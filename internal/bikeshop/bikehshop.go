@@ -11,7 +11,7 @@ import (
 
 func New() {
 
-	uri := "postgres://username:secret@ipAddr:5432/BikeShop"
+	uri := "postgres://username@localhost:5432/BikeShop"
 	os.Setenv("DATABASE_URL", uri)
 	ctx := context.Background()
 
