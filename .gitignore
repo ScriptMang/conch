@@ -2,3 +2,4 @@
 /.DS_Store
 /internal/bikeshop/bikehshop.go~
 /internal/bikeshop/peopledb.go~
+/templates/crud1.tmpl~
