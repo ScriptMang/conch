@@ -22,7 +22,7 @@ type Invoice struct {
 
 type invoices []*Invoice
 
-func (invs invoices) string() string {
+func (invs invoices) String() string {
 	str := ""
 	for _, inv := range invs {
 		str += fmt.Sprintf("%v\n", *inv)
@@ -30,7 +30,22 @@ func (invs invoices) string() string {
 	return str
 }
 
-func New() {
+// returns the string rslt of  a Select Query
+func ReadOp() string {
+	ctx, db := connect()
+	var invs invoices
+	if err := pgxscan.Select(ctx, db, &invs, `SELECT fname, lname, product,
+        price, quantity FROM invoices WHERE price > 13.00`); err != nil {
+		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+	return invs.String()
+
+}
+
+// Create a New Database Connection to bikeshop
+func connect() (context.Context, *pgxpool.Pool) {
 
 	uri := "postgres://username@localhost:5432/bikeshop"
 	os.Setenv("DATABASE_URL", uri)
@@ -42,14 +57,6 @@ func New() {
 		os.Exit(1)
 	}
 
-	defer db.Close()
+	return ctx, db
 
-	var invs invoices
-	if err := pgxscan.Select(ctx, db, &invs, `SELECT fname, lname,
-        product, price, quantity FROM invoices`); err != nil {
-		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
-	}
-
-	fmt.Printf("All the invoices\n")
-	fmt.Println(invs)
 }

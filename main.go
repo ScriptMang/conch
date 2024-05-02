@@ -21,11 +21,10 @@ func main() {
 	r.GET("/crud1", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "crud1.tmpl", gin.H{
 			"title":   "Crud1",
-			"details": "Request the First Name, Last Name, Price and Quantity of all the customers who's invoice has a unit price over $13 ",
-			"rslt":    "Query Value",
+			"details": "Request the First Name, Last Name, Product, Price and Quantity of all the customers who's invoice has a unit price over $13 ",
+			"rslt":    db.ReadOp(),
 		})
 	})
-	db.New()
 	r.Run()
 
 }
