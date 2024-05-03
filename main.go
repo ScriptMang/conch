@@ -14,13 +14,13 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl", gin.H{
 			"title": "Conch Index-Page",
-			"crud1": "Perform a Read Operation ",
+			"crud2": "Perform a Read Operation ",
 		})
 	})
 
 	r.GET("/crud1", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "crud1.tmpl", gin.H{
-			"title":   "Crud1",
+		c.HTML(http.StatusOK, "crud2.tmpl", gin.H{
+			"title":   "Crud2",
 			"details": "Request the First Name, Last Name, Product, Price and Quantity of all the customers who's invoice has a unit price over $13 ",
 			"rslt":    db.ReadOp(),
 		})

@@ -22,6 +22,7 @@ type Invoice struct {
 
 type invoices []*Invoice
 
+// implements stringer interface to print each invoice
 func (invs invoices) String() string {
 	str := ""
 	for _, inv := range invs {
