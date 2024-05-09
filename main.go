@@ -23,9 +23,9 @@ func main() {
 		c.HTML(http.StatusOK, "crud1.tmpl", gin.H{
 			"title": "Crud1",
 			"details": "Add this invoice to the database\n" +
-				"Larry mcgroover just bought 5 flashlights\n" + "unit price of 14.99\n" + "From Salt Lake City, Utah, zipcode" + "543 Kowaoski\n" +
+				"Larry Doover just bought 5 flashlights\n" + "unit price of 14.99\n" + "From Salt Lake City, Utah, zipcode" + "543 Kowaoski Road\n" +
 				"from the hardware department ",
-			"rslt": db.ReadOp(),
+			"rslt": db.InsertOp(),
 		})
 	})
 
