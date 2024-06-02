@@ -7,9 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
+func setRouter() *gin.Engine {
 	r := gin.Default()
-
 	r.LoadHTMLGlob("templates/*")
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl", gin.H{
@@ -18,25 +17,41 @@ func main() {
 			"crud2": "Perform a Read Operation",
 		})
 	})
+	return r
+}
 
+func addInvoice(r *gin.Engine) *gin.Engine {
 	r.GET("/crud1", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "crud1.tmpl", gin.H{
 			"title": "Crud1",
 			"details": "Add this invoice to the database\n" +
-				"Larry Doover just bought 5 flashlights\n" + "unit price of 14.99\n" + "From Salt Lake City, Utah, zipcode" + "543 Kowaoski Road\n" +
+				"Larry Doover just bought 5 flashlights\n" +
+				"unit price of 14.99\n" + "From Salt Lake City," +
+				"Utah, zipcode" + "543 Kowaoski Road\n" +
 				"from the hardware department ",
 			"rslt": db.InsertOp(),
 		})
 	})
+	return r
+}
 
+func readData(r *gin.Engine) *gin.Engine {
 	r.GET("/crud2", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "crud2.tmpl", gin.H{
-			"title":   "Crud2",
-			"details": "Request the First Name, Last Name, Product, Price and Quantity of all the customers who's invoice has a unit price over $13 ",
-			"rslt":    db.ReadOp(),
+			"title": "Crud2",
+			"details": "Request the First Name, Last Name, Product," +
+				"Price and Quantity of all the customers who's" +
+				"invoice has a unit price over $13 ",
+			"rslt": db.ReadOp(),
 		})
 	})
+	return r
+}
 
+func main() {
+	r := setRouter()
+	r = readData(r)
+	r = addInvoice(r)
 	r.Run()
 
 }
