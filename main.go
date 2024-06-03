@@ -23,13 +23,8 @@ func setRouter() *gin.Engine {
 func addInvoice(r *gin.Engine) *gin.Engine {
 	r.GET("/crud1", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "crud1.tmpl", gin.H{
-			"title": "Crud1",
-			"details": "Add this invoice to the database\n" +
-				"Larry Doover just bought 5 flashlights\n" +
-				"unit price of 14.99\n" + "From Salt Lake City," +
-				"Utah, zipcode" + "543 Kowaoski Road\n" +
-				"from the hardware department ",
-			"rslt": db.InsertOp(),
+			"title":   "Crud1",
+			"details": "Add Invoice",
 		})
 	})
 	return r
@@ -53,5 +48,4 @@ func main() {
 	r = readData(r)
 	r = addInvoice(r)
 	r.Run()
-
 }
