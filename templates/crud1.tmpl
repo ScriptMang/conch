@@ -8,11 +8,38 @@
 <h3><span style="white-space: pre-line"> {{.details}}</span></h3>
 
 <body>
+<form action="/crud1" method="post">
 
- <br>
- <p><span style="white-space: pre-line">{{ .rslt }}</span></p>
- <br>
-<a href="/">back to index page</a>
+<label for="fname"> First name:</label>
+<input type="text" id="fname" name="fname">
+<br><br> 
+
+<label for="lname">Last Name:</label>
+<input type="text" id="lname" name="lname">
+<br><br> 
+
+<label for="product"></label>
+<input>
+<br><br>
+
+<label for="price"></label>
+<input>
+<br><br>
+
+<label for="quantity"></label>
+<input>
+<br><br>
+
+<label for="category"></label>
+<input>
+<br><br>
+
+<label for="shipping"></label>
+<input>
+<br><br>
+
+<input type="submit" value="Submit">
+</form>
+
 </body>
-
 </html>
