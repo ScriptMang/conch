@@ -1,4 +1,3 @@
-// postgres database driver for a bikeshop database
 package bikeshop
 
 import (
@@ -11,13 +10,13 @@ import (
 )
 
 type Invoice struct {
-	Fname    string  `json:"fname"`
-	Lname    string  `json:"lname"`
-	Product  string  `json:"product"`
-	Price    float32 `json:"price"`
-	Quantity int     `json:"quantity"`
-	Category string  `json:"category"`
-	Shipping string  `json:"shipping"`
+	Fname    string  `form:"fname"`
+	Lname    string  `form:"lname"`
+	Product  string  `form:"product"`
+	Price    float32 `form:"price"`
+	Quantity int     `form:"quantity"`
+	Category string  `form:"category"`
+	Shipping string  `form:"shipping"`
 }
 
 type invoices []*Invoice
@@ -33,8 +32,9 @@ func (invs invoices) String() string {
 
 func InsertOp() string {
 	ctx, db := connect()
-	_, err := db.Exec(ctx, `INSERT INTO invoices (fname, lname, product, price, quantity, category, shipping) `+
-		`VALUES ('Larry','Doover', 'Flashlight', 14.99, 5, 'hardware', '543 Kowaoski Road, Salt Lake City, UT 54126')`)
+	_, err := db.Exec(ctx,
+		`INSERT INTO invoices (fname, lname, product, price, quantity, category, shipping) `+
+			`VALUES ('Larry','Doover', 'Flashlight', 14.99, 5, 'hardware', '543 Kowaoski Road, Salt Lake City, UT 54126')`)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)

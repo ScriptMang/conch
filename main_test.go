@@ -1,36 +1,44 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/ScriptMang/conch/internal/bikeshop"
 	assert_v2 "github.com/go-playground/assert/v2"
 )
 
 func TestPostInvoice(t *testing.T) {
 	r := setRouter()
-	r = addInvoice(r)
-
+	r = show(r)
 	w := httptest.NewRecorder()
+	vals := url.Values{}
+	vals.Add("fname", "johnny")
+	vals.Add("lname", "TwoTap")
+	vals.Add("product", "Peashooter")
+	vals.Add("price", "20.00")
+	vals.Add("quantity", "1")
+	vals.Add("category", "Toy")
+	vals.Add("shipping", "578 Bingus Ave, Moeberry OK 71203")
 
-	sampleData := bikeshop.Invoice{
-		Fname:    "Rocci",
-		Lname:    "Marcia",
-		Product:  "80lb barbell",
-		Quantity: 1,
-		Category: "exercise equipment",
-		Shipping: "548 bukleet ave, NewPort MN 5510",
+	sampleData := vals.Encode()
+	fmt.Printf("Encoding: %v\n", sampleData)
+
+	req, err := http.NewRequest("POST", "/show", strings.NewReader(sampleData))
+	if err != nil {
+		t.Fatalf("Error_v1:\n %v\n", err)
 	}
-
-	sampleJson, _ := json.Marshal(sampleData)
-	req, _ := http.NewRequest("POST", "/crud1", strings.NewReader(string(sampleJson)))
+	req.Header.Set("Content-Type", "x-www-urlencoded")
+	req.PostForm = vals
 	r.ServeHTTP(w, req)
 
-	assert_v2.Equal(t, w.Code, 200)
-	assert_v2.Equal(t, w.Body.String(), string(sampleJson))
+	expectedData := "{fname: 'johnny', lname: 'TwoTap', product: 'peashooter', price: 20.00, quantity: 1, category: Toy, shipping: '578 Bingus Ave, Moeberry OK 71203' }"
 
+	rslt := w.Body.String()
+
+	assert_v2.Equal(t, w.Code, 200)
+	assert_v2.Equal(t, rslt, expectedData)
 }
