@@ -1,16 +1,14 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	db "github.com/ScriptMang/conch/internal/bikeshop"
 	"github.com/gin-gonic/gin"
 )
 
+// configs gin router and renders index-page
 func setRouter() *gin.Engine {
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")
@@ -24,13 +22,10 @@ func setRouter() *gin.Engine {
 	return r
 }
 
+// sends form data as json Post request
 func show(r *gin.Engine) *gin.Engine {
-	r.POST("/show", func(c *gin.Context) {
+	r.POST("/crud1", func(c *gin.Context) {
 
-		// Convert the string values to float and int respectively
-		// Then  create an Invoice Object based on the PostForm-Data
-
-		c.Request.ParseForm()
 		price_val, err := strconv.ParseFloat(c.PostForm("price"), 32)
 		if err != nil {
 			panic(err)
@@ -41,7 +36,7 @@ func show(r *gin.Engine) *gin.Engine {
 			panic(err)
 		}
 
-		toFile := db.Invoice{
+		msg := db.Invoice{
 			Fname:    c.PostForm("fname"),
 			Lname:    c.PostForm("lname"),
 			Product:  c.PostForm("product"),
@@ -51,55 +46,12 @@ func show(r *gin.Engine) *gin.Engine {
 			Shipping: c.PostForm("shipping"),
 		}
 
-		// Create a New Encoder where you'll write your
-		// json Encoding of toFile to the file stream tmpFile
-
-		tmpFile, err := os.CreateTemp(os.TempDir(), "sample-data")
-
-		if err != nil {
-			panic(err)
-		}
-
-		defer os.Remove(tmpFile.Name())
-
-		err = json.NewEncoder(tmpFile).Encode(toFile)
-		if err != nil {
-			panic(err)
-		}
-
-		err = tmpFile.Close()
-		if err != nil {
-			panic(err)
-		}
-
-		// Open that file Stream and
-		// get a new Decoder stream to decode json as a string
-
-		tmpFile2, err := os.Open(tmpFile.Name())
-		if err != nil {
-			panic(err)
-		}
-
-		var order db.Invoice
-
-		err = json.NewDecoder(tmpFile2).Decode(&order)
-		if err != nil {
-			panic(err)
-		}
-
-		err = tmpFile2.Close()
-		if err != nil {
-			panic(err)
-		}
-
-		c.HTML(http.StatusOK, "show.tmpl", gin.H{
-			"title": "Show Post Form Data",
-			"rslt":  fmt.Sprintf("%+v\n", order),
-		})
+		c.JSON(http.StatusOK, msg)
 	})
 	return r
 }
 
+// renders form page to create an invoice
 func addInvoice(r *gin.Engine) *gin.Engine {
 	r.GET("/crud1", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "crud1.tmpl", gin.H{
@@ -110,6 +62,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 	return r
 }
 
+// reads the tablerows from the database
 func readData(r *gin.Engine) *gin.Engine {
 	r.GET("/crud2", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "crud2.tmpl", gin.H{

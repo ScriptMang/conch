@@ -10,13 +10,13 @@ import (
 )
 
 type Invoice struct {
-	Fname    string  `form:"fname"`
-	Lname    string  `form:"lname"`
-	Product  string  `form:"product"`
-	Price    float32 `form:"price"`
-	Quantity int     `form:"quantity"`
-	Category string  `form:"category"`
-	Shipping string  `form:"shipping"`
+	Fname    string  `json:"fname" form:"fname"`
+	Lname    string  `json:"lname" form:"lname"`
+	Product  string  `json:"product" form:"product"`
+	Price    float32 `json:"price" form:"price"`
+	Quantity int     `json:"quantity" form:"quantity"`
+	Category string  `json:"category" form:"category"`
+	Shipping string  `json:"shipping" form:"shipping"`
 }
 
 type invoices []*Invoice

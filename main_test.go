@@ -27,15 +27,15 @@ func TestPostInvoice(t *testing.T) {
 	sampleData := vals.Encode()
 	fmt.Printf("Encoding: %v\n", sampleData)
 
-	req, err := http.NewRequest("POST", "/show", strings.NewReader(sampleData))
+	req, err := http.NewRequest("POST", "/crud1", strings.NewReader(sampleData))
 	if err != nil {
 		t.Fatalf("Error_v1:\n %v\n", err)
 	}
-	req.Header.Set("Content-Type", "x-www-urlencoded")
+
 	req.PostForm = vals
 	r.ServeHTTP(w, req)
 
-	expectedData := "{fname: 'johnny', lname: 'TwoTap', product: 'peashooter', price: 20.00, quantity: 1, category: Toy, shipping: '578 Bingus Ave, Moeberry OK 71203' }"
+	expectedData := `{"fname":"johnny","lname":"TwoTap","product":"Peashooter","price":20,"quantity":1,"category":"Toy","shipping":"578 Bingus Ave, Moeberry OK 71203"}`
 
 	rslt := w.Body.String()
 
