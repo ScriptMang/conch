@@ -46,7 +46,9 @@ func show(r *gin.Engine) *gin.Engine {
 			Shipping: c.PostForm("shipping"),
 		}
 
+		db.InsertOp(msg)
 		c.JSON(http.StatusOK, msg)
+
 	})
 	return r
 }
