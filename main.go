@@ -1,8 +1,8 @@
 package main
 
 import (
+	"log"
 	"net/http"
-	"strconv"
 
 	db "github.com/ScriptMang/conch/internal/bikeshop"
 	"github.com/gin-gonic/gin"
@@ -22,38 +22,25 @@ func setRouter() *gin.Engine {
 	return r
 }
 
-// sends form data as json Post request
+// Takes Post request data of the types: url-encoded or json
+// and binds it, to the struct 'invs'.
+// When passed to insert-op its used as a bridge
+// to add a new invoice.
 func show(r *gin.Engine) *gin.Engine {
 	r.POST("/crud1", func(c *gin.Context) {
 
-		price_val, err := strconv.ParseFloat(c.PostForm("price"), 32)
-		if err != nil {
-			panic(err)
+		var invs db.Invoice
+		if err := c.ShouldBind(&invs); err != nil {
+			log.Fatalf("Error Binding: %v\n", err)
 		}
 
-		quantity_val, err := strconv.Atoi(c.PostForm("quantity"))
-		if err != nil {
-			panic(err)
-		}
-
-		msg := db.Invoice{
-			Fname:    c.PostForm("fname"),
-			Lname:    c.PostForm("lname"),
-			Product:  c.PostForm("product"),
-			Price:    float32(price_val),
-			Quantity: quantity_val,
-			Category: c.PostForm("category"),
-			Shipping: c.PostForm("shipping"),
-		}
-
-		db.InsertOp(msg)
-		c.JSON(http.StatusOK, msg)
-
+		db.InsertOp(invs)
+		c.JSON(http.StatusOK, invs)
 	})
 	return r
 }
 
-// renders form page to create an invoice
+// renders the form page that's needed to create an invoice
 func addInvoice(r *gin.Engine) *gin.Engine {
 	r.GET("/crud1", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "crud1.tmpl", gin.H{
