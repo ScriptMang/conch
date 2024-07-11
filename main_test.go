@@ -11,7 +11,7 @@ import (
 	assert_v2 "github.com/go-playground/assert/v2"
 )
 
-func ReadInvoice(t *testing.T) {
+func TestReadInvoice(t *testing.T) {
 
 }
 
