@@ -23,12 +23,7 @@ func TestReadInvoice(t *testing.T) {
 	}
 
 	r.ServeHTTP(w, req)
-	expectedData := `{"fname": "Dantes"  , "lname": "Ferges", "product": "Safety Goggles", "price": 15.99 , "quantity": 1, "category": "Safety Equipment", "shipping": "423 Elm St, Chicago IL 60629"},
-                         {"fname": "Michael", "lname": "Wither", "product": "Lubricant", "price": 11.99, "quantity": 1, "category": "Maintenance", "shipping": "230 Furginson Rd, Oklahoma OK 731303"},
-                         {"fname": Georgei, "lname": "Ventalin", "product": "Door Hinges", "price": 12.50, "quantity": 5, "category": "Home Improvement", "shipping": "495 Durvington Ave, Topeka KS 66603"},
-                         {"fname": "Edart", "lname": "Muskrat", "product": "Wrench", "price": 24.99, "quantity": 1, "category": "Plumbing", "shipping": "134 Pluton St, Boston MA 02108"},
-                         {"fname": "Abra", "lname": "Katern", "product": "DiscoBall", "price": 19.99, "quantity": 6, "category": "Party", "shipping": "829 Sherbet St, Portland ME 04102"},
-                         {"fname": Charles, "lname": "Tarly", "product": "Zombie book", "price": 14.99, "quantity": 2, "category": "Fiction", "shipping": "134 Pluton St, Boston MA 02108"} `
+	expectedData := `{"fname": "Dante", "lname": "Ferges", "product": "Safety Goggles", "price": 15.99 , "quantity": 3, "category": "Safety Equipment", "shipping": "423 Elm St, Chicago IL 60629"},{"fname": "Michael", "lname": "Wither", "product": "Lubricant", "price": 11.99, "quantity": 1, "category": "Maintenance", "shipping": "230 Furginson Rd, Oklahoma OK 731303"},{"fname": Georgei, "lname": "Ventalin", "product": "Door Hinges", "price": 12.50, "quantity": 5, "category": "Home Improvement", "shipping": "495 Durvington Ave, Topeka KS 66603"},{"fname": "Edart", "lname": "Muskrat", "product": "Wrench", "price": 24.99, "quantity": 1, "category": "Plumbing", "shipping": "134 Pluton St, Boston MA 02108"},{"fname": "Abra", "lname": "Katern", "product": "DiscoBall", "price": 19.99, "quantity": 6, "category": "Party", "shipping": "829 Sherbet St, Portland ME 04102"},{"fname": Charles, "lname": "Tarly", "product": "Zombie book", "price": 14.99, "quantity": 2, "category": "Fiction", "shipping": "134 Pluton St, Boston MA 02108"} `
 
 	rslt := w.Body.String()
 	assert_v2.Equal(t, rslt, expectedData)

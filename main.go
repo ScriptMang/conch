@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -54,13 +55,16 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 // reads the tablerows from the database
 func readData(r *gin.Engine) *gin.Engine {
 	r.GET("/crud2", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "crud2.tmpl", gin.H{
-			"title": "Crud2",
-			"details": "Request the First Name, Last Name, Product," +
-				"Price and Quantity of all the customers who's" +
-				"invoice has a unit price over $13 ",
-			"rslt": db.ReadOp(),
-		})
+		data := ""
+		invs := db.ReadOp()
+		for _, inv := range invs {
+			str1 := fmt.Sprintf(`"fname": "%s", "lname": "%s", "product": "%s", `, inv.Fname, inv.Lname, inv.Product)
+			str2 := fmt.Sprintf(`"price": %.2f, "quantity": %d, "category": "%s", `, inv.Price, inv.Quantity, inv.Category)
+			str3 := fmt.Sprintf(`"shipping": "%s"`, inv.Shipping)
+			fmt.Println(str1)
+			data += fmt.Sprintf(`{` + str1 + str2 + str3 + `},`)
+		}
+		c.String(http.StatusOK, data)
 	})
 	return r
 }

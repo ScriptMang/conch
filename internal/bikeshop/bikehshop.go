@@ -22,13 +22,15 @@ type Invoice struct {
 type invoices []*Invoice
 
 // implements stringer interface to print each invoice
-func (invs invoices) String() string {
-	str := ""
-	for _, inv := range invs {
-		str += fmt.Sprintf("%v\n", *inv)
-	}
-	return str
-}
+// as json
+// func (invs invoices) String() string {
+// 	str := ""
+// 	for _, inv := range invs {
+// 		str += fmt.Sprintf(`{"fname": "%s", "lname": "%s", "product": "%s","price": %.2f , "quantity": %d, "category": "%s", "shipping": "%s"},`,
+// 			inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping)
+// 	}
+// 	return str
+// }
 
 // Receive the new tableRow from Post-Rqst and execute the insert-op
 func InsertOp(inv Invoice) {
@@ -48,16 +50,16 @@ func InsertOp(inv Invoice) {
 }
 
 // returns the string rslt of  a Select Query
-func ReadOp() string {
+func ReadOp() []*Invoice {
 	ctx, db := connect()
 	var invs invoices
 	if err := pgxscan.Select(ctx, db, &invs, `SELECT fname, lname, product,
-        price, quantity FROM invoices WHERE price > 13.00`); err != nil {
+        price, quantity, category, shipping FROM invoices WHERE price > 13.00`); err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
 	}
 	defer db.Close()
-	return invs.String()
+	return invs
 
 }
 
