@@ -21,17 +21,6 @@ type Invoice struct {
 
 type invoices []*Invoice
 
-// implements stringer interface to print each invoice
-// as json
-// func (invs invoices) String() string {
-// 	str := ""
-// 	for _, inv := range invs {
-// 		str += fmt.Sprintf(`{"fname": "%s", "lname": "%s", "product": "%s","price": %.2f , "quantity": %d, "category": "%s", "shipping": "%s"},`,
-// 			inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping)
-// 	}
-// 	return str
-// }
-
 // Receive the new tableRow from Post-Rqst and execute the insert-op
 func InsertOp(inv Invoice) {
 	ctx, db := connect()
