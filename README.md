@@ -1,19 +1,19 @@
 # Conch
 
-A locally ran program that uses GIN Rest APIs to perform mock CRUD Operations
-For this project I'm simulating a bikshop database that keeps a table of invoices
+A locally ran program that uses GIN Rest APIs to perform mock CRUD Operations.
+For this project I'm simulating a bikshop database that keeps a table of invoices.
 
 ### Prior to Running
 
-This program requires that both go programming language 
-and PostgreSQL be installed on your local machine.
+* This program requires that both the go programming language 
+  and PostgreSQL be installed on your local machine.
 
-Make sure to import the psql dump file into PostgreSQL.
-Use the following command 'psql --username=<username> Bikeshop <  <filename>.sql'.
-Note: replace placeholder info within the angle brackets with your own.
+* Make sure to import the psql dump file into PostgreSQL.
+  Use the following command 'psql --username=<username> Bikeshop <  <filename>.sql'.
+  Note: replace placeholder info within the angle brackets with your own.
 
-Inside the bikeshop.go file make sure to replace the substring 'username' within
-the uri variable. Provide the username you used to create the database in PostgreSQL.
+* Inside the bikeshop.go file replace the substring 'username' within the uri variable. 
+  Provide the username you used to create the database in PostgreSQL instead.
 
 ### How to Run
 
