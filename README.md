@@ -3,7 +3,7 @@
 A locally ran program that uses GIN Rest APIs to perform mock CRUD Operations
 For this project I'm simulating a bikshop database that keeps a table of invoices
 
-## Prior to Running the App via the Terminal
+### Prior to Running
 
 This program requires that both go programming language 
 and PostgreSQL be installed on your local machine.
@@ -15,7 +15,7 @@ Note: replace placeholder info within the angle brackets with your own.
 Inside the bikeshop.go file make sure to replace the substring 'username' within
 the uri variable. Provide the username you used to create the database in PostgreSQL.
 
-## How to Run
+### How to Run
 
 The program is ran using the terminal. Typing 'go run .' or  by running 
 its binary './conch' within in its directory, starts the program.
@@ -26,7 +26,7 @@ This address will take you the index page filled with a link for each CRUD Opera
 Clicking the link performs the crud operation unless it requires a html form to be sent first.
 To end the program,  type '^c'(ctrl-c).
 
-## THE CRUD Operations
+### THE CRUD Operations
 
 * Create an invoice 
 * Print the invoices table
