@@ -16,8 +16,8 @@ func setRouter() *gin.Engine {
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl", gin.H{
 			"title": "Conch Index-Page",
-			"crud1": "Insert Table-Row Data",
-			"crud2": "Perform a Read Operation",
+			"crud1": "Create an invoice",
+			"crud2": "Print the invoices table",
 		})
 	})
 	return r
