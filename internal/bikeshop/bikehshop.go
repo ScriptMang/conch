@@ -21,7 +21,7 @@ type Invoice struct {
 
 type invoices []*Invoice
 
-// Receive the new tableRow from Post-Rqst and execute the insert-op
+// Takes an invoice and adds it to the database
 func InsertOp(inv Invoice) {
 	ctx, db := connect()
 
