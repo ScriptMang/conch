@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -56,15 +55,8 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 // reads the tablerows from the database
 func readData(r *gin.Engine) *gin.Engine {
 	r.GET("/crud2", func(c *gin.Context) {
-		data := ""
-		invs := db.ReadOp()
-		for _, inv := range invs {
-			str1 := fmt.Sprintf(`"fname": "%s", "lname": "%s", "product": "%s", `, inv.Fname, inv.Lname, inv.Product)
-			str2 := fmt.Sprintf(`"price": %.2f, "quantity": %d, "category": "%s", `, inv.Price, inv.Quantity, inv.Category)
-			str3 := fmt.Sprintf(`"shipping": "%s"`, inv.Shipping)
-			data += fmt.Sprintf(`{` + str1 + str2 + str3 + `},`)
-		}
-		c.String(http.StatusOK, data)
+		invs := db.Invoices(db.ReadOp())
+		c.String(http.StatusOK, invs.Json())
 	})
 	return r
 }
@@ -78,15 +70,8 @@ func showUpdate(r *gin.Engine) *gin.Engine {
 			log.Fatalf("Error Binding: %v\n", err)
 		}
 
-		data := ""
-		invs := db.UpdateOp(inv)
-		for _, inv2 := range invs {
-			str1 := fmt.Sprintf(`"fname": "%s", "lname": "%s", "product": "%s", `, inv2.Fname, inv2.Lname, inv2.Product)
-			str2 := fmt.Sprintf(`"price": %.2f, "quantity": %d, "category": "%s", `, inv2.Price, inv2.Quantity, inv2.Category)
-			str3 := fmt.Sprintf(`"shipping": "%s"`, inv2.Shipping)
-			data += fmt.Sprintf(`{` + str1 + str2 + str3 + `},`)
-		}
-		c.String(http.StatusOK, data)
+		invs := db.Invoices(db.UpdateOp(inv))
+		c.String(http.StatusOK, invs.Json())
 	})
 	return r
 }
