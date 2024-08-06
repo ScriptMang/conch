@@ -38,7 +38,7 @@ func InsertOp(inv Invoice) {
 	defer db.Close()
 }
 
-// returns the string rslt of  a Select Query
+// returns all the invoices in the database as a slice of *Invoice
 func ReadOp() []*Invoice {
 	ctx, db := connect()
 	var invs invoices
@@ -50,6 +50,29 @@ func ReadOp() []*Invoice {
 	defer db.Close()
 	return invs
 
+}
+
+// updates and returns the given invoice
+func UpdateOp(inv Invoice) []*Invoice {
+	ctx, db := connect()
+	defer db.Close()
+
+	var invs []*Invoice
+	set1 := fmt.Sprintf(`SET fname = '%s', lname = '%s', product = '%s', `, inv.Fname, inv.Lname, inv.Product)
+	set2 := fmt.Sprintf(`price = %.2f, quantity = %d, category = '%s', `, inv.Price, inv.Quantity, inv.Category)
+	set3 := fmt.Sprintf(`shipping = '%s' WHERE fname = '%s'`, inv.Shipping, inv.Fname)
+	_, err := db.Exec(ctx, `UPDATE invoices `+set1+set2+set3)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
+		os.Exit(1)
+	}
+
+	qry := fmt.Sprintf(`SELECT * FROM invoices WHERE fname= '%s'`, inv.Fname)
+	if err := pgxscan.Select(ctx, db, &invs, qry); err != nil {
+		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
+		os.Exit(1)
+	}
+	return invs
 }
 
 // Create a New Database Connection to bikeshop
