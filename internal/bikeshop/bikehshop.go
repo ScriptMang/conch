@@ -64,16 +64,49 @@ func ReadOp() []*Invoice {
 
 }
 
+// adds an invoice's properties to a sql query if the values given
+// from the htlm-form are not blank
+func addAttribsToQuery(qry *string, attribName, val string) {
+	if val != "" {
+		*qry += fmt.Sprintf(`%s = '%s',`, attribName, val)
+	}
+}
+
 // updates and returns the given invoice
 func UpdateOp(inv Invoice) []*Invoice {
 	ctx, db := connect()
 	defer db.Close()
 
 	var invs []*Invoice
-	set1 := fmt.Sprintf(`SET fname = '%s', lname = '%s', product = '%s', `, inv.Fname, inv.Lname, inv.Product)
-	set2 := fmt.Sprintf(`price = %.2f, quantity = %d, category = '%s', `, inv.Price, inv.Quantity, inv.Category)
-	set3 := fmt.Sprintf(`shipping = '%s' WHERE fname = '%s'`, inv.Shipping, inv.Fname)
-	_, err := db.Exec(ctx, `UPDATE invoices `+set1+set2+set3)
+
+	cols := ""
+
+	addAttribsToQuery(&cols, `fname`, inv.Fname)
+	addAttribsToQuery(&cols, `lname`, inv.Lname)
+	addAttribsToQuery(&cols, `product`, inv.Product)
+
+	if inv.Price > 0.00 {
+		cols += fmt.Sprintf(`price = %.2f,`, inv.Price)
+	}
+
+	if inv.Quantity > 0 {
+		cols += fmt.Sprintf(`quantity = %d,`, inv.Quantity)
+	}
+
+	addAttribsToQuery(&cols, `category`, inv.Category)
+	addAttribsToQuery(&cols, `shipping`, inv.Shipping)
+
+	// remove the apostrophe at the end of the columns
+	stripCols := cols
+	lastCharIdx := len(cols) - 1
+	if lastCharIdx >= 0 && cols[lastCharIdx] == ',' {
+		stripCols = cols[:lastCharIdx]
+	}
+
+	expr := `SET ` + stripCols + fmt.Sprintf(` WHERE fname = '%s'`, inv.Fname)
+	fmt.Println("This is the update query w/o set stripped: ", expr)
+
+	_, err := db.Exec(ctx, `UPDATE invoices `+expr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
