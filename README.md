@@ -30,5 +30,5 @@ To end the program,  type '^c'(ctrl-c).
 
 * Create an invoice 
 * Print the invoices table
-* Edit an existing invoice (WIP)
+* Edit an existing invoice
 * Delete an existing invoice (WIP)
