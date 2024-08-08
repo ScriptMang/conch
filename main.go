@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 
@@ -18,6 +20,7 @@ func setRouter() *gin.Engine {
 			"crud1": "Create an invoice",
 			"crud2": "Print the invoices table",
 			"crud3": "Update an existing invoice",
+			"crud4": "Delete an existing invoice",
 		})
 	})
 	return r
@@ -88,6 +91,42 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 	return r
 }
 
+// shows that the invoice entry has been updated
+// func showDelete(r *gin.Engine) *gin.Engine {
+// 	r.POST("/crud4", func(c *gin.Context) {
+
+// 		var inv db.Invoice
+// 		if err := c.ShouldBind(&inv); err != nil {
+// 			log.Fatalf("Error Binding: %v\n", err)
+// 		}
+
+// 		invs := db.Invoices(db.DeleteOp(inv))
+// 		c.String(http.StatusOK, invs.Json())
+// 	})
+// 	return r
+
+// renders the form page that's needed to Delete an invoice
+func deleteEntry(r *gin.Engine) *gin.Engine {
+	r.GET("/crud4", func(c *gin.Context) {
+
+		invs := db.Invoices(db.ReadOp())
+
+		//generates html option-tags with invoice values
+		tmpl := ""
+		for _, inv := range invs {
+			tmpl += fmt.Sprintf(`<option value='%s'>%s</option>`, inv.Fname, *inv)
+		}
+
+		c.HTML(http.StatusOK, "crud4.tmpl", gin.H{
+			"title":   "Crud4",
+			"details": "Delete an Existing Entry",
+			"options": template.HTML(tmpl),
+		})
+
+	})
+	return r
+}
+
 func main() {
 	r := setRouter()
 	r = readData(r)
@@ -97,6 +136,8 @@ func main() {
 
 	r = updateEntry(r)
 	r = showUpdate(r)
+
+	r = deleteEntry(r)
 
 	r.Run()
 }

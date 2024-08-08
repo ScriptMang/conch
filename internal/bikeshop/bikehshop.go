@@ -33,6 +33,16 @@ func (invs Invoices) Json() string {
 	return data
 }
 
+// prints an invoice in json format
+func (inv Invoice) String() string {
+	data := ""
+	str1 := fmt.Sprintf(`"fname": "%s", "lname": "%s", "product": "%s", `, inv.Fname, inv.Lname, inv.Product)
+	str2 := fmt.Sprintf(`"price": %.2f, "quantity": %d, "category": "%s", `, inv.Price, inv.Quantity, inv.Category)
+	str3 := fmt.Sprintf(`"shipping": "%s"`, inv.Shipping)
+	data += fmt.Sprintf(`{` + str1 + str2 + str3 + `}`)
+	return data
+}
+
 // Takes an invoice and adds it to the database
 func InsertOp(inv Invoice) {
 	ctx, db := connect()
@@ -55,7 +65,7 @@ func ReadOp() []*Invoice {
 	ctx, db := connect()
 	var invs Invoices
 	if err := pgxscan.Select(ctx, db, &invs, `SELECT fname, lname, product,
-        price, quantity, category, shipping FROM invoices WHERE price > 13.00`); err != nil {
+        price, quantity, category, shipping FROM invoices`); err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
 	}
