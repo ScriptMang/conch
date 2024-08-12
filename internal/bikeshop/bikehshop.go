@@ -19,6 +19,11 @@ type Invoice struct {
 	Shipping string  `json:"shipping" form:"shipping"`
 }
 
+// invoice meant for deletion
+type DeletionForm struct {
+	Val string `form:"invoice_list"`
+}
+
 type Invoices []*Invoice
 
 // prints all the invoices within the slice in json format
@@ -41,6 +46,14 @@ func (inv Invoice) String() string {
 	str3 := fmt.Sprintf(`"shipping": "%s"`, inv.Shipping)
 	data += fmt.Sprintf(`{` + str1 + str2 + str3 + `}`)
 	return data
+}
+
+// adds an invoice's properties to a sql query if the values given
+// from the htlm-form are not blank
+func addAttribsToQuery(qry *string, attribName, val string) {
+	if val != "" {
+		*qry += fmt.Sprintf(`%s = '%s',`, attribName, val)
+	}
 }
 
 // Takes an invoice and adds it to the database
@@ -72,14 +85,6 @@ func ReadOp() []*Invoice {
 	defer db.Close()
 	return invs
 
-}
-
-// adds an invoice's properties to a sql query if the values given
-// from the htlm-form are not blank
-func addAttribsToQuery(qry *string, attribName, val string) {
-	if val != "" {
-		*qry += fmt.Sprintf(`%s = '%s',`, attribName, val)
-	}
 }
 
 // updates and returns the given invoice
@@ -128,6 +133,22 @@ func UpdateOp(inv Invoice) []*Invoice {
 		os.Exit(1)
 	}
 	return invs
+}
+
+// Delete the given invoice based on fname
+// return the list of remaining invoices
+func DeleteOp(fname string) Invoices {
+	ctx, db := connect()
+	defer db.Close()
+
+	qry := fmt.Sprintf(`DELETE FROM invoices WHERE fname = '%s'`, fname)
+	_, err := db.Exec(ctx, qry)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
+		os.Exit(1)
+	}
+
+	return ReadOp()
 }
 
 // Create a New Database Connection to bikeshop

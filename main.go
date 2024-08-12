@@ -92,18 +92,19 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 }
 
 // shows that the invoice entry has been updated
-// func showDelete(r *gin.Engine) *gin.Engine {
-// 	r.POST("/crud4", func(c *gin.Context) {
+func showDelete(r *gin.Engine) *gin.Engine {
+	r.POST("/crud4", func(c *gin.Context) {
 
-// 		var inv db.Invoice
-// 		if err := c.ShouldBind(&inv); err != nil {
-// 			log.Fatalf("Error Binding: %v\n", err)
-// 		}
-
-// 		invs := db.Invoices(db.DeleteOp(inv))
-// 		c.String(http.StatusOK, invs.Json())
-// 	})
-// 	return r
+		var inv db.DeletionForm
+		if err := c.ShouldBind(&inv); err != nil {
+			log.Fatalf("Error Binding: %v\n", err)
+		}
+		//fmt.Printf("%s\n", inv.Val)
+		invs := db.DeleteOp(inv.Val)
+		c.String(http.StatusOK, invs.Json())
+	})
+	return r
+}
 
 // renders the form page that's needed to Delete an invoice
 func deleteEntry(r *gin.Engine) *gin.Engine {
@@ -138,6 +139,7 @@ func main() {
 	r = showUpdate(r)
 
 	r = deleteEntry(r)
+	r = showDelete(r)
 
 	r.Run()
 }
