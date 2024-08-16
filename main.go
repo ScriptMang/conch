@@ -75,12 +75,12 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 func showDelete(r *gin.Engine) *gin.Engine {
 	r.POST("/crud4", func(c *gin.Context) {
 
-		var inv db.DeletionForm
+		var inv db.Invoice
 		if err := c.ShouldBind(&inv); err != nil {
 			log.Fatalf("Error Binding: %v\n", err)
 		}
 
-		invs := db.DeleteOp(inv.Val)
+		invs := db.DeleteOp(inv)
 		c.String(http.StatusOK, invs.Json())
 	})
 	return r

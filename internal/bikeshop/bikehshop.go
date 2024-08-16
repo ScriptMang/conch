@@ -20,11 +20,6 @@ type Invoice struct {
 	Shipping string  `json:"shipping" form:"shipping"`
 }
 
-// invoice meant for deletion
-type DeletionForm struct {
-	Val string `form:"invoice_list"`
-}
-
 type Invoices []*Invoice
 
 // prints all the invoices within the slice in json format
@@ -49,11 +44,18 @@ func (inv Invoice) String() string {
 	return data
 }
 
-// adds an invoice's properties to a sql query if the values given
-// from the htlm-form are not blank
-func addAttribsToQuery(qry *string, attribName, val string) {
-	if val != "" {
-		*qry += fmt.Sprintf(`%s = '%s',`, attribName, val)
+func (inv *Invoice) validateFields() {
+	// make sure none of fields are empty
+	if inv.Fname == "" || inv.Lname == "" || inv.Product == "" ||
+		inv.Price == 0.00 || inv.Quantity == 0 || inv.Category == "" || inv.Shipping == "" {
+		fmt.Fprintf(os.Stderr, "Error none of fields can be empty or zero")
+		os.Exit(1)
+	}
+
+	//validate none of the numbers are negatives
+	if inv.Price < 0.00 || inv.Quantity < 0 {
+		fmt.Fprintf(os.Stderr, "Neither the Price or Quantity can be negative")
+		os.Exit(1)
 	}
 }
 
@@ -62,13 +64,7 @@ func InsertOp(inv Invoice) Invoice {
 	ctx, db := connect()
 	defer db.Close()
 
-	// make sure none of fields are empty
-	if inv.Fname == "" || inv.Lname == "" || inv.Product == "" ||
-		inv.Price == 0.00 || inv.Quantity == 0 || inv.Category == "" || inv.Shipping == "" {
-		fmt.Fprintf(os.Stderr, "Error none of fields can be empty or zero")
-		os.Exit(1)
-	}
-
+	inv.validateFields()
 	rows, _ := db.Query(ctx, `INSERT INTO invoices (fname, lname, product, price, quantity, category, shipping)`+
 		`VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *`, inv.Fname, inv.Lname, inv.Product,
 		inv.Price, inv.Quantity, inv.Category, inv.Shipping)
@@ -85,15 +81,15 @@ func InsertOp(inv Invoice) Invoice {
 // returns all the invoices in the database as a slice of *Invoice
 func ReadAllOp() []*Invoice {
 	ctx, db := connect()
+	defer db.Close()
+
 	var invs Invoices
 	if err := pgxscan.Select(ctx, db, &invs, `SELECT id, fname, lname, product,
         price, quantity, category, shipping FROM invoices`); err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
 	}
-	defer db.Close()
 	return invs
-
 }
 
 // updates and returns the given invoice
@@ -101,57 +97,36 @@ func UpdateOp(inv Invoice) []*Invoice {
 	ctx, db := connect()
 	defer db.Close()
 
+	inv.validateFields()
 	var invs []*Invoice
 
-	cols := ""
+	qry1 := `UPDATE invoices SET fname=$1,lname=$2,product=$3,` +
+		`price=$4,quantity=$5,category=$6,` +
+		`shipping=$7 WHERE id=$8`
 
-	addAttribsToQuery(&cols, `fname`, inv.Fname)
-	addAttribsToQuery(&cols, `lname`, inv.Lname)
-	addAttribsToQuery(&cols, `product`, inv.Product)
-
-	if inv.Price > 0.00 {
-		cols += fmt.Sprintf(`price = %.2f,`, inv.Price)
-	}
-
-	if inv.Quantity > 0 {
-		cols += fmt.Sprintf(`quantity = %d,`, inv.Quantity)
-	}
-
-	addAttribsToQuery(&cols, `category`, inv.Category)
-	addAttribsToQuery(&cols, `shipping`, inv.Shipping)
-
-	// remove the apostrophe at the end of the columns
-	stripCols := cols
-	lastCharIdx := len(cols) - 1
-	if lastCharIdx >= 0 && cols[lastCharIdx] == ',' {
-		stripCols = cols[:lastCharIdx]
-	}
-
-	expr := `SET ` + stripCols + fmt.Sprintf(` WHERE fname = '%s'`, inv.Fname)
-	fmt.Println("This is the update query w/o set stripped: ", expr)
-
-	_, err := db.Exec(ctx, `UPDATE invoices `+expr)
+	_, err := db.Exec(ctx, qry1, inv.Fname, inv.Lname, inv.Product,
+		inv.Price, inv.Quantity, inv.Category, inv.Shipping, inv.ID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
 	}
 
-	qry := fmt.Sprintf(`SELECT * FROM invoices WHERE fname= '%s'`, inv.Fname)
-	if err := pgxscan.Select(ctx, db, &invs, qry); err != nil {
+	qry2 := `SELECT * FROM invoices WHERE id= $1`
+	if err := pgxscan.Select(ctx, db, &invs, qry2, inv.ID); err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
 	}
 	return invs
 }
 
-// Delete the given invoice based on fname
+// Delete the given invoice based on id
 // return the list of remaining invoices
-func DeleteOp(fname string) Invoices {
+func DeleteOp(inv Invoice) Invoices {
 	ctx, db := connect()
 	defer db.Close()
 
-	qry := fmt.Sprintf(`DELETE FROM invoices WHERE fname = '%s'`, fname)
-	_, err := db.Exec(ctx, qry)
+	qry := `DELETE FROM invoices WHERE id = $1`
+	_, err := db.Exec(ctx, qry, inv.ID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
@@ -174,5 +149,4 @@ func connect() (context.Context, *pgxpool.Pool) {
 	}
 
 	return ctx, db
-
 }
