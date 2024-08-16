@@ -10,6 +10,7 @@ import (
 )
 
 type Invoice struct {
+	ID       int     `json:"id,omitempty" form:"id,omitempty"`
 	Fname    string  `json:"fname" form:"fname"`
 	Lname    string  `json:"lname" form:"lname"`
 	Product  string  `json:"product" form:"product"`
@@ -57,27 +58,35 @@ func addAttribsToQuery(qry *string, attribName, val string) {
 }
 
 // Takes an invoice and adds it to the database
-func InsertOp(inv Invoice) {
+func InsertOp(inv Invoice) Invoice {
 	ctx, db := connect()
+	defer db.Close()
 
-	columns := fmt.Sprint(`(fname, lname, product, price, quantity, category, shipping)`)
-	rowData := fmt.Sprintf(`('%s','%s','%s',%.2f,%d,'%s','%s')`,
-		inv.Fname, inv.Lname, inv.Product, inv.Price,
-		inv.Quantity, inv.Category, inv.Shipping)
-	_, err := db.Exec(ctx, `INSERT INTO invoices `+columns+`VALUES `+rowData)
+	// make sure none of fields are empty
+	if inv.Fname == "" || inv.Lname == "" || inv.Product == "" ||
+		inv.Price == 0.00 || inv.Quantity == 0 || inv.Category == "" || inv.Shipping == "" {
+		fmt.Fprintf(os.Stderr, "Error none of fields can be empty or zero")
+		os.Exit(1)
+	}
 
+	rows, _ := db.Query(ctx, `INSERT INTO invoices (fname, lname, product, price, quantity, category, shipping)`+
+		`VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *`, inv.Fname, inv.Lname, inv.Product,
+		inv.Price, inv.Quantity, inv.Category, inv.Shipping)
+
+	var insertedInv Invoice
+	err := pgxscan.ScanOne(&insertedInv, rows)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
 	}
-	defer db.Close()
+	return insertedInv
 }
 
 // returns all the invoices in the database as a slice of *Invoice
-func ReadOp() []*Invoice {
+func ReadAllOp() []*Invoice {
 	ctx, db := connect()
 	var invs Invoices
-	if err := pgxscan.Select(ctx, db, &invs, `SELECT fname, lname, product,
+	if err := pgxscan.Select(ctx, db, &invs, `SELECT id, fname, lname, product,
         price, quantity, category, shipping FROM invoices`); err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
@@ -148,7 +157,7 @@ func DeleteOp(fname string) Invoices {
 		os.Exit(1)
 	}
 
-	return ReadOp()
+	return ReadAllOp()
 }
 
 // Create a New Database Connection to bikeshop

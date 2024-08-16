@@ -1,13 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
+	"os"
 	"strings"
 	"testing"
 
+	db "github.com/ScriptMang/conch/internal/bikeshop"
 	assert_v2 "github.com/go-playground/assert/v2"
 )
 
@@ -30,34 +32,43 @@ func TestReadInvoice(t *testing.T) {
 
 }
 
+// test the creation of an invoice
+// requires the table to empty and serial sequence to be reset to 1.
 func TestPostInvoice(t *testing.T) {
 	r := setRouter()
-	r = show(r)
+	r = addInvoice(r)
 	w := httptest.NewRecorder()
-	vals := url.Values{}
-	vals.Add("fname", "johnny")
-	vals.Add("lname", "TwoTap")
-	vals.Add("product", "Peashooter")
-	vals.Add("price", "20.00")
-	vals.Add("quantity", "1")
-	vals.Add("category", "Toy")
-	vals.Add("shipping", "578 Bingus Ave, Moeberry OK 71203")
+	inv := db.Invoice{
+		ID:       0,
+		Fname:    "Johnny",
+		Lname:    "TwoTap",
+		Product:  "Peashooter",
+		Price:    20.00,
+		Quantity: 1,
+		Category: "Toy",
+		Shipping: "578 Bingus Ave, Moeberry OK 71203",
+	}
 
-	sampleData := vals.Encode()
-	fmt.Printf("Encoding: %v\n", sampleData)
+	sampleData, err := json.Marshal(inv)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to Encode  Object into json: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Encoding: %s\n", string(sampleData))
 
-	req, err := http.NewRequest("POST", "/crud1", strings.NewReader(sampleData))
+	req, err := http.NewRequest("POST", "/crud1", strings.NewReader(string(sampleData)))
+	req.Header.Set("content-type", "application/json")
+
 	if err != nil {
 		t.Fatalf("Error_v1:\n %v\n", err)
 	}
 
-	req.PostForm = vals
 	r.ServeHTTP(w, req)
 
-	expectedData := `{"fname":"johnny","lname":"TwoTap","product":"Peashooter","price":20,"quantity":1,"category":"Toy","shipping":"578 Bingus Ave, Moeberry OK 71203"}`
+	expectedData := `{"id":1,"fname":"Johnny","lname":"TwoTap","product":"Peashooter","price":20,"quantity":1,"category":"Toy","shipping":"578 Bingus Ave, Moeberry OK 71203"}`
 
 	rslt := w.Body.String()
 
-	assert_v2.Equal(t, w.Code, 200)
+	assert_v2.Equal(t, w.Code, http.StatusCreated)
 	assert_v2.Equal(t, rslt, expectedData)
 }
