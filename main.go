@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 
 	db "github.com/ScriptMang/conch/internal/bikeshop"
 	"github.com/gin-gonic/gin"
@@ -37,9 +39,24 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 
 // reads the tablerows from the database
 func readData(r *gin.Engine) *gin.Engine {
-	r.GET("/crud2", func(c *gin.Context) {
-		invs := db.Invoices(db.ReadAllOp())
-		c.String(http.StatusOK, invs.Json())
+	r.GET("/crud2/invoices", func(c *gin.Context) {
+		// if no id is passed
+		invs := db.ReadInvoices()
+		c.JSON(http.StatusOK, invs)
+	})
+	return r
+}
+
+// read a tablerow based on id
+func readDataById(r *gin.Engine) *gin.Engine {
+	r.GET("/crud2/invoice/:id", func(c *gin.Context) {
+		// if no id is passed
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error %v can't converted to an integer\n", err)
+		}
+		invs := db.ReadInvoiceByID(id)
+		c.JSON(http.StatusOK, invs)
 	})
 	return r
 }
@@ -90,7 +107,7 @@ func showDelete(r *gin.Engine) *gin.Engine {
 func deleteEntry(r *gin.Engine) *gin.Engine {
 	r.GET("/crud4", func(c *gin.Context) {
 
-		invs := db.Invoices(db.ReadAllOp())
+		invs := db.Invoices(db.ReadInvoices())
 
 		//generates html option-tags with invoice values
 		tmpl := ""
@@ -111,6 +128,7 @@ func deleteEntry(r *gin.Engine) *gin.Engine {
 func main() {
 	r := setRouter()
 	r = readData(r)
+	r = readDataById(r)
 
 	r = addInvoice(r)
 

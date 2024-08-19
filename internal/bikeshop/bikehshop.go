@@ -78,17 +78,32 @@ func InsertOp(inv Invoice) Invoice {
 	return insertedInv
 }
 
-// returns all the invoices in the database as a slice of *Invoice
-func ReadAllOp() []*Invoice {
+// returns all the invoices in the database a slice []*Invoice
+func ReadInvoices() []*Invoice {
 	ctx, db := connect()
 	defer db.Close()
 
 	var invs Invoices
-	if err := pgxscan.Select(ctx, db, &invs, `SELECT id, fname, lname, product,
-        price, quantity, category, shipping FROM invoices`); err != nil {
+	if err := pgxscan.Select(ctx, db, &invs, `SELECT * FROM invoices`); err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
 	}
+	return invs
+}
+
+// return the invoice given the id
+// if the id doesn't exist it returns all invoices
+func ReadInvoiceByID(id int) []*Invoice {
+	ctx, db := connect()
+	defer db.Close()
+
+	var invs Invoices
+	err := pgxscan.Select(ctx, db, &invs, `SELECT * FROM invoices WHERE id =$1`, id)
+	if err != nil || invs == nil {
+		fmt.Fprintf(os.Stderr, "Error there is no invoice with the target id of %d: %v\n", id, err)
+		os.Exit(1)
+	}
+
 	return invs
 }
 
@@ -132,7 +147,7 @@ func DeleteOp(inv Invoice) Invoices {
 		os.Exit(1)
 	}
 
-	return ReadAllOp()
+	return ReadInvoices()
 }
 
 // Create a New Database Connection to bikeshop
