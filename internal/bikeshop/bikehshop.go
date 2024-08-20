@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -44,15 +45,52 @@ func (inv Invoice) String() string {
 	return data
 }
 
+// takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateFields() {
-	// make sure none of fields are empty
+	// check for empty fields: for all the fields
 	if inv.Fname == "" || inv.Lname == "" || inv.Product == "" ||
 		inv.Price == 0.00 || inv.Quantity == 0 || inv.Category == "" || inv.Shipping == "" {
-		fmt.Fprintf(os.Stderr, "Error none of fields can be empty or zero")
+		fmt.Fprintf(os.Stderr, "Error none of the fields can be empty or zero")
 		os.Exit(1)
 	}
 
-	//validate none of the numbers are negatives
+	// check that none of the string fields start or end with a digit or special character
+	digitFilter := "0123456789"
+	puncFilter := ".,?!'\"`:;"
+	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
+
+	// check for digits: first-name, last-name and category
+	if strings.IndexAny(inv.Fname, digitFilter) != -1 || strings.IndexAny(inv.Lname, digitFilter) != -1 ||
+		strings.IndexAny(inv.Category, digitFilter) != -1 {
+		fmt.Fprintf(os.Stderr, "Error the first name, last name or category can't contain any digits")
+		os.Exit(1)
+
+	}
+
+	// check for punctuation: first-name, last-name and category
+	if strings.IndexAny(inv.Fname, puncFilter) != -1 || strings.IndexAny(inv.Lname, puncFilter) != -1 ||
+		strings.IndexAny(inv.Category, puncFilter) != -1 {
+		fmt.Fprintf(os.Stderr, "Error the first name, last name or category can't contain any punctuation")
+		os.Exit(1)
+
+	}
+
+	// check for spaces: first-name, last-name
+	if strings.IndexAny(inv.Fname, " ") != -1 || strings.IndexAny(inv.Lname, " ") != -1 {
+		fmt.Fprintf(os.Stderr, "Error the first name, last name or category can't contain any spaces")
+		os.Exit(1)
+
+	}
+
+	// check for symbols: first-name, last-name, category
+	if strings.IndexAny(inv.Fname, symbolFilter) != -1 || strings.IndexAny(inv.Lname, symbolFilter) != -1 ||
+		strings.IndexAny(inv.Category, symbolFilter) != -1 {
+		fmt.Fprintf(os.Stderr, "Error the first name, last name or category can't contain any symbols")
+		os.Exit(1)
+
+	}
+
+	// check for negative values:  price and quantity
 	if inv.Price < 0.00 || inv.Quantity < 0 {
 		fmt.Fprintf(os.Stderr, "Neither the Price or Quantity can be negative")
 		os.Exit(1)
