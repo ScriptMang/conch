@@ -171,20 +171,22 @@ func UpdateInvoice(inv Invoice, id int) Invoice {
 	return inv2
 }
 
-// Delete the given invoice based on id
-// return the list of remaining invoices
-func DeleteOp(inv Invoice) Invoices {
+// delete's the given invoice based on id
+// and return the deleted invoice
+func DeleteInvoice(id int) Invoice {
 	ctx, db := connect()
 	defer db.Close()
 
-	qry := `DELETE FROM invoices WHERE id = $1`
-	_, err := db.Exec(ctx, qry, inv.ID)
+	row, _ := db.Query(ctx, `DELETE FROM invoices WHERE id=$1 RETURNING *`, id)
+
+	var inv Invoice
+	err := pgxscan.ScanOne(&inv, row)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error there is no invoice with the target id of %d: %v\n", id, err)
 		os.Exit(1)
 	}
 
-	return ReadInvoices()
+	return inv
 }
 
 // Create a New Database Connection to bikeshop

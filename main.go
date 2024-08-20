@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -82,39 +81,17 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 	return r
 }
 
-// shows that the invoice entry has been updated
-func showDelete(r *gin.Engine) *gin.Engine {
-	r.POST("/crud4", func(c *gin.Context) {
-
-		var inv db.Invoice
-		if err := c.ShouldBind(&inv); err != nil {
-			log.Fatalf("Error Binding: %v\n", err)
-		}
-
-		invs := db.DeleteOp(inv)
-		c.String(http.StatusOK, invs.Json())
-	})
-	return r
-}
-
-// renders the form page that's needed to Delete an invoice
+// deletes an invoice entry based on id
 func deleteEntry(r *gin.Engine) *gin.Engine {
-	r.GET("/crud4", func(c *gin.Context) {
+	r.DELETE("/crud4/invoice/:id", func(c *gin.Context) {
 
-		invs := db.Invoices(db.ReadInvoices())
-
-		//generates html option-tags with invoice values
-		tmpl := ""
-		for _, inv := range invs {
-			tmpl += fmt.Sprintf(`<option value='%s'>%s</option>`, inv.Fname, *inv)
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error %v can't converted to an integer\n", err)
 		}
 
-		c.HTML(http.StatusOK, "crud4.tmpl", gin.H{
-			"title":   "Crud4",
-			"details": "Delete an Existing Entry",
-			"options": template.HTML(tmpl),
-		})
-
+		inv := db.DeleteInvoice(id)
+		c.JSON(http.StatusOK, inv)
 	})
 	return r
 }
@@ -129,7 +106,6 @@ func main() {
 	r = updateEntry(r)
 
 	r = deleteEntry(r)
-	r = showDelete(r)
 
 	r.Run()
 }
