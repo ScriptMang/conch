@@ -146,7 +146,7 @@ func ReadInvoiceByID(id int) []*Invoice {
 }
 
 // updates and returns the given invoice by id
-func UpdateInvoice(inv Invoice) Invoice {
+func UpdateInvoice(inv Invoice, id int) Invoice {
 	ctx, db := connect()
 	defer db.Close()
 
@@ -157,12 +157,12 @@ func UpdateInvoice(inv Invoice) Invoice {
 		`shipping=$7 WHERE id=$8 RETURNING *`
 
 	rows, _ := db.Query(ctx, qry1, inv.Fname, inv.Lname, inv.Product,
-		inv.Price, inv.Quantity, inv.Category, inv.Shipping, inv.ID)
+		inv.Price, inv.Quantity, inv.Category, inv.Shipping, id)
 
 	var inv2 Invoice
 	err := pgxscan.ScanOne(&inv2, rows)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error there is no invoice with the target id of %d: %v\n", id, err)
 		os.Exit(1)
 	}
 

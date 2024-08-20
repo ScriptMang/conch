@@ -65,12 +65,17 @@ func readDataById(r *gin.Engine) *gin.Engine {
 func updateEntry(r *gin.Engine) *gin.Engine {
 	r.PUT("/crud3/invoice/:id", func(c *gin.Context) {
 
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error %v can't converted to an integer\n", err)
+		}
+
 		var inv db.Invoice
-		if err := c.ShouldBind(&inv); err != nil {
+		if err = c.ShouldBind(&inv); err != nil {
 			log.Fatalf("Error Binding: %v\n", err)
 		}
 
-		invs := db.UpdateInvoice(inv)
+		invs := db.UpdateInvoice(inv, id)
 		c.JSON(201, invs)
 	})
 	return r
