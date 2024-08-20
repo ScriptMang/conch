@@ -107,31 +107,28 @@ func ReadInvoiceByID(id int) []*Invoice {
 	return invs
 }
 
-// updates and returns the given invoice
-func UpdateOp(inv Invoice) []*Invoice {
+// updates and returns the given invoice by id
+func UpdateInvoice(inv Invoice) Invoice {
 	ctx, db := connect()
 	defer db.Close()
 
 	inv.validateFields()
-	var invs []*Invoice
 
 	qry1 := `UPDATE invoices SET fname=$1,lname=$2,product=$3,` +
 		`price=$4,quantity=$5,category=$6,` +
-		`shipping=$7 WHERE id=$8`
+		`shipping=$7 WHERE id=$8 RETURNING *`
 
-	_, err := db.Exec(ctx, qry1, inv.Fname, inv.Lname, inv.Product,
+	rows, _ := db.Query(ctx, qry1, inv.Fname, inv.Lname, inv.Product,
 		inv.Price, inv.Quantity, inv.Category, inv.Shipping, inv.ID)
+
+	var inv2 Invoice
+	err := pgxscan.ScanOne(&inv2, rows)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
 	}
 
-	qry2 := `SELECT * FROM invoices WHERE id= $1`
-	if err := pgxscan.Select(ctx, db, &invs, qry2, inv.ID); err != nil {
-		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
-		os.Exit(1)
-	}
-	return invs
+	return inv2
 }
 
 // Delete the given invoice based on id

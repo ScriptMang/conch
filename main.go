@@ -61,29 +61,17 @@ func readDataById(r *gin.Engine) *gin.Engine {
 	return r
 }
 
-// shows that the invoice entry has been updated
-func showUpdate(r *gin.Engine) *gin.Engine {
-	r.POST("/crud3", func(c *gin.Context) {
+// updates an invoice entry by id
+func updateEntry(r *gin.Engine) *gin.Engine {
+	r.PUT("/crud3/invoice/:id", func(c *gin.Context) {
 
 		var inv db.Invoice
 		if err := c.ShouldBind(&inv); err != nil {
 			log.Fatalf("Error Binding: %v\n", err)
 		}
 
-		invs := db.Invoices(db.UpdateOp(inv))
-		c.String(http.StatusOK, invs.Json())
-	})
-	return r
-}
-
-// renders the form page that's needed to update an invoice
-func updateEntry(r *gin.Engine) *gin.Engine {
-	r.GET("/crud3", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "crud3.tmpl", gin.H{
-			"title":   "Crud3",
-			"details": "Update an Existing Entry",
-		})
-
+		invs := db.UpdateInvoice(inv)
+		c.JSON(201, invs)
 	})
 	return r
 }
@@ -133,7 +121,6 @@ func main() {
 	r = addInvoice(r)
 
 	r = updateEntry(r)
-	r = showUpdate(r)
 
 	r = deleteEntry(r)
 	r = showDelete(r)
