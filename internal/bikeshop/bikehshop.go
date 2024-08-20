@@ -131,18 +131,20 @@ func ReadInvoices() []*Invoice {
 
 // return the invoice given the id
 // if the id doesn't exist it returns all invoices
-func ReadInvoiceByID(id int) []*Invoice {
+func ReadInvoiceByID(id int) Invoice {
 	ctx, db := connect()
 	defer db.Close()
 
-	var invs Invoices
-	err := pgxscan.Select(ctx, db, &invs, `SELECT * FROM invoices WHERE id =$1`, id)
-	if err != nil || invs == nil {
+	row, _ := db.Query(ctx, `SELECT * FROM invoices WHERE id =$1`, id)
+
+	var inv Invoice
+	err := pgxscan.ScanOne(&inv, row)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error there is no invoice with the target id of %d: %v\n", id, err)
 		os.Exit(1)
 	}
 
-	return invs
+	return inv
 }
 
 // updates and returns the given invoice by id

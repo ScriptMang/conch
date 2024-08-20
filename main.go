@@ -40,7 +40,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 // reads the tablerows from the database
 func readData(r *gin.Engine) *gin.Engine {
 	r.GET("/crud2/invoices", func(c *gin.Context) {
-		// if no id is passed
+
 		invs := db.ReadInvoices()
 		c.JSON(http.StatusOK, invs)
 	})
@@ -50,13 +50,14 @@ func readData(r *gin.Engine) *gin.Engine {
 // read a tablerow based on id
 func readDataById(r *gin.Engine) *gin.Engine {
 	r.GET("/crud2/invoice/:id", func(c *gin.Context) {
-		// if no id is passed
+
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error %v can't converted to an integer\n", err)
 		}
-		invs := db.ReadInvoiceByID(id)
-		c.JSON(http.StatusOK, invs)
+
+		inv := db.ReadInvoiceByID(id)
+		c.JSON(http.StatusOK, inv)
 	})
 	return r
 }
