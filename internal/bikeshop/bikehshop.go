@@ -103,9 +103,8 @@ func InsertOp(inv Invoice) Invoice {
 	defer db.Close()
 
 	inv.validateFields()
-	rows, _ := db.Query(ctx, `INSERT INTO invoices (fname, lname, product, price, quantity, category, shipping)`+
-		`VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *`, inv.Fname, inv.Lname, inv.Product,
-		inv.Price, inv.Quantity, inv.Category, inv.Shipping)
+	rows, _ := db.Query(ctx, `INSERT INTO invoices (fname, lname, product, price, quantity, category, shipping) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping)
 
 	var insertedInv Invoice
 	err := pgxscan.ScanOne(&insertedInv, rows)
@@ -135,7 +134,7 @@ func ReadInvoiceByID(id int) Invoice {
 	ctx, db := connect()
 	defer db.Close()
 
-	row, _ := db.Query(ctx, `SELECT * FROM invoices WHERE id =$1`, id)
+	row, _ := db.Query(ctx, `SELECT * FROM invoices WHERE id=$1`, id)
 
 	var inv Invoice
 	err := pgxscan.ScanOne(&inv, row)
@@ -154,12 +153,8 @@ func UpdateInvoice(inv Invoice, id int) Invoice {
 
 	inv.validateFields()
 
-	qry1 := `UPDATE invoices SET fname=$1,lname=$2,product=$3,` +
-		`price=$4,quantity=$5,category=$6,` +
-		`shipping=$7 WHERE id=$8 RETURNING *`
-
-	rows, _ := db.Query(ctx, qry1, inv.Fname, inv.Lname, inv.Product,
-		inv.Price, inv.Quantity, inv.Category, inv.Shipping, id)
+	rows, _ := db.Query(ctx, `UPDATE invoices SET fname=$1,lname=$2,product=$3,price=$4,quantity=$5,category=$6,shipping=$7 WHERE id=$8 RETURNING *`,
+		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping, id)
 
 	var inv2 Invoice
 	err := pgxscan.ScanOne(&inv2, rows)
