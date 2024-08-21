@@ -22,7 +22,7 @@ func setRouter() *gin.Engine {
 // When passed to insert-op its used as a bridge
 // to add a new invoice.
 func addInvoice(r *gin.Engine) *gin.Engine {
-	r.POST("/crud1", func(c *gin.Context) {
+	r.POST("/crud1/invoices", func(c *gin.Context) {
 
 		var invs db.Invoice
 		err := c.ShouldBind(&invs)
