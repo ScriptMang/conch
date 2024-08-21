@@ -71,7 +71,8 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 		}
 
 		var inv db.Invoice
-		if err = c.ShouldBind(&inv); err != nil {
+		err = c.ShouldBind(&inv)
+		if err != nil {
 			log.Fatalf("Error Binding: %v\n", err)
 		}
 

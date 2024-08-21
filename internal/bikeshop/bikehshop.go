@@ -121,7 +121,8 @@ func ReadInvoices() []*Invoice {
 	defer db.Close()
 
 	var invs Invoices
-	if err := pgxscan.Select(ctx, db, &invs, `SELECT * FROM invoices`); err != nil {
+	err := pgxscan.Select(ctx, db, &invs, `SELECT * FROM invoices`)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
 		os.Exit(1)
 	}
