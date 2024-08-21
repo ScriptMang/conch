@@ -23,28 +23,6 @@ type Invoice struct {
 
 type Invoices []*Invoice
 
-// prints all the invoices within the slice in json format
-func (invs Invoices) Json() string {
-	data := ""
-	for _, inv := range invs {
-		str1 := fmt.Sprintf(`"fname": "%s", "lname": "%s", "product": "%s", `, inv.Fname, inv.Lname, inv.Product)
-		str2 := fmt.Sprintf(`"price": %.2f, "quantity": %d, "category": "%s", `, inv.Price, inv.Quantity, inv.Category)
-		str3 := fmt.Sprintf(`"shipping": "%s"`, inv.Shipping)
-		data += fmt.Sprintf(`{` + str1 + str2 + str3 + `},`)
-	}
-	return data
-}
-
-// prints an invoice in json format
-func (inv Invoice) String() string {
-	data := ""
-	str1 := fmt.Sprintf(`"fname": "%s", "lname": "%s", "product": "%s", `, inv.Fname, inv.Lname, inv.Product)
-	str2 := fmt.Sprintf(`"price": %.2f, "quantity": %d, "category": "%s", `, inv.Price, inv.Quantity, inv.Category)
-	str3 := fmt.Sprintf(`"shipping": "%s"`, inv.Shipping)
-	data += fmt.Sprintf(`{` + str1 + str2 + str3 + `}`)
-	return data
-}
-
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateFields() {
 	// check for empty fields: for all the fields
