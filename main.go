@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	db "github.com/ScriptMang/conch/internal/bikeshop"
@@ -22,16 +20,22 @@ func setRouter() *gin.Engine {
 // When passed to insert-op its used as a bridge
 // to add a new invoice.
 func addInvoice(r *gin.Engine) *gin.Engine {
-	r.POST("/crud1/invoices", func(c *gin.Context) {
-
+	r.POST("/crud1/invoices/", func(c *gin.Context) {
 		var invs db.Invoice
-		err := c.ShouldBind(&invs)
+		var fieldErr db.InvoiceError
+		err := c.BindJSON(&invs)
 		if err != nil {
-			log.Fatalf("Error Binding: %v\n", err)
+			fieldErr.HttpStatusCode = 415
+			fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Failed to bind invoice, request only takes JSON data"))
 		}
 
-		val := db.InsertOp(invs)
-		c.JSON(http.StatusCreated, val)
+		inv, fieldErr := db.InsertOp(invs)
+		switch {
+		case len(fieldErr.Msg) > 0:
+			c.JSON(fieldErr.HttpStatusCode, fieldErr)
+		default:
+			c.JSON(http.StatusCreated, inv)
+		}
 	})
 	return r
 }
@@ -39,7 +43,6 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 // reads the tablerows from the database
 func readData(r *gin.Engine) *gin.Engine {
 	r.GET("/crud2/invoices", func(c *gin.Context) {
-
 		invs := db.ReadInvoices()
 		c.JSON(http.StatusOK, invs)
 	})
@@ -49,14 +52,23 @@ func readData(r *gin.Engine) *gin.Engine {
 // read a tablerow based on id
 func readDataById(r *gin.Engine) *gin.Engine {
 	r.GET("/crud2/invoice/:id", func(c *gin.Context) {
-
+		var inv db.Invoice
+		var fieldErr db.InvoiceError
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error %v can't converted to an integer\n", err)
+			fieldErr.ContentType = "application/json"
+			fieldErr.HttpStatusCode = 400
+			fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Bad Request: id can't converted to an integer"))
+		} else {
+			inv, fieldErr = db.ReadInvoiceByID(id)
 		}
 
-		inv := db.ReadInvoiceByID(id)
-		c.JSON(http.StatusOK, inv)
+		switch {
+		case len(fieldErr.Msg) > 0:
+			c.JSON(fieldErr.HttpStatusCode, fieldErr)
+		default:
+			c.JSON(http.StatusOK, inv)
+		}
 	})
 	return r
 }
@@ -65,19 +77,28 @@ func readDataById(r *gin.Engine) *gin.Engine {
 func updateEntry(r *gin.Engine) *gin.Engine {
 	r.PUT("/crud3/invoice/:id", func(c *gin.Context) {
 
+		var inv, inv2 db.Invoice
+		var fieldErr db.InvoiceError
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error %v can't converted to an integer\n", err)
+			fieldErr.ContentType = "application/json"
+			fieldErr.HttpStatusCode = 400
+			fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Bad Request: id can't converted to an integer"))
+		} else {
+			bindingErr := c.BindJSON(&inv)
+			if bindingErr != nil {
+				fieldErr.HttpStatusCode = 415
+				fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Failed to bind invoice, request only takes JSON data"))
+			}
+			inv2, fieldErr = db.UpdateInvoice(inv, id)
 		}
 
-		var inv db.Invoice
-		err = c.ShouldBind(&inv)
-		if err != nil {
-			log.Fatalf("Error Binding: %v\n", err)
+		switch {
+		case len(fieldErr.Msg) > 0:
+			c.JSON(fieldErr.HttpStatusCode, fieldErr)
+		default:
+			c.JSON(http.StatusCreated, inv2)
 		}
-
-		invs := db.UpdateInvoice(inv, id)
-		c.JSON(201, invs)
 	})
 	return r
 }
@@ -86,26 +107,34 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 func deleteEntry(r *gin.Engine) *gin.Engine {
 	r.DELETE("/crud4/invoice/:id", func(c *gin.Context) {
 
+		var inv db.Invoice
+		var fieldErr db.InvoiceError
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error %v can't converted to an integer\n", err)
+			fieldErr.ContentType = "application/json"
+			fieldErr.HttpStatusCode = 400
+			fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Bad Request: id can't converted to an integer"))
+		} else {
+			inv, fieldErr = db.DeleteInvoice(id)
 		}
 
-		inv := db.DeleteInvoice(id)
-		c.JSON(http.StatusOK, inv)
+		switch {
+		case len(fieldErr.Msg) > 0:
+			c.JSON(fieldErr.HttpStatusCode, fieldErr)
+		default:
+			c.JSON(http.StatusOK, inv)
+		}
 	})
 	return r
 }
 
 func main() {
 	r := setRouter()
+
 	r = readData(r)
 	r = readDataById(r)
-
 	r = addInvoice(r)
-
 	r = updateEntry(r)
-
 	r = deleteEntry(r)
 
 	r.Run()
