@@ -29,15 +29,22 @@ type InvoiceError struct {
 
 type Invoices []*Invoice
 
+// helper funct: takes a pointer to an InvoiceErorr, HttpStatusCode and a string msg
+// as parameters and sets the values for the InvoiceError struct.
+// By default content-type is of type 'application/json'
+func (fieldErr *InvoiceError) addMsg(code int, str string) {
+	fieldErr.ContentType = "application/json"
+	fieldErr.HttpStatusCode = code
+	fieldErr.Msg = append(fieldErr.Msg, str)
+}
+
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateFields() InvoiceError {
 	// check for empty fields: for all the fields
 	var fieldErr InvoiceError
 	if inv.Fname == "" || inv.Lname == "" || inv.Product == "" ||
 		inv.Price == 0.00 || inv.Quantity == 0 || inv.Category == "" || inv.Shipping == "" {
-		fieldErr.ContentType = "application/json"
-		fieldErr.HttpStatusCode = 400
-		fieldErr.Msg = append(fieldErr.Msg, "Error none of the fields can be empty or zero")
+		fieldErr.addMsg(400, "Error none of the fields can be empty or zero")
 		return fieldErr
 	}
 
@@ -49,39 +56,29 @@ func (inv *Invoice) validateFields() InvoiceError {
 	// check for digits: first-name, last-name and category
 	if strings.IndexAny(inv.Fname, digitFilter) != -1 || strings.IndexAny(inv.Lname, digitFilter) != -1 ||
 		strings.IndexAny(inv.Category, digitFilter) != -1 {
-		fieldErr.ContentType = "application/json"
-		fieldErr.HttpStatusCode = 400
-		fieldErr.Msg = append(fieldErr.Msg, "Bad Request: the first name, last name or category can't contain any digits")
+		fieldErr.addMsg(400, "Bad Request: the first name, last name or category can't contain any digits")
 	}
 
 	// check for punctuation: first-name, last-name and category
 	if strings.IndexAny(inv.Fname, punctFilter) != -1 || strings.IndexAny(inv.Lname, punctFilter) != -1 ||
 		strings.IndexAny(inv.Category, punctFilter) != -1 {
-		fieldErr.ContentType = "application/json"
-		fieldErr.HttpStatusCode = 400
-		fieldErr.Msg = append(fieldErr.Msg, "Bad Request: the first name, last name or category can't contain any punctuation")
+		fieldErr.addMsg(400, "Bad Request: the first name, last name or category can't contain any punctuation")
 	}
 
 	// check for spaces: first-name, last-name
 	if strings.IndexAny(inv.Fname, " ") != -1 || strings.IndexAny(inv.Lname, " ") != -1 {
-		fieldErr.ContentType = "application/json"
-		fieldErr.HttpStatusCode = 400
-		fieldErr.Msg = append(fieldErr.Msg, "Bad Request: the first name, last name or category can't contain any spaces")
+		fieldErr.addMsg(400, "Bad Request: the first name, last name or category can't contain any spaces")
 	}
 
 	// check for symbols: first-name, last-name, category
 	if strings.IndexAny(inv.Fname, symbolFilter) != -1 || strings.IndexAny(inv.Lname, symbolFilter) != -1 ||
 		strings.IndexAny(inv.Category, symbolFilter) != -1 {
-		fieldErr.ContentType = "application/json"
-		fieldErr.HttpStatusCode = 400
-		fieldErr.Msg = append(fieldErr.Msg, "Bad Request: the first name, last name or category can't contain any symbols")
+		fieldErr.addMsg(400, "Bad Request: the first name, last name or category can't contain any symbols")
 	}
 
 	// check for negative values:  price and quantity
 	if inv.Price < 0.00 || inv.Quantity < 0 {
-		fieldErr.ContentType = "application/json"
-		fieldErr.HttpStatusCode = 400
-		fieldErr.Msg = append(fieldErr.Msg, "Bad Request: Neither the price or quantity can be negative")
+		fieldErr.addMsg(400, "Bad Request: Neither the price or quantity can be negative")
 	}
 	return fieldErr
 }
@@ -100,26 +97,42 @@ func InsertOp(inv Invoice) (Invoice, InvoiceError) {
 	rows, _ := db.Query(ctx, `INSERT INTO invoices (fname, lname, product, price, quantity, category, shipping) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
 		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping)
 
+	// Insert Errors
+	// id is already exists
+	// data overflow(val is too high or  too long)
+	// data doesn't meet minimum req
 	err := pgxscan.ScanOne(&insertedInv, rows)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
-		os.Exit(1)
+		qryError := err.Error()
+		if strings.Contains(qryError, "numeric field overflow") {
+			fieldErr.addMsg(400, "numeric field overflow, provide a value between 1.00 - 999.99")
+		}
+		if strings.Contains(qryError, "greater than maximum value for int4") {
+			fieldErr.addMsg(400, "integer overflow, value must be between 1 - 2147483647")
+		}
+		if strings.Contains(qryError, "value too long for type character varying") {
+			fieldErr.addMsg(400, "varchar too long, use varchar length between 1-255")
+		}
+		fieldErr.addMsg(400, qryError)
 	}
+
 	return insertedInv, fieldErr
 }
 
 // returns all the invoices in the database a slice []*Invoice
-func ReadInvoices() []*Invoice {
+func ReadInvoices() ([]*Invoice, InvoiceError) {
 	ctx, db := connect()
 	defer db.Close()
 
+	// Errors when reading all invoices
+	// invoices is empty
 	var invs Invoices
+	var fieldErr InvoiceError
 	err := pgxscan.Select(ctx, db, &invs, `SELECT * FROM invoices`)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Query or row processing error: %v\n", err)
-		os.Exit(1)
+		fieldErr.addMsg(400, "Invoices are empty")
 	}
-	return invs
+	return invs, fieldErr
 }
 
 // return the invoice given the id
@@ -138,9 +151,7 @@ func ReadInvoiceByID(id int) (Invoice, InvoiceError) {
 
 	err := pgxscan.ScanOne(&inv, row)
 	if err != nil {
-		fieldErr.ContentType = "application/json"
-		fieldErr.HttpStatusCode = 404
-		fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Resource Not Found: invoice with specified id does not exist: %v\n", err))
+		fieldErr.addMsg(404, "Resource Not Found: invoice with specified id does not exist")
 	}
 
 	return inv, fieldErr
@@ -162,9 +173,7 @@ func UpdateInvoice(inv Invoice, id int) (Invoice, InvoiceError) {
 
 	err := pgxscan.ScanOne(&inv2, rows)
 	if err != nil {
-		fieldErr.ContentType = "application/json"
-		fieldErr.HttpStatusCode = 404
-		fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Resource Not Found: invoice with specified id does not exist: %v\n", err))
+		fieldErr.addMsg(404, "Resource Not Found: invoice with specified id does not exist")
 	}
 
 	return inv2, fieldErr
@@ -182,9 +191,7 @@ func DeleteInvoice(id int) (Invoice, InvoiceError) {
 	fieldErr := inv.validateFields()
 	err := pgxscan.ScanOne(&inv, row)
 	if err != nil {
-		fieldErr.ContentType = "application/json"
-		fieldErr.HttpStatusCode = 404
-		fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Resource Not Found: invoice with specified id does not exist: %v\n", err))
+		fieldErr.addMsg(404, "Resource Not Found: invoice with specified id does not exist")
 	}
 
 	return inv, fieldErr

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -26,7 +25,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 		err := c.BindJSON(&invs)
 		if err != nil {
 			fieldErr.HttpStatusCode = 415
-			fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Failed to bind invoice, request only takes JSON data"))
+			fieldErr.Msg = append(fieldErr.Msg, "Failed to bind invoice, request only takes JSON data")
 		}
 
 		inv, fieldErr := db.InsertOp(invs)
@@ -43,8 +42,14 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 // reads the tablerows from the database
 func readData(r *gin.Engine) *gin.Engine {
 	r.GET("/crud2/invoices", func(c *gin.Context) {
-		invs := db.ReadInvoices()
-		c.JSON(http.StatusOK, invs)
+		invs, tableErr := db.ReadInvoices()
+
+		switch {
+		case len(tableErr.Msg) > 0:
+			c.JSON(tableErr.HttpStatusCode, tableErr)
+		default:
+			c.JSON(http.StatusOK, invs)
+		}
 	})
 	return r
 }
@@ -58,7 +63,7 @@ func readDataById(r *gin.Engine) *gin.Engine {
 		if err != nil {
 			fieldErr.ContentType = "application/json"
 			fieldErr.HttpStatusCode = 400
-			fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Bad Request: id can't converted to an integer"))
+			fieldErr.Msg = append(fieldErr.Msg, "Bad Request: id can't converted to an integer")
 		} else {
 			inv, fieldErr = db.ReadInvoiceByID(id)
 		}
@@ -83,12 +88,12 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 		if err != nil {
 			fieldErr.ContentType = "application/json"
 			fieldErr.HttpStatusCode = 400
-			fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Bad Request: id can't converted to an integer"))
+			fieldErr.Msg = append(fieldErr.Msg, "Bad Request: id can't converted to an integer")
 		} else {
 			bindingErr := c.BindJSON(&inv)
 			if bindingErr != nil {
 				fieldErr.HttpStatusCode = 415
-				fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Failed to bind invoice, request only takes JSON data"))
+				fieldErr.Msg = append(fieldErr.Msg, "Failed to bind invoice, request only takes JSON data")
 			}
 			inv2, fieldErr = db.UpdateInvoice(inv, id)
 		}
@@ -113,7 +118,7 @@ func deleteEntry(r *gin.Engine) *gin.Engine {
 		if err != nil {
 			fieldErr.ContentType = "application/json"
 			fieldErr.HttpStatusCode = 400
-			fieldErr.Msg = append(fieldErr.Msg, fmt.Sprintf("Bad Request: id can't converted to an integer"))
+			fieldErr.Msg = append(fieldErr.Msg, "Bad Request: id can't converted to an integer")
 		} else {
 			inv, fieldErr = db.DeleteInvoice(id)
 		}
