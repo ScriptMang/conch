@@ -33,6 +33,7 @@ For routes that end in '/:id' replace ':id' with an integer number.
 To end the program in the terminal, type '^c'(ctrl-c).
 
 ### Expected Json Data
+```
 {
   "fname": string,
   "lname": string,
@@ -42,15 +43,16 @@ To end the program in the terminal, type '^c'(ctrl-c).
   "category": string,
   "shipping": string
 }
+```
 
 ### CRUD Operations
-* Add an invoice to the table
-   POST localhost:8080/crud1/invoices/ <body>
-* Read all the invoices from the table
-   GET localhost:8080/crud2/invoices
-* Read an invoice based on their ID
-   GET localhost:8080/crud2/invoice/:id
-* Edit an existing invoice
-   PUT localhost:8080/crud3/invoice/:id <body>
-* Delete an existing invoice
-   DELETE localhost:8080/crud4/invoice/:id
+* Add an invoice to the table<br>
+   `POST` `localhost:8080/crud1/invoices/` `<body>`
+* Read all the invoices from the table<br>
+   `GET` `localhost:8080/crud2/invoices`
+* Read an invoice based on their ID<br>
+   `GET` `localhost:8080/crud2/invoice/:id`
+* Edit an existing invoice<br>
+   `PUT` `localhost:8080/crud3/invoice/:id` `<body>`
+* Delete an existing invoice<br>
+   `DELETE` `localhost:8080/crud4/invoice/:id`
