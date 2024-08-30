@@ -48,12 +48,12 @@ To end the program in the terminal, type `^c`(ctrl-c).
 
 ### CRUD Operations
 * Add an invoice to the table<br>
-   `POST` `localhost:8080/crud1/invoices/` `<body>`
+   `POST` `localhost:8080/invoices/` `<body>`
 * Read all the invoices from the table<br>
-   `GET` `localhost:8080/crud2/invoices`
+   `GET` `localhost:8080/invoices`
 * Read an invoice based on their ID<br>
-   `GET` `localhost:8080/crud2/invoice/:id`
+   `GET` `localhost:8080/invoice/:id`
 * Edit an existing invoice<br>
-   `PUT` `localhost:8080/crud3/invoice/:id` `<body>`
+   `PUT` `localhost:8080/invoice/:id` `<body>`
 * Delete an existing invoice<br>
-   `DELETE` `localhost:8080/crud4/invoice/:id`
+   `DELETE` `localhost:8080/invoice/:id`

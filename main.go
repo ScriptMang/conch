@@ -56,7 +56,7 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 
 // // binds json data to an invoice and insert its to the database
 func addInvoice(r *gin.Engine) *gin.Engine {
-	r.POST("/crud1/invoices/", func(c *gin.Context) {
+	r.POST("/invoices/", func(c *gin.Context) {
 		var inv db.Invoice
 		var rqstData respBodyData
 		var bindingOk bool
@@ -72,7 +72,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 
 // reads the tablerows from the database
 func readData(r *gin.Engine) *gin.Engine {
-	r.GET("/crud2/invoices", func(c *gin.Context) {
+	r.GET("/invoices", func(c *gin.Context) {
 		var rqstData respBodyData
 		rqstData.Invs, rqstData.FieldErr = db.ReadInvoices()
 		rqstData.HttpStatusCode = 200
@@ -83,7 +83,7 @@ func readData(r *gin.Engine) *gin.Engine {
 
 // read a tablerow based on id
 func readDataById(r *gin.Engine) *gin.Engine {
-	r.GET("/crud2/invoice/:id", func(c *gin.Context) {
+	r.GET("/invoice/:id", func(c *gin.Context) {
 		var rqstData respBodyData
 		id := validateRouteID(c, &rqstData)
 		if id != 0 {
@@ -97,7 +97,7 @@ func readDataById(r *gin.Engine) *gin.Engine {
 
 // updates an invoice entry by id
 func updateEntry(r *gin.Engine) *gin.Engine {
-	r.PUT("/crud3/invoice/:id", func(c *gin.Context) {
+	r.PUT("/invoice/:id", func(c *gin.Context) {
 		var inv db.Invoice
 		var bindingOk bool
 		var rqstData respBodyData
@@ -116,7 +116,7 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 
 // deletes an invoice entry based on id
 func deleteEntry(r *gin.Engine) *gin.Engine {
-	r.DELETE("/crud4/invoice/:id", func(c *gin.Context) {
+	r.DELETE("/invoice/:id", func(c *gin.Context) {
 		var rqstData respBodyData
 		id := validateRouteID(c, &rqstData)
 		if id != 0 {
