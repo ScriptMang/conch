@@ -53,7 +53,7 @@ To end the program in the terminal, type `^c`(ctrl-c).
    `GET` `localhost:8080/invoices`
 * Read an invoice based on their ID<br>
    `GET` `localhost:8080/invoice/:id`
-* Edit an existing invoice<br>
+* Update an existing invoice<br>
    `PUT` `localhost:8080/invoice/:id` `<body>`
 * Delete an existing invoice<br>
    `DELETE` `localhost:8080/invoice/:id`
