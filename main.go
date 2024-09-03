@@ -8,10 +8,11 @@ import (
 )
 
 type respBodyData struct {
-	Invs           []*db.Invoice
-	HttpStatusCode int // status code for successful crud operation
-	FieldErr       db.InvoiceError
+	Invs     []*db.Invoice
+	FieldErr db.InvoiceError
 }
+
+var code int //httpstatuscode
 
 // configs gin router and renders index-page
 func setRouter() *gin.Engine {
@@ -26,7 +27,7 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 	bindingErr := c.ShouldBind(&inv)
 	if bindingErr != nil {
 		rqstData.FieldErr.AddMsg(400, "Failed to bind invoice, request only takes JSON data")
-		c.AbortWithStatusJSON(rqstData.HttpStatusCode, rqstData.FieldErr)
+		c.AbortWithStatusJSON(db.ErrorCode, rqstData.FieldErr)
 		return inv, false
 	}
 	return inv, true
@@ -48,9 +49,9 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 
 	switch {
 	case len(fieldErr.Msg) > 0:
-		c.JSON(db.Code, fieldErr)
+		c.JSON(db.ErrorCode, fieldErr)
 	default:
-		c.JSON(rqstData.HttpStatusCode, invs)
+		c.JSON(code, invs)
 	}
 }
 
@@ -63,7 +64,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 		inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 		if bindingOk {
 			rqstData.Invs, rqstData.FieldErr = db.InsertOp(inv)
-			rqstData.HttpStatusCode = 201
+			code = 201
 			sendResponse(c, &rqstData)
 		}
 	})
@@ -75,7 +76,7 @@ func readData(r *gin.Engine) *gin.Engine {
 	r.GET("/invoices", func(c *gin.Context) {
 		var rqstData respBodyData
 		rqstData.Invs, rqstData.FieldErr = db.ReadInvoices()
-		rqstData.HttpStatusCode = 200
+		code = 200
 		sendResponse(c, &rqstData)
 	})
 	return r
@@ -88,7 +89,7 @@ func readDataById(r *gin.Engine) *gin.Engine {
 		id := validateRouteID(c, &rqstData)
 		if id != 0 {
 			rqstData.Invs, rqstData.FieldErr = db.ReadInvoiceByID(id)
-			rqstData.HttpStatusCode = 200
+			code = 200
 			sendResponse(c, &rqstData)
 		}
 	})
@@ -106,7 +107,7 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 			inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 			if bindingOk {
 				rqstData.Invs, rqstData.FieldErr = db.UpdateInvoice(inv, id)
-				rqstData.HttpStatusCode = 201
+				code = 201
 				sendResponse(c, &rqstData)
 			}
 		}
@@ -121,7 +122,7 @@ func deleteEntry(r *gin.Engine) *gin.Engine {
 		id := validateRouteID(c, &rqstData)
 		if id != 0 {
 			rqstData.Invs, rqstData.FieldErr = db.DeleteInvoice(id)
-			rqstData.HttpStatusCode = 200
+			code = 200
 			sendResponse(c, &rqstData)
 		}
 	})
