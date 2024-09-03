@@ -48,7 +48,7 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 
 	switch {
 	case len(fieldErr.Msg) > 0:
-		c.JSON(fieldErr.HttpStatusCode, fieldErr)
+		c.JSON(db.Code, fieldErr)
 	default:
 		c.JSON(rqstData.HttpStatusCode, invs)
 	}

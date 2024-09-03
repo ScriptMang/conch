@@ -22,19 +22,18 @@ type Invoice struct {
 }
 
 type InvoiceError struct {
-	ContentType    string
-	HttpStatusCode int
-	Msg            []string
+	Msg []string
 }
 
 type Invoices []*Invoice
 
+var Code int // http-status code
+
 // helper funct: takes a pointer to an InvoiceErorr, HttpStatusCode and a string msg
 // as parameters and sets the values for the InvoiceError struct.
 // By default content-type is of type 'application/json'
-func (fieldErr *InvoiceError) AddMsg(code int, str string) {
-	fieldErr.ContentType = "application/json"
-	fieldErr.HttpStatusCode = code
+func (fieldErr *InvoiceError) AddMsg(statusCode int, str string) {
+	Code = statusCode
 	fieldErr.Msg = append(fieldErr.Msg, str)
 }
 
