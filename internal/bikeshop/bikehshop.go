@@ -37,13 +37,32 @@ func (fieldErr *InvoiceError) AddMsg(statusCode int, str string) {
 	fieldErr.Msg = append(fieldErr.Msg, str)
 }
 
+// empty-fields
+func (fieldErr *InvoiceError) isTextFieldEmpty(field, fieldName string) {
+	if field == "" {
+		fieldErr.AddMsg(400, "Bad Request, "+fieldName+" field can't be empty")
+	}
+}
+
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateFields() InvoiceError {
 	// check for empty fields: for all the fields
 	var fieldErr InvoiceError
-	if inv.Fname == "" || inv.Lname == "" || inv.Product == "" ||
-		inv.Price == 0.00 || inv.Quantity == 0 || inv.Category == "" || inv.Shipping == "" {
-		fieldErr.AddMsg(400, "Error none of the fields can be empty or zero")
+
+	switch {
+	case inv.Price == 0.00:
+		fieldErr.AddMsg(400, "Bad Request, Price field can't be 0")
+	case inv.Quantity == 0:
+		fieldErr.AddMsg(400, "Bad Request, Quantity field can't be 0")
+	}
+
+	fieldErr.isTextFieldEmpty(inv.Fname, "Fname")
+	fieldErr.isTextFieldEmpty(inv.Lname, "Lname")
+	fieldErr.isTextFieldEmpty(inv.Product, "Product")
+	fieldErr.isTextFieldEmpty(inv.Category, "Category")
+	fieldErr.isTextFieldEmpty(inv.Shipping, "Shipping")
+
+	if len(fieldErr.Msg) > 0 {
 		return fieldErr
 	}
 
