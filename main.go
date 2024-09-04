@@ -26,7 +26,7 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 	var inv db.Invoice
 	bindingErr := c.ShouldBind(&inv)
 	if bindingErr != nil {
-		rqstData.FieldErr.AddMsg(400, "Failed to bind invoice, request only takes JSON data")
+		rqstData.FieldErr.AddMsg(400, bindingErr.Error())
 		c.AbortWithStatusJSON(db.ErrorCode, rqstData.FieldErr)
 		return inv, false
 	}
