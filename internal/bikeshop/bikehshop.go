@@ -49,10 +49,11 @@ func (inv *Invoice) validateFields() InvoiceError {
 	// check for empty fields: for all the fields
 	var fieldErr InvoiceError
 
-	switch {
-	case inv.Price == 0.00:
+	if inv.Price == 0.00 {
 		fieldErr.AddMsg(400, "Bad Request, Price field can't be 0")
-	case inv.Quantity == 0:
+	}
+
+	if inv.Quantity == 0 {
 		fieldErr.AddMsg(400, "Bad Request, Quantity field can't be 0")
 	}
 
