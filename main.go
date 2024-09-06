@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"strings"
 
 	db "github.com/ScriptMang/conch/internal/bikeshop"
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,23 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 	var inv db.Invoice
 	bindingErr := c.ShouldBind(&inv)
 	if bindingErr != nil {
-		rqstData.FieldErr.AddMsg(400, bindingErr.Error())
+		err := bindingErr.Error()
+		var editedErrMsg string
+
+		if strings.Contains(err, "json: cannot unmarshal") {
+			editedErrMsg = strings.Replace(err, "json:", "Error: json", 1)
+			rqstData.FieldErr.AddMsg(400, editedErrMsg)
+		} else if strings.Contains(err, "looking for beginning of value") {
+			editedErrMsg = strings.Replace(err, "invalid", "Error: invalid", 1)
+			editedErrMsg = strings.Replace(
+				editedErrMsg, "looking for beginning of value",
+				"must be wrapped in double quotes", 1)
+			rqstData.FieldErr.AddMsg(400, editedErrMsg)
+		} else {
+			editedErrMsg = strings.Replace(err, "invalid", "Error: invalid", 1)
+			rqstData.FieldErr.AddMsg(400, editedErrMsg)
+		}
+
 		c.AbortWithStatusJSON(db.ErrorCode, rqstData.FieldErr)
 		return inv, false
 	}
