@@ -39,29 +39,29 @@ func (fieldErr *InvoiceError) AddMsg(statusCode int, str string) {
 
 // checks for empty text-fields in an invoice
 // if there an error its added to an error slice
-func (fieldErr *InvoiceError) isTextFieldEmpty(field, fieldName string) {
+func isTextFieldEmpty(field, fieldName string, fieldErr *InvoiceError) {
 	if field == "" {
-		fieldErr.AddMsg(400, "Bad Request, "+fieldName+" field can't be empty")
+		fieldErr.AddMsg(400, "Bad Request, "+fieldName+" can't be empty")
 	}
 }
 
 // check each invoice field for a null value
 // if the field is null add error to the invoice error slice
-func (fieldErr *InvoiceError) validateEmptyFields(inv *Invoice) {
+func validateEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
 
 	if inv.Price == 0.00 {
-		fieldErr.AddMsg(400, "Bad Request, Price field can't be 0")
+		fieldErr.AddMsg(400, "Bad Request, Price can't be 0")
 	}
 
 	if inv.Quantity == 0 {
-		fieldErr.AddMsg(400, "Bad Request, Quantity field can't be 0")
+		fieldErr.AddMsg(400, "Bad Request, Quantity can't be 0")
 	}
 
-	fieldErr.isTextFieldEmpty(inv.Fname, "Fname")
-	fieldErr.isTextFieldEmpty(inv.Lname, "Lname")
-	fieldErr.isTextFieldEmpty(inv.Product, "Product")
-	fieldErr.isTextFieldEmpty(inv.Category, "Category")
-	fieldErr.isTextFieldEmpty(inv.Shipping, "Shipping")
+	isTextFieldEmpty(inv.Fname, "Fname", fieldErr)
+	isTextFieldEmpty(inv.Lname, "Lname", fieldErr)
+	isTextFieldEmpty(inv.Product, "Product", fieldErr)
+	isTextFieldEmpty(inv.Category, "Category", fieldErr)
+	isTextFieldEmpty(inv.Shipping, "Shipping", fieldErr)
 
 }
 
@@ -72,7 +72,7 @@ func fieldHasPunct(s string) bool {
 
 // check each invoice field for a punctuation
 // if the field has punctuation add error msgs to the invoice error slice msg
-func (fieldErr *InvoiceError) validateFieldsForPunctuation(inv *Invoice) {
+func validateFieldsForPunctuation(inv *Invoice, fieldErr *InvoiceError) {
 	// check for punctuation: first-name, last-name and category
 	if fieldHasPunct(inv.Fname) {
 		fieldErr.AddMsg(400, "Bad Request: the first name can't contain any punctuation")
@@ -80,7 +80,6 @@ func (fieldErr *InvoiceError) validateFieldsForPunctuation(inv *Invoice) {
 
 	if fieldHasPunct(inv.Lname) {
 		fieldErr.AddMsg(400, "Bad Request: the last name can't contain any punctuation")
-
 	}
 
 	if fieldHasPunct(inv.Category) {
@@ -92,13 +91,13 @@ func (fieldErr *InvoiceError) validateFieldsForPunctuation(inv *Invoice) {
 func (inv *Invoice) validateFields() InvoiceError {
 	// check for empty fields: for all the fields
 	var fieldErr InvoiceError
-	fieldErr.validateEmptyFields(inv)
+	validateEmptyFields(inv, &fieldErr)
 
 	if len(fieldErr.Msg) > 0 {
 		return fieldErr
 	}
 
-	fieldErr.validateFieldsForPunctuation(inv)
+	validateFieldsForPunctuation(inv, &fieldErr)
 
 	// check that none of the string fields start or end with a digit or special character
 	digitFilter := "0123456789"
