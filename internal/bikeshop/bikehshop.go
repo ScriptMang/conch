@@ -116,6 +116,17 @@ func isTextInvalid(fieldVal, charFilter string) bool {
 	return strings.IndexAny(fieldVal, charFilter) != -1
 }
 
+func validateProductField(inv *Invoice, fieldErr *InvoiceError) {
+
+	productFilter := "?!'\":;~#$|{}_\\+="
+	if isTextInvalid(inv.Product, productFilter[:7]) {
+		fieldErr.AddMsg(400, "Bad Request: product can't contain any of the listed forms of punctuation ?!':;\"")
+	}
+	if isTextInvalid(inv.Product, productFilter[7:]) {
+		fieldErr.AddMsg(400, "Bad Request: product can't contain any of the listed forms of symbols ~#$|{}_\\+=")
+	}
+}
+
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateFields() InvoiceError {
 	// check for empty fields: for all the fields
@@ -129,20 +140,7 @@ func (inv *Invoice) validateFields() InvoiceError {
 	validateFieldsForDigits(inv, &fieldErr)
 	validateFieldsForPunctuation(inv, &fieldErr)
 	validateFieldsForSymbols(inv, &fieldErr)
-
-	// check that none of the string fields start or end with a digit or special character
-
-	productFilter := "?!'\":;~#$|{}_\\+="
-
-	// check specific punctuation and symbols for product
-	if isTextInvalid(inv.Product, productFilter) {
-		if isTextInvalid(inv.Product, productFilter[:7]) {
-			fieldErr.AddMsg(400, "Bad Request: product can't contain any of the listed forms of punctuation ?!':;\"")
-		}
-		if isTextInvalid(inv.Product, productFilter[7:]) {
-			fieldErr.AddMsg(400, "Bad Request: product can't contain any of the listed forms of symbols ~#$|{}_\\+=")
-		}
-	}
+	validateProductField(inv, &fieldErr)
 
 	// check for spaces: first-name, last-name
 	if isTextInvalid(inv.Fname, " ") || isTextInvalid(inv.Lname, " ") {
