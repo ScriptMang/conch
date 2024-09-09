@@ -87,6 +87,12 @@ func validateFieldsForPunctuation(inv *Invoice, fieldErr *InvoiceError) {
 	}
 }
 
+// checks a string field against an invalid char sequence
+// if it returns a index then the text is invalid and it returns true
+func isTextInvalid(fieldVal, charFilter string) bool {
+	return strings.IndexAny(fieldVal, charFilter) != -1
+}
+
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateFields() InvoiceError {
 	// check for empty fields: for all the fields
@@ -105,29 +111,29 @@ func (inv *Invoice) validateFields() InvoiceError {
 	productFilter := "?!'\":;~#$|{}_\\+="
 
 	// check for digits: first-name, last-name and category
-	if strings.IndexAny(inv.Fname, digitFilter) != -1 || strings.IndexAny(inv.Lname, digitFilter) != -1 ||
-		strings.IndexAny(inv.Category, digitFilter) != -1 {
+	if isTextInvalid(inv.Fname, digitFilter) || isTextInvalid(inv.Lname, digitFilter) ||
+		isTextInvalid(inv.Category, digitFilter) {
 		fieldErr.AddMsg(400, "Bad Request: the first name, last name or category can't contain any digits")
 	}
 
 	// check specific punctuation and symbols for product
-	if strings.IndexAny(inv.Product, productFilter) != -1 {
-		if strings.IndexAny(inv.Product, productFilter[:7]) != -1 {
+	if isTextInvalid(inv.Product, productFilter) {
+		if isTextInvalid(inv.Product, productFilter[:7]) {
 			fieldErr.AddMsg(400, "Bad Request: product can't contain any of the listed forms of punctuation ?!':;\"")
 		}
-		if strings.IndexAny(inv.Product, productFilter[7:]) != -1 {
+		if isTextInvalid(inv.Product, productFilter[7:]) {
 			fieldErr.AddMsg(400, "Bad Request: product can't contain any of the listed forms of symbols ~#$|{}_\\+=")
 		}
 	}
 
 	// check for spaces: first-name, last-name
-	if strings.IndexAny(inv.Fname, " ") != -1 || strings.IndexAny(inv.Lname, " ") != -1 {
+	if isTextInvalid(inv.Fname, " ") || isTextInvalid(inv.Lname, " ") {
 		fieldErr.AddMsg(400, "Bad Request: the first name, last name or category can't contain any spaces")
 	}
 
 	// check for symbols: first-name, last-name, category
-	if strings.IndexAny(inv.Fname, symbolFilter) != -1 || strings.IndexAny(inv.Lname, symbolFilter) != -1 ||
-		strings.IndexAny(inv.Category, symbolFilter) != -1 {
+	if isTextInvalid(inv.Fname, symbolFilter) || isTextInvalid(inv.Lname, symbolFilter) ||
+		isTextInvalid(inv.Category, symbolFilter) {
 		fieldErr.AddMsg(400, "Bad Request: the first name, last name or category can't contain any symbols")
 	}
 
