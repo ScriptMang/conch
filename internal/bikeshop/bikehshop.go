@@ -65,6 +65,29 @@ func (fieldErr *InvoiceError) validateEmptyFields(inv *Invoice) {
 
 }
 
+func fieldHasPunct(s string) bool {
+	punctFilter := ".,?!'\"`:;"
+	return strings.IndexAny(s, punctFilter) != -1
+}
+
+// check each invoice field for a punctuation
+// if the field has punctuation add error msgs to the invoice error slice msg
+func (fieldErr *InvoiceError) validateFieldsForPunctuation(inv *Invoice) {
+	// check for punctuation: first-name, last-name and category
+	if fieldHasPunct(inv.Fname) {
+		fieldErr.AddMsg(400, "Bad Request: the first name can't contain any punctuation")
+	}
+
+	if fieldHasPunct(inv.Lname) {
+		fieldErr.AddMsg(400, "Bad Request: the last name can't contain any punctuation")
+
+	}
+
+	if fieldHasPunct(inv.Category) {
+		fieldErr.AddMsg(400, "Bad Request: the category can't contain any punctuation")
+	}
+}
+
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateFields() InvoiceError {
 	// check for empty fields: for all the fields
@@ -75,9 +98,10 @@ func (inv *Invoice) validateFields() InvoiceError {
 		return fieldErr
 	}
 
+	fieldErr.validateFieldsForPunctuation(inv)
+
 	// check that none of the string fields start or end with a digit or special character
 	digitFilter := "0123456789"
-	punctFilter := ".,?!'\"`:;"
 	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
 	productFilter := "?!'\":;~#$|{}_\\+="
 
@@ -85,12 +109,6 @@ func (inv *Invoice) validateFields() InvoiceError {
 	if strings.IndexAny(inv.Fname, digitFilter) != -1 || strings.IndexAny(inv.Lname, digitFilter) != -1 ||
 		strings.IndexAny(inv.Category, digitFilter) != -1 {
 		fieldErr.AddMsg(400, "Bad Request: the first name, last name or category can't contain any digits")
-	}
-
-	// check for punctuation: first-name, last-name and category
-	if strings.IndexAny(inv.Fname, punctFilter) != -1 || strings.IndexAny(inv.Lname, punctFilter) != -1 ||
-		strings.IndexAny(inv.Category, punctFilter) != -1 {
-		fieldErr.AddMsg(400, "Bad Request: the first name, last name or category can't contain any punctuation")
 	}
 
 	// check specific punctuation and symbols for product
