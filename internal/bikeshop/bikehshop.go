@@ -144,7 +144,7 @@ func (inv *Invoice) validateFields() InvoiceError {
 
 	// check for spaces: first-name, last-name
 	if isTextInvalid(inv.Fname, " ") || isTextInvalid(inv.Lname, " ") {
-		fieldErr.AddMsg(400, "Bad Request: the first name, last name or category can't contain any spaces")
+		fieldErr.AddMsg(400, "Bad Request: the first name, last name can't have any spaces")
 	}
 
 	// check for negative values:  price and quantity
