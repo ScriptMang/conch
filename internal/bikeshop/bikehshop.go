@@ -102,6 +102,21 @@ func validateFieldsForPunctuation(inv *Invoice, fieldErr *InvoiceError) {
 	}
 }
 
+func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
+	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
+	// check for symbols: first-name, last-name, category
+	if isTextInvalid(s, symbolFilter) {
+		fieldErr.AddMsg(400, "Bad Request: "+fieldName+" can't have any Symbols")
+	}
+}
+
+func validateFieldsForSymbols(inv *Invoice, fieldErr *InvoiceError) {
+	// check for symbols: first-name, last-name, category
+	fieldHasSymbols(inv.Fname, "Fname", fieldErr)
+	fieldHasSymbols(inv.Lname, "Lname", fieldErr)
+	fieldHasSymbols(inv.Category, "Category", fieldErr)
+}
+
 // checks a string field against an invalid char sequence
 // if it returns a index then the text is invalid and it returns true
 func isTextInvalid(fieldVal, charFilter string) bool {
@@ -120,10 +135,10 @@ func (inv *Invoice) validateFields() InvoiceError {
 
 	validateFieldsForDigits(inv, &fieldErr)
 	validateFieldsForPunctuation(inv, &fieldErr)
+	validateFieldsForSymbols(inv, &fieldErr)
 
 	// check that none of the string fields start or end with a digit or special character
 
-	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
 	productFilter := "?!'\":;~#$|{}_\\+="
 
 	// check specific punctuation and symbols for product
@@ -139,12 +154,6 @@ func (inv *Invoice) validateFields() InvoiceError {
 	// check for spaces: first-name, last-name
 	if isTextInvalid(inv.Fname, " ") || isTextInvalid(inv.Lname, " ") {
 		fieldErr.AddMsg(400, "Bad Request: the first name, last name or category can't contain any spaces")
-	}
-
-	// check for symbols: first-name, last-name, category
-	if isTextInvalid(inv.Fname, symbolFilter) || isTextInvalid(inv.Lname, symbolFilter) ||
-		isTextInvalid(inv.Category, symbolFilter) {
-		fieldErr.AddMsg(400, "Bad Request: the first name, last name or category can't contain any symbols")
 	}
 
 	// check for negative values:  price and quantity
