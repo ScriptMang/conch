@@ -74,32 +74,25 @@ func fieldHasDigits(s, fieldName string, fieldErr *InvoiceError) {
 
 func validateFieldsForDigits(inv *Invoice, fieldErr *InvoiceError) {
 	// check for digits: first-name, last-name and category
-
 	fieldHasDigits(inv.Fname, "Fname", fieldErr)
 	fieldHasDigits(inv.Lname, "Lname", fieldErr)
 	fieldHasDigits(inv.Category, "Category", fieldErr)
 }
 
-func fieldHasPunct(s string) bool {
+func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
 	punctFilter := ".,?!'\"`:;"
-	return strings.IndexAny(s, punctFilter) != -1
+	if isTextInvalid(s, punctFilter) {
+		fieldErr.AddMsg(400, "Bad Request: "+fieldName+" can't have any punctuation")
+	}
 }
 
 // check each invoice field for a punctuation
 // if the field has punctuation add error msgs to the invoice error slice msg
 func validateFieldsForPunctuation(inv *Invoice, fieldErr *InvoiceError) {
 	// check for punctuation: first-name, last-name and category
-	if fieldHasPunct(inv.Fname) {
-		fieldErr.AddMsg(400, "Bad Request: the first name can't contain any punctuation")
-	}
-
-	if fieldHasPunct(inv.Lname) {
-		fieldErr.AddMsg(400, "Bad Request: the last name can't contain any punctuation")
-	}
-
-	if fieldHasPunct(inv.Category) {
-		fieldErr.AddMsg(400, "Bad Request: the category can't contain any punctuation")
-	}
+	fieldHasPunct(inv.Fname, "Fname", fieldErr)
+	fieldHasPunct(inv.Lname, "Lname", fieldErr)
+	fieldHasPunct(inv.Category, "Category", fieldErr)
 }
 
 func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
