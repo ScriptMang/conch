@@ -65,6 +65,21 @@ func validateEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
 
 }
 
+func fieldHasDigits(s, fieldName string, fieldErr *InvoiceError) {
+	digitFilter := "0123456789"
+	if isTextInvalid(s, digitFilter) {
+		fieldErr.AddMsg(400, "Bad Request: "+fieldName+" can't have any digits")
+	}
+}
+
+func validateFieldsForDigits(inv *Invoice, fieldErr *InvoiceError) {
+	// check for digits: first-name, last-name and category
+
+	fieldHasDigits(inv.Fname, "Fname", fieldErr)
+	fieldHasDigits(inv.Lname, "Lname", fieldErr)
+	fieldHasDigits(inv.Category, "Category", fieldErr)
+}
+
 func fieldHasPunct(s string) bool {
 	punctFilter := ".,?!'\"`:;"
 	return strings.IndexAny(s, punctFilter) != -1
@@ -103,18 +118,13 @@ func (inv *Invoice) validateFields() InvoiceError {
 		return fieldErr
 	}
 
+	validateFieldsForDigits(inv, &fieldErr)
 	validateFieldsForPunctuation(inv, &fieldErr)
 
 	// check that none of the string fields start or end with a digit or special character
-	digitFilter := "0123456789"
+
 	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
 	productFilter := "?!'\":;~#$|{}_\\+="
-
-	// check for digits: first-name, last-name and category
-	if isTextInvalid(inv.Fname, digitFilter) || isTextInvalid(inv.Lname, digitFilter) ||
-		isTextInvalid(inv.Category, digitFilter) {
-		fieldErr.AddMsg(400, "Bad Request: the first name, last name or category can't contain any digits")
-	}
 
 	// check specific punctuation and symbols for product
 	if isTextInvalid(inv.Product, productFilter) {
