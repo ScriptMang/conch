@@ -128,7 +128,7 @@ func validateProductField(inv *Invoice, fieldErr *InvoiceError) {
 }
 
 // takes an invoice and throws an error for any field with an invalid input
-func (inv *Invoice) validateFields() InvoiceError {
+func (inv *Invoice) validateAllFields() InvoiceError {
 	// check for empty fields: for all the fields
 	var fieldErr InvoiceError
 	validateEmptyFields(inv, &fieldErr)
@@ -161,7 +161,7 @@ func InsertOp(inv Invoice) ([]*Invoice, InvoiceError) {
 
 	var insertedInv Invoice
 	var invs []*Invoice
-	fieldErr := inv.validateFields()
+	fieldErr := inv.validateAllFields()
 
 	if len(fieldErr.Msg) > 0 {
 		return invs, fieldErr
@@ -230,7 +230,7 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 
 	var inv2 Invoice
 	var invs []*Invoice
-	fieldErr := inv.validateFields()
+	fieldErr := inv.validateAllFields()
 	if len(fieldErr.Msg) > 0 {
 		return invs, fieldErr
 	}
