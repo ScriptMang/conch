@@ -86,12 +86,13 @@ func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
 		punctFilter = " .,?!'\"`:;"
 	} else if fieldName == "Product" {
 		punctFilter = "?!'\";"
+	} else if fieldName == "Category" || fieldName == "Shipping" {
+		punctFilter = ".?!'\"`:;"
 	}
 
 	if isTextInvalid(s, punctFilter) {
 		fieldErr.AddMsg(400, "Bad Request: "+fieldName+" can't have any punctuation")
 	}
-
 }
 
 // check each invoice field for a punctuation
@@ -102,6 +103,7 @@ func validateFieldsForPunctuation(inv *Invoice, fieldErr *InvoiceError) {
 	fieldHasPunct(inv.Lname, "Lname", fieldErr)
 	fieldHasPunct(inv.Category, "Category", fieldErr)
 	fieldHasPunct(inv.Product, "Product", fieldErr)
+	fieldHasPunct(inv.Shipping, "Shipping", fieldErr)
 }
 
 func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
