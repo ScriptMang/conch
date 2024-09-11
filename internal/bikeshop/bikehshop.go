@@ -81,9 +81,17 @@ func validateFieldsForDigits(inv *Invoice, fieldErr *InvoiceError) {
 
 func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
 	punctFilter := ".,?!'\"`:;"
+
+	if fieldName == "Fname" || fieldName == "Lname" {
+		punctFilter = " .,?!'\"`:;"
+	} else if fieldName == "Product" {
+		punctFilter = "?!'\";"
+	}
+
 	if isTextInvalid(s, punctFilter) {
 		fieldErr.AddMsg(400, "Bad Request: "+fieldName+" can't have any punctuation")
 	}
+
 }
 
 // check each invoice field for a punctuation
@@ -93,6 +101,7 @@ func validateFieldsForPunctuation(inv *Invoice, fieldErr *InvoiceError) {
 	fieldHasPunct(inv.Fname, "Fname", fieldErr)
 	fieldHasPunct(inv.Lname, "Lname", fieldErr)
 	fieldHasPunct(inv.Category, "Category", fieldErr)
+	fieldHasPunct(inv.Product, "Product", fieldErr)
 }
 
 func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
@@ -116,17 +125,6 @@ func isTextInvalid(fieldVal, charFilter string) bool {
 	return strings.IndexAny(fieldVal, charFilter) != -1
 }
 
-func validateProductField(inv *Invoice, fieldErr *InvoiceError) {
-
-	productFilter := "?!'\":;~#$|{}_\\+="
-	if isTextInvalid(inv.Product, productFilter[:7]) {
-		fieldErr.AddMsg(400, "Bad Request: product can't contain any of the listed forms of punctuation ?!':;\"")
-	}
-	if isTextInvalid(inv.Product, productFilter[7:]) {
-		fieldErr.AddMsg(400, "Bad Request: product can't contain any of the listed forms of symbols ~#$|{}_\\+=")
-	}
-}
-
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateAllFields() InvoiceError {
 	// check for empty fields: for all the fields
@@ -140,12 +138,6 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 	validateFieldsForDigits(inv, &fieldErr)
 	validateFieldsForPunctuation(inv, &fieldErr)
 	validateFieldsForSymbols(inv, &fieldErr)
-	validateProductField(inv, &fieldErr)
-
-	// check for spaces: first-name, last-name
-	if isTextInvalid(inv.Fname, " ") || isTextInvalid(inv.Lname, " ") {
-		fieldErr.AddMsg(400, "Bad Request: the first name, last name can't have any spaces")
-	}
 
 	// check for negative values:  price and quantity
 	if inv.Price < 0.00 || inv.Quantity < 0 {
