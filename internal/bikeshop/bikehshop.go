@@ -118,7 +118,7 @@ func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
 	}
 
 	if fieldName == "Shipping" {
-		symbolFilter = "~@#%$^|><*()[]{}_+=\\/"
+		symbolFilter = "~@#&%$^|><*()[]{}_+=\\/"
 	}
 
 	// check for symbols: first-name, last-name, category, product
