@@ -106,7 +106,20 @@ func validateFieldsForPunctuation(inv *Invoice, fieldErr *InvoiceError) {
 
 func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
 	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
-	// check for symbols: first-name, last-name, category
+
+	if fieldName == "Product" {
+		symbolFilter = "~#$*{}[]_\\+=><^"
+	}
+
+	if fieldName == "Category" {
+		symbolFilter = "~@#%$^|><*()[]{}_-+=\\/"
+	}
+
+	if fieldName == "Shipping" {
+		symbolFilter = "~@#%$^|><*()[]{}_+=\\/"
+	}
+
+	// check for symbols: first-name, last-name, category, product
 	if isTextInvalid(s, symbolFilter) {
 		fieldErr.AddMsg(400, "Bad Request: "+fieldName+" can't have any Symbols")
 	}
@@ -117,6 +130,8 @@ func validateFieldsForSymbols(inv *Invoice, fieldErr *InvoiceError) {
 	fieldHasSymbols(inv.Fname, "Fname", fieldErr)
 	fieldHasSymbols(inv.Lname, "Lname", fieldErr)
 	fieldHasSymbols(inv.Category, "Category", fieldErr)
+	fieldHasSymbols(inv.Product, "Product", fieldErr)
+	fieldHasSymbols(inv.Shipping, "Shipping", fieldErr)
 }
 
 // checks a string field against an invalid char sequence
