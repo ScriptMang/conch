@@ -232,40 +232,57 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	return invs, fieldErr
 }
 
-func validateFieldsForUpdate(inv Invoice) InvoiceError {
+func validateFieldsForUpdate(orig Invoice, inv *Invoice) InvoiceError {
 	var fieldErr InvoiceError
 
 	//validate fields for filters, ignore if empty
-	if inv.Fname != "" {
+
+	if inv.Fname == "" {
+		inv.Fname = orig.Fname
+	} else if inv.Fname != "" {
 		fieldHasDigits(inv.Fname, "Fname", &fieldErr)
 		fieldHasPunct(inv.Fname, "Fname", &fieldErr)
 		fieldHasSymbols(inv.Fname, "Fname", &fieldErr)
 	}
-	if inv.Lname != "" {
+
+	if inv.Lname == "" {
+		inv.Lname = orig.Lname
+	} else if inv.Lname != "" {
 		fieldHasDigits(inv.Lname, "Lname", &fieldErr)
 		fieldHasPunct(inv.Lname, "Lname", &fieldErr)
 		fieldHasSymbols(inv.Lname, "Lname", &fieldErr)
 	}
-	if inv.Product != "" {
+
+	if inv.Product == "" {
+		inv.Product = orig.Product
+	} else if inv.Product != "" {
 		fieldHasDigits(inv.Product, "Product", &fieldErr)
 		fieldHasPunct(inv.Product, "Product", &fieldErr)
 		fieldHasSymbols(inv.Product, "Product", &fieldErr)
 	}
-	if inv.Category != "" {
+	if inv.Category == "" {
+		inv.Category = orig.Category
+	} else if inv.Category != "" {
 		fieldHasDigits(inv.Category, "Category", &fieldErr)
 		fieldHasPunct(inv.Category, "Category", &fieldErr)
 		fieldHasSymbols(inv.Category, "Category", &fieldErr)
 	}
-	if inv.Shipping != "" {
+	if inv.Shipping == "" {
+		inv.Shipping = orig.Shipping
+	} else if inv.Shipping != "" {
 		fieldHasPunct(inv.Shipping, "Shipping", &fieldErr)
 		fieldHasSymbols(inv.Shipping, "Shipping", &fieldErr)
 	}
 
-	if inv.Price != 0.00 && inv.Price < 0.00 {
+	if inv.Price == 0.00 {
+		inv.Price = orig.Price
+	} else if inv.Price != 0.00 && inv.Price < 0.00 {
 		fieldErr.AddMsg(400, "Bad Request: The price can't be negative")
 	}
 
-	if inv.Quantity != 0 && inv.Quantity < 0 {
+	if inv.Quantity == 0 {
+		inv.Quantity = orig.Quantity
+	} else if inv.Quantity != 0 && inv.Quantity < 0 {
 		fieldErr.AddMsg(400, "Bad Request: The quantity can't be negative")
 	}
 	return fieldErr
@@ -276,9 +293,18 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 	ctx, db := connect()
 	defer db.Close()
 
-	var inv2 Invoice
+	var orig []*Invoice // original invoice
+	var inv2 Invoice    // resulting invoice
 	var invs []*Invoice
-	fieldErr := validateFieldsForUpdate(inv)
+
+	var fieldErr InvoiceError
+
+	orig, fieldErr = ReadInvoiceByID(id)
+	if len(fieldErr.Msg) > 0 {
+		return invs, fieldErr
+	}
+
+	fieldErr = validateFieldsForUpdate(*orig[0], &inv)
 	if len(fieldErr.Msg) > 0 {
 		return invs, fieldErr
 	}
