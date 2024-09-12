@@ -232,47 +232,31 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	return invs, fieldErr
 }
 
+func checkGrammar(val *string, orig, fieldName string, fieldErr *InvoiceError) {
+	if *val == "" {
+		*val = orig
+	} else if *val != "" && fieldName != "Shipping" && fieldName != "Product" {
+		fieldHasDigits(*val, fieldName, fieldErr)
+		fieldHasPunct(*val, fieldName, fieldErr)
+		fieldHasSymbols(*val, fieldName, fieldErr)
+	}
+
+	if fieldName == "Shipping" || fieldName == "Product" {
+		fieldHasPunct(*val, fieldName, fieldErr)
+		fieldHasSymbols(*val, fieldName, fieldErr)
+	}
+}
+
 func validateFieldsForUpdate(orig Invoice, inv *Invoice) InvoiceError {
 	var fieldErr InvoiceError
 
-	//validate fields for filters, ignore if empty
+	//validate fields for Grammars, ignore if empty
 
-	if inv.Fname == "" {
-		inv.Fname = orig.Fname
-	} else if inv.Fname != "" {
-		fieldHasDigits(inv.Fname, "Fname", &fieldErr)
-		fieldHasPunct(inv.Fname, "Fname", &fieldErr)
-		fieldHasSymbols(inv.Fname, "Fname", &fieldErr)
-	}
-
-	if inv.Lname == "" {
-		inv.Lname = orig.Lname
-	} else if inv.Lname != "" {
-		fieldHasDigits(inv.Lname, "Lname", &fieldErr)
-		fieldHasPunct(inv.Lname, "Lname", &fieldErr)
-		fieldHasSymbols(inv.Lname, "Lname", &fieldErr)
-	}
-
-	if inv.Product == "" {
-		inv.Product = orig.Product
-	} else if inv.Product != "" {
-		fieldHasDigits(inv.Product, "Product", &fieldErr)
-		fieldHasPunct(inv.Product, "Product", &fieldErr)
-		fieldHasSymbols(inv.Product, "Product", &fieldErr)
-	}
-	if inv.Category == "" {
-		inv.Category = orig.Category
-	} else if inv.Category != "" {
-		fieldHasDigits(inv.Category, "Category", &fieldErr)
-		fieldHasPunct(inv.Category, "Category", &fieldErr)
-		fieldHasSymbols(inv.Category, "Category", &fieldErr)
-	}
-	if inv.Shipping == "" {
-		inv.Shipping = orig.Shipping
-	} else if inv.Shipping != "" {
-		fieldHasPunct(inv.Shipping, "Shipping", &fieldErr)
-		fieldHasSymbols(inv.Shipping, "Shipping", &fieldErr)
-	}
+	checkGrammar(&inv.Fname, orig.Fname, "Fname", &fieldErr)
+	checkGrammar(&inv.Lname, orig.Lname, "Lname", &fieldErr)
+	checkGrammar(&inv.Product, orig.Product, "Product", &fieldErr)
+	checkGrammar(&inv.Category, orig.Category, "Category", &fieldErr)
+	checkGrammar(&inv.Shipping, orig.Shipping, "Shipping", &fieldErr)
 
 	if inv.Price == 0.00 {
 		inv.Price = orig.Price
@@ -296,9 +280,7 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 	var orig []*Invoice // original invoice
 	var inv2 Invoice    // resulting invoice
 	var invs []*Invoice
-
 	var fieldErr InvoiceError
-
 	orig, fieldErr = ReadInvoiceByID(id)
 	if len(fieldErr.Msg) > 0 {
 		return invs, fieldErr
