@@ -47,7 +47,7 @@ func isTextFieldEmpty(field, fieldName string, fieldErr *InvoiceError) {
 
 // check each invoice field for a null value
 // if the field is null add error to the invoice error slice
-func validateEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
+func validateAllEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
 
 	if inv.Price == 0.00 {
 		fieldErr.AddMsg(400, "Bad Request, Price can't be 0")
@@ -72,6 +72,7 @@ func fieldHasDigits(s, fieldName string, fieldErr *InvoiceError) {
 	}
 }
 
+// checks fname lname, and category invoice fields for digits
 func validateFieldsForDigits(inv *Invoice, fieldErr *InvoiceError) {
 	// check for digits: first-name, last-name and category
 	fieldHasDigits(inv.Fname, "Fname", fieldErr)
@@ -95,10 +96,8 @@ func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
 	}
 }
 
-// check each invoice field for a punctuation
-// if the field has punctuation add error msgs to the invoice error slice msg
+// checks each string invoice field for punctuation
 func validateFieldsForPunctuation(inv *Invoice, fieldErr *InvoiceError) {
-	// check for punctuation: first-name, last-name and category
 	fieldHasPunct(inv.Fname, "Fname", fieldErr)
 	fieldHasPunct(inv.Lname, "Lname", fieldErr)
 	fieldHasPunct(inv.Category, "Category", fieldErr)
@@ -127,8 +126,8 @@ func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
 	}
 }
 
+// checks each string invoice field for symbols
 func validateFieldsForSymbols(inv *Invoice, fieldErr *InvoiceError) {
-	// check for symbols: first-name, last-name, category
 	fieldHasSymbols(inv.Fname, "Fname", fieldErr)
 	fieldHasSymbols(inv.Lname, "Lname", fieldErr)
 	fieldHasSymbols(inv.Category, "Category", fieldErr)
@@ -146,7 +145,7 @@ func isTextInvalid(fieldVal, charFilter string) bool {
 func (inv *Invoice) validateAllFields() InvoiceError {
 	// check for empty fields: for all the fields
 	var fieldErr InvoiceError
-	validateEmptyFields(inv, &fieldErr)
+	validateAllEmptyFields(inv, &fieldErr)
 
 	if len(fieldErr.Msg) > 0 {
 		return fieldErr
