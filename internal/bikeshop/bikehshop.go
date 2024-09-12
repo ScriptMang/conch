@@ -232,6 +232,45 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	return invs, fieldErr
 }
 
+func validateFieldsForUpdate(inv Invoice) InvoiceError {
+	var fieldErr InvoiceError
+
+	//validate fields for filters, ignore if empty
+	if inv.Fname != "" {
+		fieldHasDigits(inv.Fname, "Fname", &fieldErr)
+		fieldHasPunct(inv.Fname, "Fname", &fieldErr)
+		fieldHasSymbols(inv.Fname, "Fname", &fieldErr)
+	}
+	if inv.Lname != "" {
+		fieldHasDigits(inv.Lname, "Lname", &fieldErr)
+		fieldHasPunct(inv.Lname, "Lname", &fieldErr)
+		fieldHasSymbols(inv.Lname, "Lname", &fieldErr)
+	}
+	if inv.Product != "" {
+		fieldHasDigits(inv.Product, "Product", &fieldErr)
+		fieldHasPunct(inv.Product, "Product", &fieldErr)
+		fieldHasSymbols(inv.Product, "Product", &fieldErr)
+	}
+	if inv.Category != "" {
+		fieldHasDigits(inv.Category, "Category", &fieldErr)
+		fieldHasPunct(inv.Category, "Category", &fieldErr)
+		fieldHasSymbols(inv.Category, "Category", &fieldErr)
+	}
+	if inv.Shipping != "" {
+		fieldHasPunct(inv.Shipping, "Shipping", &fieldErr)
+		fieldHasSymbols(inv.Shipping, "Shipping", &fieldErr)
+	}
+
+	if inv.Price != 0.00 && inv.Price < 0.00 {
+		fieldErr.AddMsg(400, "Bad Request: The price can't be negative")
+	}
+
+	if inv.Quantity != 0 && inv.Quantity < 0 {
+		fieldErr.AddMsg(400, "Bad Request: The quantity can't be negative")
+	}
+	return fieldErr
+}
+
 // updates and returns the given invoice by id
 func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 	ctx, db := connect()
@@ -239,7 +278,7 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 
 	var inv2 Invoice
 	var invs []*Invoice
-	fieldErr := inv.validateAllFields()
+	fieldErr := validateFieldsForUpdate(inv)
 	if len(fieldErr.Msg) > 0 {
 		return invs, fieldErr
 	}
