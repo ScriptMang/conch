@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -11,6 +13,17 @@ import (
 type respBodyData struct {
 	Invs     []*db.Invoice
 	FieldErr db.InvoiceError
+}
+
+type resultingInv struct {
+	ID       int
+	Fname    string
+	Lname    string
+	Product  string
+	Price    json.Number
+	Quantity int
+	Category string
+	Shipping string
 }
 
 var code int //httpstatuscode
@@ -63,12 +76,28 @@ func validateRouteID(c *gin.Context, rqstData *respBodyData) int {
 func sendResponse(c *gin.Context, rqstData *respBodyData) {
 	invs := rqstData.Invs
 	fieldErr := rqstData.FieldErr
-
 	switch {
 	case len(fieldErr.Msg) > 0:
 		c.JSON(db.ErrorCode, fieldErr)
 	default:
-		c.JSON(code, invs)
+
+		var rsltInv resultingInv
+		var invLst []*resultingInv
+
+		// change price of type float to string
+		// add it to resultingInv struct then invLst
+		for _, val := range invs {
+			rsltInv.ID = val.ID
+			rsltInv.Fname = val.Fname
+			rsltInv.Lname = val.Lname
+			rsltInv.Product = val.Product
+			rsltInv.Price = json.Number(fmt.Sprintf("%.2f", val.Price))
+			rsltInv.Quantity = val.Quantity
+			rsltInv.Category = val.Category
+			rsltInv.Shipping = val.Shipping
+			invLst = append(invLst, &rsltInv)
+		}
+		c.JSON(code, invLst)
 	}
 }
 
