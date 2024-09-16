@@ -205,7 +205,15 @@ func ReadInvoices() ([]*Invoice, InvoiceError) {
 	var fieldErr InvoiceError
 	err := pgxscan.Select(ctx, db, &invs, `SELECT * FROM invoices`)
 	if err != nil {
-		fieldErr.AddMsg(400, "Invoices are empty")
+
+		errMsg := err.Error()
+
+		if strings.Contains(errMsg, "\"username\" does not exist") {
+			fieldErr.AddMsg(400, "Error: failed to connect to database, username doesn't exist")
+		} else {
+			fieldErr.AddMsg(400, "Invoices are empty")
+		}
+
 	}
 	return invs, fieldErr
 }
@@ -223,7 +231,15 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	var fieldErr InvoiceError
 	err := pgxscan.ScanOne(&inv, row)
 	if err != nil {
-		fieldErr.AddMsg(404, "Resource Not Found: invoice with specified id does not exist")
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "\"username\" does not exist") {
+			fieldErr.AddMsg(400, "Error: failed to connect to database, username doesn't exist")
+		}
+
+		if strings.Contains(errMsg, "no rows in result set") {
+			fieldErr.AddMsg(404, "Resource Not Found: invoice with specified id does not exist")
+		}
+		fmt.Printf("%s\n", errMsg)
 		return invs, fieldErr
 	}
 
@@ -281,6 +297,8 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 	var invs []*Invoice
 	var fieldErr InvoiceError
 	orig, fieldErr = ReadInvoiceByID(id)
+	msgLen := len(fieldErr.Msg)
+	fmt.Printf("There are %d field err messages\n", msgLen)
 	if len(fieldErr.Msg) > 0 {
 		return invs, fieldErr
 	}
@@ -295,7 +313,13 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 
 	err := pgxscan.ScanOne(&inv2, rows)
 	if err != nil {
-		fieldErr.AddMsg(404, "Resource Not Found: invoice with specified id does not exist")
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "\"username\" does not exist") {
+			fieldErr.AddMsg(400, "Error: failed to connect to database, username doesn't exist")
+		} else {
+			fieldErr.AddMsg(400, "Invoices are empty")
+		}
+		fmt.Println("%s\n", errMsg)
 	}
 	invs = append(invs, &inv2)
 
@@ -315,7 +339,15 @@ func DeleteInvoice(id int) ([]*Invoice, InvoiceError) {
 	var fieldErr InvoiceError
 	err := pgxscan.ScanOne(&inv, row)
 	if err != nil {
-		fieldErr.AddMsg(404, "Resource Not Found: invoice with specified id does not exist")
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "\"username\" does not exist") {
+			fieldErr.AddMsg(400, "Error: failed to connect to database, username doesn't exist")
+		}
+
+		if strings.Contains(errMsg, "no rows in result set") {
+			fieldErr.AddMsg(404, "Resource Not Found: invoice with specified id does not exist")
+		}
+		fmt.Printf("%s\n", errMsg)
 	}
 	invs = append(invs, &inv)
 	return invs, fieldErr
