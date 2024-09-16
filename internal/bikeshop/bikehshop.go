@@ -203,18 +203,22 @@ func ReadInvoices() ([]*Invoice, InvoiceError) {
 
 	var invs Invoices
 	var fieldErr InvoiceError
-	err := pgxscan.Select(ctx, db, &invs, `SELECT * FROM invoices`)
+	//rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
+	rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
+	err := pgxscan.ScanAll(&invs, rows)
 	if err != nil {
 
 		errMsg := err.Error()
 
 		if strings.Contains(errMsg, "\"username\" does not exist") {
 			fieldErr.AddMsg(400, "Error: failed to connect to database, username doesn't exist")
-		} else {
-			fieldErr.AddMsg(400, "Invoices are empty")
 		}
-
 	}
+
+	if invs == nil && err == nil {
+		fieldErr.AddMsg(400, "Error: The database table invoices is empty")
+	}
+
 	return invs, fieldErr
 }
 
@@ -224,11 +228,15 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	ctx, db := connect()
 	defer db.Close()
 
-	row, _ := db.Query(ctx, `SELECT * FROM invoices WHERE id=$1`, id)
-
 	var inv Invoice
 	var invs []*Invoice
-	var fieldErr InvoiceError
+	_, fieldErr := ReadInvoices()
+	if len(fieldErr.Msg) > 0 {
+		return invs, fieldErr
+	}
+
+	row, _ := db.Query(ctx, `SELECT * FROM invoices WHERE id=$1`, id)
+
 	err := pgxscan.ScanOne(&inv, row)
 	if err != nil {
 		errMsg := err.Error()
@@ -332,11 +340,14 @@ func DeleteInvoice(id int) ([]*Invoice, InvoiceError) {
 	ctx, db := connect()
 	defer db.Close()
 
-	row, _ := db.Query(ctx, `DELETE FROM invoices WHERE id=$1 RETURNING *`, id)
-
 	var inv Invoice
 	var invs []*Invoice
-	var fieldErr InvoiceError
+	_, fieldErr := ReadInvoices()
+	if len(fieldErr.Msg) > 0 {
+		return invs, fieldErr
+	}
+
+	row, _ := db.Query(ctx, `DELETE FROM invoices WHERE id=$1 RETURNING *`, id)
 	err := pgxscan.ScanOne(&inv, row)
 	if err != nil {
 		errMsg := err.Error()
