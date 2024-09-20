@@ -82,7 +82,7 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 	default:
 
 		var rsltInv resultingInv
-		var invLst []*resultingInv
+		var invLst []resultingInv
 
 		// change price of type float to string
 		// add it to resultingInv struct then invLst
@@ -95,8 +95,9 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 			rsltInv.Quantity = val.Quantity
 			rsltInv.Category = val.Category
 			rsltInv.Shipping = val.Shipping
-			invLst = append(invLst, &rsltInv)
+			invLst = append(invLst, rsltInv)
 		}
+
 		c.JSON(code, invLst)
 	}
 }
