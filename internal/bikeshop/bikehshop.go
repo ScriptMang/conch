@@ -22,7 +22,7 @@ type Invoice struct {
 }
 
 type InvoiceError struct {
-	Msg []string
+	ErrMsgs []string
 }
 
 type Invoices []*Invoice
@@ -34,7 +34,7 @@ var ErrorCode int // http-status code for errors
 // By default content-type is of type 'application/json'
 func (fieldErr *InvoiceError) AddMsg(statusCode int, str string) {
 	ErrorCode = statusCode
-	fieldErr.Msg = append(fieldErr.Msg, str)
+	fieldErr.ErrMsgs = append(fieldErr.ErrMsgs, str)
 }
 
 // checks for empty text-fields in an invoice
@@ -147,7 +147,7 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 	var fieldErr InvoiceError
 	validateAllEmptyFields(inv, &fieldErr)
 
-	if len(fieldErr.Msg) > 0 {
+	if len(fieldErr.ErrMsgs) > 0 {
 		return fieldErr
 	}
 
@@ -171,7 +171,7 @@ func InsertOp(inv Invoice) ([]*Invoice, InvoiceError) {
 	var invs []*Invoice
 	fieldErr := inv.validateAllFields()
 
-	if len(fieldErr.Msg) > 0 {
+	if len(fieldErr.ErrMsgs) > 0 {
 		return invs, fieldErr
 	}
 	rows, _ := db.Query(ctx, `INSERT INTO invoices (fname, lname, product, price, quantity, category, shipping) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
@@ -231,7 +231,7 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	var inv Invoice
 	var invs []*Invoice
 	_, fieldErr := ReadInvoices()
-	if len(fieldErr.Msg) > 0 {
+	if len(fieldErr.ErrMsgs) > 0 {
 		return invs, fieldErr
 	}
 
@@ -305,14 +305,14 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 	var invs []*Invoice
 	var fieldErr InvoiceError
 	orig, fieldErr = ReadInvoiceByID(id)
-	msgLen := len(fieldErr.Msg)
+	msgLen := len(fieldErr.ErrMsgs)
 	fmt.Printf("There are %d field err messages\n", msgLen)
-	if len(fieldErr.Msg) > 0 {
+	if len(fieldErr.ErrMsgs) > 0 {
 		return invs, fieldErr
 	}
 
 	fieldErr = validateFieldsForUpdate(*orig[0], &inv)
-	if len(fieldErr.Msg) > 0 {
+	if len(fieldErr.ErrMsgs) > 0 {
 		return invs, fieldErr
 	}
 
@@ -343,7 +343,7 @@ func DeleteInvoice(id int) ([]*Invoice, InvoiceError) {
 	var inv Invoice
 	var invs []*Invoice
 	_, fieldErr := ReadInvoices()
-	if len(fieldErr.Msg) > 0 {
+	if len(fieldErr.ErrMsgs) > 0 {
 		return invs, fieldErr
 	}
 
