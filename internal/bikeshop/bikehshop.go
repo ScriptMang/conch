@@ -69,7 +69,7 @@ func validateAllEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
 func fieldHasDigits(s, fieldName string, fieldErr *InvoiceError) {
 	digitFilter := "0123456789"
 	if isTextInvalid(s, digitFilter) {
-		fieldErr.AddMsg(badRequest, "Bad Request: "+fieldName+" can't have any digits")
+		fieldErr.AddMsg(badRequest, "Error: "+fieldName+" can't have any digits")
 	}
 }
 
@@ -93,7 +93,7 @@ func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
 	}
 
 	if isTextInvalid(s, punctFilter) {
-		fieldErr.AddMsg(badRequest, "Bad Request: "+fieldName+" can't have any punctuation")
+		fieldErr.AddMsg(badRequest, "Error: "+fieldName+" can't have any punctuation")
 	}
 }
 
@@ -123,7 +123,7 @@ func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
 
 	// check for symbols: first-name, last-name, category, product
 	if isTextInvalid(s, symbolFilter) {
-		fieldErr.AddMsg(badRequest, "Bad Request: "+fieldName+" can't have any Symbols")
+		fieldErr.AddMsg(badRequest, "Error: "+fieldName+" can't have any Symbols")
 	}
 }
 
@@ -158,7 +158,7 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 
 	// check for negative values:  price and quantity
 	if inv.Price < 0.00 || inv.Quantity < 0 {
-		fieldErr.AddMsg(badRequest, "Bad Request: Neither the price or quantity can be negative")
+		fieldErr.AddMsg(badRequest, "Error: Neither the price or quantity can be negative")
 	}
 	return fieldErr
 }
@@ -284,13 +284,13 @@ func validateFieldsForUpdate(orig Invoice, inv *Invoice) InvoiceError {
 	if inv.Price == 0 {
 		inv.Price = orig.Price
 	} else if inv.Price != 0.00 && inv.Price < 0.00 {
-		fieldErr.AddMsg(badRequest, "Bad Request: The price can't be negative")
+		fieldErr.AddMsg(badRequest, "Error: The price can't be negative")
 	}
 
 	if inv.Quantity == 0 {
 		inv.Quantity = orig.Quantity
 	} else if inv.Quantity != 0 && inv.Quantity < 0 {
-		fieldErr.AddMsg(badRequest, "Bad Request: The quantity can't be negative")
+		fieldErr.AddMsg(badRequest, "Error: The quantity can't be negative")
 	}
 	return fieldErr
 }
