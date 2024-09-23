@@ -148,6 +148,11 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 	var fieldErr InvoiceError
 	validateAllEmptyFields(inv, &fieldErr)
 
+	// check for negative values:  price and quantity
+	if inv.Price < 0.00 || inv.Quantity < 0 {
+		fieldErr.AddMsg(badRequest, "Error: Neither the price or quantity can be negative")
+	}
+
 	if len(fieldErr.ErrMsgs) > 0 {
 		return fieldErr
 	}
@@ -156,10 +161,6 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 	validateFieldsForPunctuation(inv, &fieldErr)
 	validateFieldsForSymbols(inv, &fieldErr)
 
-	// check for negative values:  price and quantity
-	if inv.Price < 0.00 || inv.Quantity < 0 {
-		fieldErr.AddMsg(badRequest, "Error: Neither the price or quantity can be negative")
-	}
 	return fieldErr
 }
 
