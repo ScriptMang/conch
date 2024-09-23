@@ -42,7 +42,7 @@ func (fieldErr *InvoiceError) AddMsg(statusCode int, str string) {
 // if there an error its added to an error slice
 func isTextFieldEmpty(field, fieldName string, fieldErr *InvoiceError) {
 	if field == "" {
-		fieldErr.AddMsg(badRequest, "Bad Request, "+fieldName+" can't be empty")
+		fieldErr.AddMsg(badRequest, "Error: "+fieldName+" can't be empty")
 	}
 }
 
@@ -51,11 +51,11 @@ func isTextFieldEmpty(field, fieldName string, fieldErr *InvoiceError) {
 func validateAllEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
 
 	if inv.Price == 0.00 {
-		fieldErr.AddMsg(badRequest, "Bad Request, Price can't be 0")
+		fieldErr.AddMsg(badRequest, "Error: Price can't be 0")
 	}
 
 	if inv.Quantity == 0 {
-		fieldErr.AddMsg(badRequest, "Bad Request, Quantity can't be 0")
+		fieldErr.AddMsg(badRequest, "Error: Quantity can't be 0")
 	}
 
 	isTextFieldEmpty(inv.Fname, "Fname", fieldErr)
