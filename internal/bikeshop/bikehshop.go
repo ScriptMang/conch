@@ -28,6 +28,7 @@ type InvoiceError struct {
 type Invoices []*Invoice
 
 var ErrorCode int // http-status code for errors
+const badRequest = 400
 
 // helper funct: takes a pointer to an InvoiceErorr, HttpStatusCode and a string msg
 // as parameters and sets the values for the InvoiceError struct.
@@ -41,7 +42,7 @@ func (fieldErr *InvoiceError) AddMsg(statusCode int, str string) {
 // if there an error its added to an error slice
 func isTextFieldEmpty(field, fieldName string, fieldErr *InvoiceError) {
 	if field == "" {
-		fieldErr.AddMsg(400, "Bad Request, "+fieldName+" can't be empty")
+		fieldErr.AddMsg(badRequest, "Bad Request, "+fieldName+" can't be empty")
 	}
 }
 
@@ -50,11 +51,11 @@ func isTextFieldEmpty(field, fieldName string, fieldErr *InvoiceError) {
 func validateAllEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
 
 	if inv.Price == 0.00 {
-		fieldErr.AddMsg(400, "Bad Request, Price can't be 0")
+		fieldErr.AddMsg(badRequest, "Bad Request, Price can't be 0")
 	}
 
 	if inv.Quantity == 0 {
-		fieldErr.AddMsg(400, "Bad Request, Quantity can't be 0")
+		fieldErr.AddMsg(badRequest, "Bad Request, Quantity can't be 0")
 	}
 
 	isTextFieldEmpty(inv.Fname, "Fname", fieldErr)
@@ -68,7 +69,7 @@ func validateAllEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
 func fieldHasDigits(s, fieldName string, fieldErr *InvoiceError) {
 	digitFilter := "0123456789"
 	if isTextInvalid(s, digitFilter) {
-		fieldErr.AddMsg(400, "Bad Request: "+fieldName+" can't have any digits")
+		fieldErr.AddMsg(badRequest, "Bad Request: "+fieldName+" can't have any digits")
 	}
 }
 
@@ -92,7 +93,7 @@ func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
 	}
 
 	if isTextInvalid(s, punctFilter) {
-		fieldErr.AddMsg(400, "Bad Request: "+fieldName+" can't have any punctuation")
+		fieldErr.AddMsg(badRequest, "Bad Request: "+fieldName+" can't have any punctuation")
 	}
 }
 
@@ -122,7 +123,7 @@ func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
 
 	// check for symbols: first-name, last-name, category, product
 	if isTextInvalid(s, symbolFilter) {
-		fieldErr.AddMsg(400, "Bad Request: "+fieldName+" can't have any Symbols")
+		fieldErr.AddMsg(badRequest, "Bad Request: "+fieldName+" can't have any Symbols")
 	}
 }
 
@@ -157,7 +158,7 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 
 	// check for negative values:  price and quantity
 	if inv.Price < 0.00 || inv.Quantity < 0 {
-		fieldErr.AddMsg(400, "Bad Request: Neither the price or quantity can be negative")
+		fieldErr.AddMsg(badRequest, "Bad Request: Neither the price or quantity can be negative")
 	}
 	return fieldErr
 }
@@ -181,15 +182,15 @@ func InsertOp(inv Invoice) ([]*Invoice, InvoiceError) {
 	if err != nil {
 		qryError := err.Error()
 		if strings.Contains(qryError, "numeric field overflow") {
-			fieldErr.AddMsg(400, "numeric field overflow, provide a value between 1.00 - 999.99")
+			fieldErr.AddMsg(badRequest, "numeric field overflow, provide a value between 1.00 - 999.99")
 		}
 		if strings.Contains(qryError, "greater than maximum value for int4") {
-			fieldErr.AddMsg(400, "integer overflow, value must be between 1 - 2147483647")
+			fieldErr.AddMsg(badRequest, "integer overflow, value must be between 1 - 2147483647")
 		}
 		if strings.Contains(qryError, "value too long for type character varying") {
-			fieldErr.AddMsg(400, "varchar too long, use varchar length between 1-255")
+			fieldErr.AddMsg(badRequest, "varchar too long, use varchar length between 1-255")
 		}
-		fieldErr.AddMsg(400, qryError)
+		fieldErr.AddMsg(badRequest, qryError)
 	}
 	invs = append(invs, &insertedInv)
 
@@ -207,11 +208,10 @@ func ReadInvoices() ([]*Invoice, InvoiceError) {
 	rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
 	err := pgxscan.ScanAll(&invs, rows)
 	if err != nil {
-
 		errMsg := err.Error()
 
 		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(400, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
 		}
 	}
 
@@ -241,7 +241,7 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	if err != nil {
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(400, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
 		}
 
 		if strings.Contains(errMsg, "no rows in result set") {
@@ -281,16 +281,16 @@ func validateFieldsForUpdate(orig Invoice, inv *Invoice) InvoiceError {
 	checkGrammar(&inv.Category, orig.Category, "Category", &fieldErr)
 	checkGrammar(&inv.Shipping, orig.Shipping, "Shipping", &fieldErr)
 
-	if inv.Price == 0.00 {
+	if inv.Price == 0 {
 		inv.Price = orig.Price
 	} else if inv.Price != 0.00 && inv.Price < 0.00 {
-		fieldErr.AddMsg(400, "Bad Request: The price can't be negative")
+		fieldErr.AddMsg(badRequest, "Bad Request: The price can't be negative")
 	}
 
 	if inv.Quantity == 0 {
 		inv.Quantity = orig.Quantity
 	} else if inv.Quantity != 0 && inv.Quantity < 0 {
-		fieldErr.AddMsg(400, "Bad Request: The quantity can't be negative")
+		fieldErr.AddMsg(badRequest, "Bad Request: The quantity can't be negative")
 	}
 	return fieldErr
 }
@@ -323,9 +323,9 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 	if err != nil {
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(400, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
 		} else {
-			fieldErr.AddMsg(400, "Invoices are empty")
+			fieldErr.AddMsg(badRequest, "Invoices are empty")
 		}
 		fmt.Println("%s\n", errMsg)
 	}
@@ -352,7 +352,7 @@ func DeleteInvoice(id int) ([]*Invoice, InvoiceError) {
 	if err != nil {
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(400, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
 		}
 
 		if strings.Contains(errMsg, "no rows in result set") {
@@ -366,7 +366,6 @@ func DeleteInvoice(id int) ([]*Invoice, InvoiceError) {
 
 // Create a New Database Connection to bikeshop
 func connect() (context.Context, *pgxpool.Pool) {
-
 	uri := "postgres://username@localhost:5432/bikeshop"
 	os.Setenv("DATABASE_URL", uri)
 	ctx := context.Background()
