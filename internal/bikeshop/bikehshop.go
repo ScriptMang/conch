@@ -153,7 +153,7 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 		fieldErr.AddMsg(badRequest, "Error: Neither the price or quantity can be negative")
 	}
 
-	if len(fieldErr.ErrMsgs) > 0 {
+	if len(fieldErr.ErrMsgs) > 1 {
 		return fieldErr
 	}
 
@@ -204,19 +204,17 @@ func ReadInvoices() ([]*Invoice, InvoiceError) {
 	defer db.Close()
 
 	var invs Invoices
-	var fieldErr InvoiceError
+	fieldErr := InvoiceError{ErrMsgs: []string{""}}
 	rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
 	err := pgxscan.ScanAll(&invs, rows)
 	if err != nil {
 		errMsg := err.Error()
 
 		if strings.Contains(errMsg, "\"username\" does not exist") {
+			fieldErr.ErrMsgs = nil
 			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
 		}
-	}
-
-	if invs == nil && err == nil {
-		fieldErr.AddMsg(400, "Error: The database table invoices is empty")
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 
 	return invs, fieldErr
@@ -231,7 +229,8 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	var inv Invoice
 	var invs []*Invoice
 	_, fieldErr := ReadInvoices()
-	if len(fieldErr.ErrMsgs) > 0 {
+
+	if strings.Contains(fieldErr.ErrMsgs[0], "\"username\" does not exist") {
 		return invs, fieldErr
 	}
 
@@ -240,6 +239,7 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	err := pgxscan.ScanOne(&inv, row)
 	if err != nil {
 		errMsg := err.Error()
+		fieldErr.ErrMsgs = nil
 		if strings.Contains(errMsg, "\"username\" does not exist") {
 			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
 		}
@@ -247,10 +247,10 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 		if strings.Contains(errMsg, "no rows in result set") {
 			fieldErr.AddMsg(404, "Resource Not Found: invoice with specified id does not exist")
 		}
-		// fmt.Printf("%s\n", errMsg)
+
+		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
 		return invs, fieldErr
 	}
-
 	invs = append(invs, &inv)
 	return invs, fieldErr
 }
@@ -285,12 +285,14 @@ func validateFieldsForUpdate(orig Invoice, inv *Invoice) InvoiceError {
 		inv.Price = orig.Price
 	} else if inv.Price != 0.00 && inv.Price < 0.00 {
 		fieldErr.AddMsg(badRequest, "Error: The price can't be negative")
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 
 	if inv.Quantity == 0 {
 		inv.Quantity = orig.Quantity
 	} else if inv.Quantity != 0 && inv.Quantity < 0 {
 		fieldErr.AddMsg(badRequest, "Error: The quantity can't be negative")
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 	return fieldErr
 }
@@ -307,27 +309,32 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 	orig, fieldErr = ReadInvoiceByID(id)
 	// msgLen := len(fieldErr.ErrMsgs)
 	// fmt.Printf("There are %d field err messages\n", msgLen)
-	if len(fieldErr.ErrMsgs) > 0 {
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 		return invs, fieldErr
 	}
 
 	fieldErr = validateFieldsForUpdate(*orig[0], &inv)
-	if len(fieldErr.ErrMsgs) > 0 {
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 		return invs, fieldErr
 	}
 
-	rows, _ := db.Query(ctx, `UPDATE invoices SET fname=$1,lname=$2,product=$3,price=$4,quantity=$5,category=$6,shipping=$7 WHERE id=$8 RETURNING *`,
-		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping, id)
+	rows, _ := db.Query(
+		ctx,
+		`UPDATE invoices SET fname=$1,lname=$2,product=$3,price=$4,quantity=$5,category=$6,shipping=$7 WHERE id=$8 RETURNING *`,
+		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping, id,
+	)
 
 	err := pgxscan.ScanOne(&inv2, rows)
 	if err != nil {
 		errMsg := err.Error()
+		fieldErr.ErrMsgs = nil
 		if strings.Contains(errMsg, "\"username\" does not exist") {
 			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
 		} else {
 			fieldErr.AddMsg(badRequest, "Invoices are empty")
 		}
 		// fmt.Println("%s\n", errMsg)
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 	invs = append(invs, &inv2)
 
@@ -343,7 +350,9 @@ func DeleteInvoice(id int) ([]*Invoice, InvoiceError) {
 	var inv Invoice
 	var invs []*Invoice
 	_, fieldErr := ReadInvoices()
-	if len(fieldErr.ErrMsgs) > 0 {
+
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		// fmt.Printf("Error messages is empty for Delete-OP")
 		return invs, fieldErr
 	}
 
@@ -351,6 +360,7 @@ func DeleteInvoice(id int) ([]*Invoice, InvoiceError) {
 	err := pgxscan.ScanOne(&inv, row)
 	if err != nil {
 		errMsg := err.Error()
+		fieldErr.ErrMsgs = nil
 		if strings.Contains(errMsg, "\"username\" does not exist") {
 			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
 		}
@@ -358,7 +368,8 @@ func DeleteInvoice(id int) ([]*Invoice, InvoiceError) {
 		if strings.Contains(errMsg, "no rows in result set") {
 			fieldErr.AddMsg(404, "Resource Not Found: invoice with specified id does not exist")
 		}
-		//	fmt.Printf("%s\n", errMsg)
+		//fmt.Printf("%s\n", errMsg)
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 	invs = append(invs, &inv)
 	return invs, fieldErr

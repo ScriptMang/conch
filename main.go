@@ -77,7 +77,7 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 	invs := rqstData.Invs
 	fieldErr := rqstData.FieldErr
 	switch {
-	case len(fieldErr.ErrMsgs) > 0:
+	case fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "":
 		c.JSON(db.ErrorCode, fieldErr)
 	default:
 
