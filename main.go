@@ -166,7 +166,7 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 			inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 			if bindingOk {
 				rqstData.Invs, rqstData.FieldErr = db.UpdateInvoice(inv, id)
-				code = statusCreated
+				code = statusOK
 				sendResponse(c, &rqstData)
 			}
 		}
