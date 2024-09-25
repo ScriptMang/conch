@@ -177,8 +177,12 @@ func InsertOp(inv Invoice) ([]*Invoice, InvoiceError) {
 	if len(fieldErr.ErrMsgs) > 0 {
 		return invs, fieldErr
 	}
-	rows, _ := db.Query(ctx, `INSERT INTO invoices (fname, lname, product, price, quantity, category, shipping) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping)
+
+	rows, _ := db.Query(
+		ctx,
+		`INSERT INTO invoices (fname, lname, product, price, quantity, category, shipping) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping,
+	)
 
 	err := pgxscan.ScanOne(&insertedInv, rows)
 	if err != nil {
