@@ -44,9 +44,19 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 	if bindingErr != nil {
 		err := bindingErr.Error()
 		var editedErrMsg string
-
 		if strings.Contains(err, "json: cannot unmarshal") {
-			editedErrMsg = strings.Replace(err, "json:", "Error: json", 1)
+			edit1 := strings.Replace(err, "json: cannot unmarshal", "Binding Error:", 1)
+			edit2 := strings.Replace(edit1, "into Go struct field Invoice.", "", 1)
+			edit3 := strings.Replace(edit2, "of type", "takes a", 1)
+			edit4 := edit3 + " not a "
+			var temp string
+			wordLst := strings.Split(edit4, " ")
+			if wordLst[2] == "string" || wordLst[2] == "number" {
+				temp = wordLst[2]
+				wordLst[2] = ""
+			}
+			edit5 := strings.Join(wordLst, " ") + temp
+			editedErrMsg = strings.Replace(edit5, "  ", " ", 1)
 			rqstData.FieldErr.AddMsg(db.BadRequest, editedErrMsg)
 		} else if strings.Contains(err, "looking for beginning of value") {
 			editedErrMsg = strings.Replace(err, "invalid", "Error: invalid", 1)
