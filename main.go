@@ -27,6 +27,8 @@ type resultingInv struct {
 }
 
 var code int //httpstatuscode
+const statusOK = 200
+const statusCreated = 201
 
 // configs gin router and renders index-page
 func setRouter() *gin.Engine {
@@ -45,16 +47,16 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 
 		if strings.Contains(err, "json: cannot unmarshal") {
 			editedErrMsg = strings.Replace(err, "json:", "Error: json", 1)
-			rqstData.FieldErr.AddMsg(400, editedErrMsg)
+			rqstData.FieldErr.AddMsg(db.BadRequest, editedErrMsg)
 		} else if strings.Contains(err, "looking for beginning of value") {
 			editedErrMsg = strings.Replace(err, "invalid", "Error: invalid", 1)
 			editedErrMsg = strings.Replace(
 				editedErrMsg, "' looking for beginning of value",
 				"', value must be wrapped in double quotes", 1)
-			rqstData.FieldErr.AddMsg(400, editedErrMsg)
+			rqstData.FieldErr.AddMsg(db.BadRequest, editedErrMsg)
 		} else {
 			editedErrMsg = strings.Replace(err, "invalid", "Error: invalid", 1)
-			rqstData.FieldErr.AddMsg(400, editedErrMsg)
+			rqstData.FieldErr.AddMsg(db.BadRequest, editedErrMsg)
 		}
 
 		c.AbortWithStatusJSON(db.ErrorCode, rqstData.FieldErr)
@@ -66,7 +68,7 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 func validateRouteID(c *gin.Context, rqstData *respBodyData) int {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		rqstData.FieldErr.AddMsg(400, "Bad Request: id can't be converted to an integer")
+		rqstData.FieldErr.AddMsg(db.BadRequest, "Bad Request: id can't be converted to an integer")
 		sendResponse(c, rqstData)
 	}
 	return id
@@ -111,7 +113,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 		inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 		if bindingOk {
 			rqstData.Invs, rqstData.FieldErr = db.InsertOp(inv)
-			code = 201
+			code = statusCreated
 			sendResponse(c, &rqstData)
 		}
 	})
@@ -123,7 +125,7 @@ func readData(r *gin.Engine) *gin.Engine {
 	r.GET("/invoices", func(c *gin.Context) {
 		var rqstData respBodyData
 		rqstData.Invs, rqstData.FieldErr = db.ReadInvoices()
-		code = 200
+		code = statusOK
 		sendResponse(c, &rqstData)
 	})
 	return r
@@ -136,7 +138,7 @@ func readDataById(r *gin.Engine) *gin.Engine {
 		id := validateRouteID(c, &rqstData)
 		if id != 0 {
 			rqstData.Invs, rqstData.FieldErr = db.ReadInvoiceByID(id)
-			code = 200
+			code = statusOK
 			sendResponse(c, &rqstData)
 		}
 	})
@@ -154,7 +156,7 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 			inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 			if bindingOk {
 				rqstData.Invs, rqstData.FieldErr = db.UpdateInvoice(inv, id)
-				code = 201
+				code = statusCreated
 				sendResponse(c, &rqstData)
 			}
 		}
@@ -169,7 +171,7 @@ func deleteEntry(r *gin.Engine) *gin.Engine {
 		id := validateRouteID(c, &rqstData)
 		if id != 0 {
 			rqstData.Invs, rqstData.FieldErr = db.DeleteInvoice(id)
-			code = 200
+			code = statusOK
 			sendResponse(c, &rqstData)
 		}
 	})

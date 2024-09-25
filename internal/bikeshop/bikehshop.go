@@ -28,7 +28,8 @@ type InvoiceError struct {
 type Invoices []*Invoice
 
 var ErrorCode int // http-status code for errors
-const badRequest = 400
+const BadRequest = 400
+const resourceNotFound = 404
 
 // helper funct: takes a pointer to an InvoiceErorr, HttpStatusCode and a string msg
 // as parameters and sets the values for the InvoiceError struct.
@@ -42,7 +43,7 @@ func (fieldErr *InvoiceError) AddMsg(statusCode int, str string) {
 // if there an error its added to an error slice
 func isTextFieldEmpty(field, fieldName string, fieldErr *InvoiceError) {
 	if field == "" {
-		fieldErr.AddMsg(badRequest, "Error: "+fieldName+" can't be empty")
+		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't be empty")
 	}
 }
 
@@ -51,11 +52,11 @@ func isTextFieldEmpty(field, fieldName string, fieldErr *InvoiceError) {
 func validateAllEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
 
 	if inv.Price == 0.00 {
-		fieldErr.AddMsg(badRequest, "Error: Price can't be 0")
+		fieldErr.AddMsg(BadRequest, "Error: Price can't be 0")
 	}
 
 	if inv.Quantity == 0 {
-		fieldErr.AddMsg(badRequest, "Error: Quantity can't be 0")
+		fieldErr.AddMsg(BadRequest, "Error: Quantity can't be 0")
 	}
 
 	isTextFieldEmpty(inv.Fname, "Fname", fieldErr)
@@ -69,7 +70,7 @@ func validateAllEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
 func fieldHasDigits(s, fieldName string, fieldErr *InvoiceError) {
 	digitFilter := "0123456789"
 	if isTextInvalid(s, digitFilter) {
-		fieldErr.AddMsg(badRequest, "Error: "+fieldName+" can't have any digits")
+		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any digits")
 	}
 }
 
@@ -93,7 +94,7 @@ func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
 	}
 
 	if isTextInvalid(s, punctFilter) {
-		fieldErr.AddMsg(badRequest, "Error: "+fieldName+" can't have any punctuation")
+		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any punctuation")
 	}
 }
 
@@ -123,7 +124,7 @@ func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
 
 	// check for symbols: first-name, last-name, category, product
 	if isTextInvalid(s, symbolFilter) {
-		fieldErr.AddMsg(badRequest, "Error: "+fieldName+" can't have any Symbols")
+		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any Symbols")
 	}
 }
 
@@ -150,7 +151,7 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 
 	// check for negative values:  price and quantity
 	if inv.Price < 0.00 || inv.Quantity < 0 {
-		fieldErr.AddMsg(badRequest, "Error: Neither the price or quantity can be negative")
+		fieldErr.AddMsg(BadRequest, "Error: Neither the price or quantity can be negative")
 	}
 
 	if len(fieldErr.ErrMsgs) > 1 {
@@ -183,15 +184,15 @@ func InsertOp(inv Invoice) ([]*Invoice, InvoiceError) {
 	if err != nil {
 		qryError := err.Error()
 		if strings.Contains(qryError, "numeric field overflow") {
-			fieldErr.AddMsg(badRequest, "numeric field overflow, provide a value between 1.00 - 999.99")
+			fieldErr.AddMsg(BadRequest, "numeric field overflow, provide a value between 1.00 - 999.99")
 		}
 		if strings.Contains(qryError, "greater than maximum value for int4") {
-			fieldErr.AddMsg(badRequest, "integer overflow, value must be between 1 - 2147483647")
+			fieldErr.AddMsg(BadRequest, "integer overflow, value must be between 1 - 2147483647")
 		}
 		if strings.Contains(qryError, "value too long for type character varying") {
-			fieldErr.AddMsg(badRequest, "varchar too long, use varchar length between 1-255")
+			fieldErr.AddMsg(BadRequest, "varchar too long, use varchar length between 1-255")
 		}
-		fieldErr.AddMsg(badRequest, qryError)
+		fieldErr.AddMsg(BadRequest, qryError)
 	}
 	invs = append(invs, &insertedInv)
 
@@ -212,7 +213,7 @@ func ReadInvoices() ([]*Invoice, InvoiceError) {
 
 		if strings.Contains(errMsg, "\"username\" does not exist") {
 			fieldErr.ErrMsgs = nil
-			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
 		}
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
@@ -241,11 +242,11 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 		errMsg := err.Error()
 		fieldErr.ErrMsgs = nil
 		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
 		}
 
 		if strings.Contains(errMsg, "no rows in result set") {
-			fieldErr.AddMsg(404, "Resource Not Found: invoice with specified id does not exist")
+			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
 		}
 
 		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
@@ -284,14 +285,14 @@ func validateFieldsForUpdate(orig Invoice, inv *Invoice) InvoiceError {
 	if inv.Price == 0 {
 		inv.Price = orig.Price
 	} else if inv.Price != 0.00 && inv.Price < 0.00 {
-		fieldErr.AddMsg(badRequest, "Error: The price can't be negative")
+		fieldErr.AddMsg(BadRequest, "Error: The price can't be negative")
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 
 	if inv.Quantity == 0 {
 		inv.Quantity = orig.Quantity
 	} else if inv.Quantity != 0 && inv.Quantity < 0 {
-		fieldErr.AddMsg(badRequest, "Error: The quantity can't be negative")
+		fieldErr.AddMsg(BadRequest, "Error: The quantity can't be negative")
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 	return fieldErr
@@ -329,9 +330,9 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 		errMsg := err.Error()
 		fieldErr.ErrMsgs = nil
 		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
 		} else {
-			fieldErr.AddMsg(badRequest, "Invoices are empty")
+			fieldErr.AddMsg(BadRequest, "Invoices are empty")
 		}
 		// fmt.Println("%s\n", errMsg)
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
@@ -362,11 +363,11 @@ func DeleteInvoice(id int) ([]*Invoice, InvoiceError) {
 		errMsg := err.Error()
 		fieldErr.ErrMsgs = nil
 		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(badRequest, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
 		}
 
 		if strings.Contains(errMsg, "no rows in result set") {
-			fieldErr.AddMsg(404, "Resource Not Found: invoice with specified id does not exist")
+			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
 		}
 		//fmt.Printf("%s\n", errMsg)
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
