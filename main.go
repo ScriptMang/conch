@@ -49,6 +49,10 @@ func chosenErrorMsg(errMsg string) int {
 	return 0
 }
 
+func editErrMsg(orig, match, edit string) string {
+	return strings.Replace(orig, match, edit, 1)
+}
+
 // binds an empty invoice to client's data in the response body
 // returns the given invoice and an invoice error
 func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice, bool) {
@@ -64,9 +68,9 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 	errMsgChoice := chosenErrorMsg(err)
 	switch errMsgChoice {
 	case 1:
-		edit1 := strings.Replace(err, "json: cannot unmarshal", "Binding Error:", 1)
-		edit2 := strings.Replace(edit1, "into Go struct field Invoice.", "", 1)
-		edit3 := strings.Replace(edit2, "of type", "takes a", 1)
+		edit1 := editErrMsg(err, "json: cannot unmarshal", "Binding Error:")
+		edit2 := editErrMsg(edit1, "into Go struct field Invoice.", "")
+		edit3 := editErrMsg(edit2, "of type", "takes a")
 		edit4 := edit3 + " not a "
 		var temp string
 		wordLst := strings.Split(edit4, " ")
@@ -75,16 +79,16 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 			wordLst[2] = ""
 		}
 		edit5 := strings.Join(wordLst, " ") + temp
-		editedErrMsg = strings.Replace(edit5, "  ", " ", 1)
+		editedErrMsg = editErrMsg(edit5, "  ", " ")
 		rqstData.FieldErr.AddMsg(db.BadRequest, editedErrMsg)
 	case 2:
-		editedErrMsg = strings.Replace(err, "invalid", "Error: invalid", 1)
-		editedErrMsg = strings.Replace(
-			editedErrMsg, "' looking for beginning of value",
-			"', value must be wrapped in double quotes", 1)
+		edit := editErrMsg(err, "invalid", "Error: invalid")
+		editedErrMsg = editErrMsg(edit,
+			"' looking for beginning of value",
+			"', value must be wrapped in double quotes")
 		rqstData.FieldErr.AddMsg(db.BadRequest, editedErrMsg)
 	default:
-		editedErrMsg = strings.Replace(err, "invalid", "Error: invalid", 1)
+		editedErrMsg = editErrMsg(err, "invalid", "Error: invalid")
 		rqstData.FieldErr.AddMsg(db.BadRequest, editedErrMsg)
 	}
 
