@@ -85,11 +85,12 @@ func validateFieldsForDigits(inv *Invoice, fieldErr *InvoiceError) {
 func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
 	punctFilter := ".,?!'\"`:;"
 
-	if fieldName == "Fname" || fieldName == "Lname" {
+	switch fieldName {
+	case "Fname", "Lname":
 		punctFilter = " .,?!'\"`:;"
-	} else if fieldName == "Product" {
+	case "Product":
 		punctFilter = "?!'\";"
-	} else if fieldName == "Category" || fieldName == "Shipping" {
+	case "Category", "Shipping":
 		punctFilter = ".?!'\"`:;"
 	}
 
@@ -110,15 +111,12 @@ func validateFieldsForPunctuation(inv *Invoice, fieldErr *InvoiceError) {
 func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
 	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
 
-	if fieldName == "Product" {
+	switch fieldName {
+	case "Product":
 		symbolFilter = "~#$*{}[]_\\+=><^"
-	}
-
-	if fieldName == "Category" {
+	case "Category":
 		symbolFilter = "~@#%$^|><*()[]{}_-+=\\/"
-	}
-
-	if fieldName == "Shipping" {
+	case "Shipping":
 		symbolFilter = "~@#&%$^|><*()[]{}_+=\\/"
 	}
 
