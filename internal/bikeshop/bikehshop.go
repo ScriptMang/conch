@@ -260,10 +260,11 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	return invs, fieldErr
 }
 
-func checkGrammar(val *string, orig, fieldName string, fieldErr *InvoiceError) {
-	if *val == "" {
-		*val = orig
-	} else if *val != "" && fieldName != "Shipping" && fieldName != "Product" {
+func checkGrammar(val *string, fieldName string, fieldErr *InvoiceError) {
+
+	isTextFieldEmpty(*val, fieldName, fieldErr)
+
+	if *val != "" && fieldName != "Shipping" && fieldName != "Product" {
 		fieldHasDigits(*val, fieldName, fieldErr)
 		fieldHasPunct(*val, fieldName, fieldErr)
 		fieldHasSymbols(*val, fieldName, fieldErr)
@@ -278,13 +279,13 @@ func checkGrammar(val *string, orig, fieldName string, fieldErr *InvoiceError) {
 func validateFieldsForUpdate(orig Invoice, inv *Invoice) InvoiceError {
 	var fieldErr InvoiceError
 
-	//validate fields for Grammars, ignore if empty
+	// validate fields for Grammars, ignore if empty
 
-	checkGrammar(&inv.Fname, orig.Fname, "Fname", &fieldErr)
-	checkGrammar(&inv.Lname, orig.Lname, "Lname", &fieldErr)
-	checkGrammar(&inv.Product, orig.Product, "Product", &fieldErr)
-	checkGrammar(&inv.Category, orig.Category, "Category", &fieldErr)
-	checkGrammar(&inv.Shipping, orig.Shipping, "Shipping", &fieldErr)
+	checkGrammar(&inv.Fname, "Fname", &fieldErr)
+	checkGrammar(&inv.Lname, "Lname", &fieldErr)
+	checkGrammar(&inv.Product, "Product", &fieldErr)
+	checkGrammar(&inv.Category, "Category", &fieldErr)
+	checkGrammar(&inv.Shipping, "Shipping", &fieldErr)
 
 	if inv.Price == 0 {
 		inv.Price = orig.Price
