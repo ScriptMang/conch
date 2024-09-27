@@ -156,10 +156,6 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 		fieldErr.AddMsg(BadRequest, "Error: The quantity can't be negative")
 	}
 
-	if len(fieldErr.ErrMsgs) > 1 {
-		return fieldErr
-	}
-
 	validateFieldsForDigits(inv, &fieldErr)
 	validateFieldsForPunctuation(inv, &fieldErr)
 	validateFieldsForSymbols(inv, &fieldErr)
