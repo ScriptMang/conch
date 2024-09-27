@@ -285,16 +285,16 @@ func validateFieldsForUpdate(orig Invoice, inv *Invoice) InvoiceError {
 	checkGrammar(&inv.Category, "Category", &fieldErr)
 	checkGrammar(&inv.Shipping, "Shipping", &fieldErr)
 
-	if inv.Price == 0 {
-		inv.Price = orig.Price
-	} else if inv.Price != 0.00 && inv.Price < 0.00 {
+	if inv.Price == 0.00 {
+		fieldErr.AddMsg(BadRequest, "Error: Price can't be zero")
+	} else if inv.Price < 0.00 {
 		fieldErr.AddMsg(BadRequest, "Error: The price can't be negative")
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 
 	if inv.Quantity == 0 {
-		inv.Quantity = orig.Quantity
-	} else if inv.Quantity != 0 && inv.Quantity < 0 {
+		fieldErr.AddMsg(BadRequest, "Error: Quantity can't be zero")
+	} else if inv.Quantity < 0 {
 		fieldErr.AddMsg(BadRequest, "Error: The quantity can't be negative")
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
