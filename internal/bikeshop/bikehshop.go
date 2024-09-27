@@ -52,11 +52,11 @@ func isTextFieldEmpty(field, fieldName string, fieldErr *InvoiceError) {
 func validateAllEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
 
 	if inv.Price == 0.00 {
-		fieldErr.AddMsg(BadRequest, "Error: Price can't be 0")
+		fieldErr.AddMsg(BadRequest, "Error: Price can't be zero")
 	}
 
 	if inv.Quantity == 0 {
-		fieldErr.AddMsg(BadRequest, "Error: Quantity can't be 0")
+		fieldErr.AddMsg(BadRequest, "Error: Quantity can't be zero")
 	}
 
 	isTextFieldEmpty(inv.Fname, "Fname", fieldErr)
