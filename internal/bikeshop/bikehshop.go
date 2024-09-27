@@ -278,7 +278,7 @@ func checkGrammar(val *string, fieldName string, fieldErr *InvoiceError) {
 	}
 }
 
-func validateFieldsForUpdate(orig Invoice, inv *Invoice) InvoiceError {
+func validateFieldsForUpdate(inv *Invoice) InvoiceError {
 	var fieldErr InvoiceError
 
 	// validate fields for Grammars, ignore if empty
@@ -310,18 +310,17 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 	ctx, db := connect()
 	defer db.Close()
 
-	var orig []*Invoice // original invoice
-	var inv2 Invoice    // resulting invoice
+	var inv2 Invoice // resulting invoice
 	var invs []*Invoice
 	var fieldErr InvoiceError
-	orig, fieldErr = ReadInvoiceByID(id)
+	_, fieldErr = ReadInvoiceByID(id)
 	// msgLen := len(fieldErr.ErrMsgs)
 	// fmt.Printf("There are %d field err messages\n", msgLen)
 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 		return invs, fieldErr
 	}
 
-	fieldErr = validateFieldsForUpdate(*orig[0], &inv)
+	fieldErr = validateFieldsForUpdate(&inv)
 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 		return invs, fieldErr
 	}
