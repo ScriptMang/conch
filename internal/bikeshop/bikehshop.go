@@ -148,8 +148,12 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 	validateAllEmptyFields(inv, &fieldErr)
 
 	// check for negative values:  price and quantity
-	if inv.Price < 0.00 || inv.Quantity < 0 {
-		fieldErr.AddMsg(BadRequest, "Error: Neither the price or quantity can be negative")
+	if inv.Price < 0.00 {
+		fieldErr.AddMsg(BadRequest, "Error: The price can't be negative")
+	}
+
+	if inv.Quantity < 0 {
+		fieldErr.AddMsg(BadRequest, "Error: The quantity can't be negative")
 	}
 
 	if len(fieldErr.ErrMsgs) > 1 {
