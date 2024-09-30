@@ -177,6 +177,8 @@ func readDataById(r *gin.Engine) *gin.Engine {
 }
 
 // updates an invoice entry by id
+// require the user to pass the entire invoice
+// to change any field
 func updateEntry(r *gin.Engine) *gin.Engine {
 	r.PUT("/invoice/:id", func(c *gin.Context) {
 		var inv db.Invoice
@@ -187,6 +189,26 @@ func updateEntry(r *gin.Engine) *gin.Engine {
 			inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 			if bindingOk {
 				rqstData.Invs, rqstData.FieldErr = db.UpdateInvoice(inv, id)
+				code = statusOK
+				sendResponse(c, &rqstData)
+			}
+		}
+	})
+	return r
+}
+
+// similar to the updateEntry except you don't have
+// to pass all the fields in a invoice to update a field
+func patchEntry(r *gin.Engine) *gin.Engine {
+	r.PATCH("/invoice/:id", func(c *gin.Context) {
+		var inv db.Invoice
+		var bindingOk bool
+		var rqstData respBodyData
+		id := validateRouteID(c, &rqstData)
+		if id != 0 {
+			inv, bindingOk = validateInvoiceBinding(c, &rqstData)
+			if bindingOk {
+				rqstData.Invs, rqstData.FieldErr = db.PatchInvoice(inv, id)
 				code = statusOK
 				sendResponse(c, &rqstData)
 			}
@@ -216,6 +238,7 @@ func main() {
 	r = readDataById(r)
 	r = addInvoice(r)
 	r = updateEntry(r)
+	r = patchEntry(r)
 	r = deleteEntry(r)
 
 	r.Run()

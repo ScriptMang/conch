@@ -344,6 +344,89 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 	return invs, fieldErr
 }
 
+func checkGrammarForPatch(val *string, orig, fieldName string, fieldErr *InvoiceError) {
+	if *val == "" {
+		*val = orig // unique to patch requests
+	} else if *val != "" && fieldName != "Shipping" && fieldName != "Product" {
+		fieldHasDigits(*val, fieldName, fieldErr)
+		fieldHasPunct(*val, fieldName, fieldErr)
+		fieldHasSymbols(*val, fieldName, fieldErr)
+	}
+
+	if fieldName == "Shipping" || fieldName == "Product" {
+		fieldHasPunct(*val, fieldName, fieldErr)
+		fieldHasSymbols(*val, fieldName, fieldErr)
+	}
+}
+
+func validateFieldsForPatch(orig Invoice, inv *Invoice) InvoiceError {
+	var fieldErr InvoiceError
+
+	// validate fields for Grammars, ignore if empty
+
+	checkGrammarForPatch(&inv.Fname, orig.Fname, "Fname", &fieldErr)
+	checkGrammarForPatch(&inv.Lname, orig.Lname, "Lname", &fieldErr)
+	checkGrammarForPatch(&inv.Product, orig.Product, "Product", &fieldErr)
+	checkGrammarForPatch(&inv.Category, orig.Category, "Category", &fieldErr)
+	checkGrammarForPatch(&inv.Shipping, orig.Shipping, "Shipping", &fieldErr)
+
+	if inv.Price == 0 {
+		inv.Price = orig.Price // unique to patch requests
+	} else if inv.Price != 0.00 && inv.Price < 0.00 {
+		fieldErr.AddMsg(BadRequest, "Error: The price can't be negative")
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+	}
+
+	if inv.Quantity == 0 {
+		inv.Quantity = orig.Quantity // unique to patch requests
+	} else if inv.Quantity != 0 && inv.Quantity < 0 {
+		fieldErr.AddMsg(BadRequest, "Error: The quantity can't be negative")
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+	}
+	return fieldErr
+}
+
+func PatchInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
+	ctx, db := connect()
+	defer db.Close()
+
+	var inv2 Invoice // resulting invoice
+	var invs []*Invoice
+	orig, fieldErr := ReadInvoiceByID(id)
+	// msgLen := len(fieldErr.ErrMsgs)
+	// fmt.Printf("There are %d field err messages\n", msgLen)
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		return invs, fieldErr
+	}
+
+	fieldErr = validateFieldsForPatch(*orig[0], &inv)
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		return invs, fieldErr
+	}
+
+	rows, _ := db.Query(
+		ctx,
+		`UPDATE invoices SET fname=$1,lname=$2,product=$3,price=$4,quantity=$5,category=$6,shipping=$7 WHERE id=$8 RETURNING *`,
+		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping, id,
+	)
+
+	err := pgxscan.ScanOne(&inv2, rows)
+	if err != nil {
+		errMsg := err.Error()
+		fieldErr.ErrMsgs = nil
+		if strings.Contains(errMsg, "\"username\" does not exist") {
+			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+		} else {
+			fieldErr.AddMsg(BadRequest, "Invoices are empty")
+		}
+		// fmt.Println("%s\n", errMsg)
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+	}
+	invs = append(invs, &inv2)
+
+	return invs, fieldErr
+}
+
 // delete's the given invoice based on id
 // and return the deleted invoice
 func DeleteInvoice(id int) ([]*Invoice, InvoiceError) {
