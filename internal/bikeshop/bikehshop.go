@@ -20,7 +20,10 @@ type Invoice struct {
 	Category string  `json:"category" form:"category"`
 	Shipping string  `json:"shipping" form:"shipping"`
 }
-
+type textField struct {
+	name  string // field-name
+	value string // field-value
+}
 type InvoiceError struct {
 	ErrMsgs []string
 }
@@ -101,11 +104,11 @@ func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
 
 // checks each string invoice field for punctuation
 func validateFieldsForPunctuation(inv *Invoice, fieldErr *InvoiceError) {
-	fieldHasPunct(inv.Fname, "Fname", fieldErr)
-	fieldHasPunct(inv.Lname, "Lname", fieldErr)
-	fieldHasPunct(inv.Category, "Category", fieldErr)
-	fieldHasPunct(inv.Product, "Product", fieldErr)
-	fieldHasPunct(inv.Shipping, "Shipping", fieldErr)
+	textFields := []textField{{"Fname", inv.Fname}, {"Lname", inv.Lname},
+		{"Category", inv.Category}, {"Product", inv.Product}, {"Shipping", inv.Shipping}}
+	for _, text := range textFields {
+		fieldHasPunct(text.value, text.name, fieldErr)
+	}
 }
 
 func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
