@@ -243,30 +243,7 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 }
 
 func validateFieldsForUpdate(inv *Invoice) InvoiceError {
-	var fieldErr InvoiceError
-
-	// validate fields for Grammars, ignore if empty
-
-	checkGrammar(&inv.Fname, "Fname", &fieldErr)
-	checkGrammar(&inv.Lname, "Lname", &fieldErr)
-	checkGrammar(&inv.Product, "Product", &fieldErr)
-	checkGrammar(&inv.Category, "Category", &fieldErr)
-	checkGrammar(&inv.Shipping, "Shipping", &fieldErr)
-
-	if inv.Price == 0.00 {
-		fieldErr.AddMsg(BadRequest, "Error: Price can't be zero")
-	} else if inv.Price < 0.00 {
-		fieldErr.AddMsg(BadRequest, "Error: The price can't be negative")
-		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-	}
-
-	if inv.Quantity == 0 {
-		fieldErr.AddMsg(BadRequest, "Error: Quantity can't be zero")
-	} else if inv.Quantity < 0 {
-		fieldErr.AddMsg(BadRequest, "Error: The quantity can't be negative")
-		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-	}
-	return fieldErr
+	return inv.validateAllFields()
 }
 
 // updates and returns the given invoice by id
