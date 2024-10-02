@@ -62,12 +62,11 @@ func validateAllEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
 		fieldErr.AddMsg(BadRequest, "Error: Quantity can't be zero")
 	}
 
-	isTextFieldEmpty(inv.Fname, "Fname", fieldErr)
-	isTextFieldEmpty(inv.Lname, "Lname", fieldErr)
-	isTextFieldEmpty(inv.Product, "Product", fieldErr)
-	isTextFieldEmpty(inv.Category, "Category", fieldErr)
-	isTextFieldEmpty(inv.Shipping, "Shipping", fieldErr)
-
+	textFields := []textField{{"Fname", inv.Fname}, {"Lname", inv.Lname},
+		{"Category", inv.Category}, {"Product", inv.Product}, {"Shipping", inv.Shipping}}
+	for _, text := range textFields {
+		isTextFieldEmpty(text.value, text.name, fieldErr)
+	}
 }
 
 func fieldHasDigits(s, fieldName string, fieldErr *InvoiceError) {
