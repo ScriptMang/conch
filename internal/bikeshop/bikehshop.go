@@ -305,15 +305,19 @@ func checkGrammarForPatch(val *string, orig, fieldName string, fieldErr *Invoice
 }
 
 func validateFieldsForPatch(orig Invoice, inv *Invoice) InvoiceError {
+	// validate fields for Grammars
+	textFields := []textField{
+		{name: "Fname", value: inv.Fname},
+		{name: "Lname", value: inv.Lname},
+		{name: "Category", value: inv.Category},
+		{name: "Product", value: inv.Product},
+		{name: "Shipping", value: inv.Shipping},
+	}
 	var fieldErr InvoiceError
-
-	// validate fields for Grammars, ignore if empty
-
-	checkGrammarForPatch(&inv.Fname, orig.Fname, "Fname", &fieldErr)
-	checkGrammarForPatch(&inv.Lname, orig.Lname, "Lname", &fieldErr)
-	checkGrammarForPatch(&inv.Product, orig.Product, "Product", &fieldErr)
-	checkGrammarForPatch(&inv.Category, orig.Category, "Category", &fieldErr)
-	checkGrammarForPatch(&inv.Shipping, orig.Shipping, "Shipping", &fieldErr)
+	origVals := []string{orig.Fname, orig.Lname, orig.Product, orig.Category, orig.Shipping}
+	for i, text := range textFields {
+		checkGrammarForPatch(&text.value, origVals[i], text.name, &fieldErr)
+	}
 
 	if inv.Price == 0 {
 		inv.Price = orig.Price // unique to patch requests
