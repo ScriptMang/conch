@@ -164,22 +164,32 @@ func checkGrammar(val *string, fieldName string, fieldErr *InvoiceError) {
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateAllFields() InvoiceError {
 	// check for empty fields: for all the fields
+	textFields := []textField{
+		{name: "Fname", value: inv.Fname},
+		{name: "Lname", value: inv.Lname},
+		{name: "Category", value: inv.Category},
+		{name: "Product", value: inv.Product},
+		{name: "Shipping", value: inv.Shipping},
+	}
 	var fieldErr InvoiceError
-	validateAllEmptyFields(inv, &fieldErr)
+	for _, text := range textFields {
+		checkGrammar(&text.value, text.name, &fieldErr)
+	}
 
 	// check for negative values:  price and quantity
-	if inv.Price < 0.00 {
+	if inv.Price == 0.00 {
+		fieldErr.AddMsg(BadRequest, "Error: Price can't be zero")
+	} else if inv.Price < 0.00 {
 		fieldErr.AddMsg(BadRequest, "Error: The price can't be negative")
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 
-	if inv.Quantity < 0 {
+	if inv.Quantity == 0 {
+		fieldErr.AddMsg(BadRequest, "Error: Quantity can't be zero")
+	} else if inv.Quantity < 0 {
 		fieldErr.AddMsg(BadRequest, "Error: The quantity can't be negative")
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
-
-	validateFieldsForDigits(inv, &fieldErr)
-	validateFieldsForPunctuation(inv, &fieldErr)
-	validateFieldsForSymbols(inv, &fieldErr)
-
 	return fieldErr
 }
 
