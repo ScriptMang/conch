@@ -80,9 +80,10 @@ func fieldHasDigits(s, fieldName string, fieldErr *InvoiceError) {
 // checks fname lname, and category invoice fields for digits
 func validateFieldsForDigits(inv *Invoice, fieldErr *InvoiceError) {
 	// check for digits: first-name, last-name and category
-	fieldHasDigits(inv.Fname, "Fname", fieldErr)
-	fieldHasDigits(inv.Lname, "Lname", fieldErr)
-	fieldHasDigits(inv.Category, "Category", fieldErr)
+	textFields := []textField{{"Fname", inv.Fname}, {"Lname", inv.Lname}, {"Category", inv.Category}}
+	for _, text := range textFields {
+		fieldHasDigits(text.value, text.name, fieldErr)
+	}
 }
 
 func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
@@ -129,13 +130,13 @@ func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
 	}
 }
 
-// checks each string invoice field for symbols
+// // checks each string invoice field for symbols
 func validateFieldsForSymbols(inv *Invoice, fieldErr *InvoiceError) {
-	fieldHasSymbols(inv.Fname, "Fname", fieldErr)
-	fieldHasSymbols(inv.Lname, "Lname", fieldErr)
-	fieldHasSymbols(inv.Category, "Category", fieldErr)
-	fieldHasSymbols(inv.Product, "Product", fieldErr)
-	fieldHasSymbols(inv.Shipping, "Shipping", fieldErr)
+	textFields := []textField{{"Fname", inv.Fname}, {"Lname", inv.Lname},
+		{"Category", inv.Category}, {"Product", inv.Product}, {"Shipping", inv.Shipping}}
+	for _, text := range textFields {
+		fieldHasSymbols(text.value, text.name, fieldErr)
+	}
 }
 
 // checks a string field against an invalid char sequence
