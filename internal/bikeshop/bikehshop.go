@@ -50,38 +50,10 @@ func isTextFieldEmpty(field, fieldName string, fieldErr *InvoiceError) {
 	}
 }
 
-// check each invoice field for a null value
-// if the field is null add error to the invoice error slice
-func validateAllEmptyFields(inv *Invoice, fieldErr *InvoiceError) {
-
-	if inv.Price == 0.00 {
-		fieldErr.AddMsg(BadRequest, "Error: Price can't be zero")
-	}
-
-	if inv.Quantity == 0 {
-		fieldErr.AddMsg(BadRequest, "Error: Quantity can't be zero")
-	}
-
-	textFields := []textField{{"Fname", inv.Fname}, {"Lname", inv.Lname},
-		{"Category", inv.Category}, {"Product", inv.Product}, {"Shipping", inv.Shipping}}
-	for _, text := range textFields {
-		isTextFieldEmpty(text.value, text.name, fieldErr)
-	}
-}
-
 func fieldHasDigits(s, fieldName string, fieldErr *InvoiceError) {
 	digitFilter := "0123456789"
 	if isTextInvalid(s, digitFilter) {
 		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any digits")
-	}
-}
-
-// checks fname lname, and category invoice fields for digits
-func validateFieldsForDigits(inv *Invoice, fieldErr *InvoiceError) {
-	// check for digits: first-name, last-name and category
-	textFields := []textField{{"Fname", inv.Fname}, {"Lname", inv.Lname}, {"Category", inv.Category}}
-	for _, text := range textFields {
-		fieldHasDigits(text.value, text.name, fieldErr)
 	}
 }
 
@@ -102,15 +74,6 @@ func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
 	}
 }
 
-// checks each string invoice field for punctuation
-func validateFieldsForPunctuation(inv *Invoice, fieldErr *InvoiceError) {
-	textFields := []textField{{"Fname", inv.Fname}, {"Lname", inv.Lname},
-		{"Category", inv.Category}, {"Product", inv.Product}, {"Shipping", inv.Shipping}}
-	for _, text := range textFields {
-		fieldHasPunct(text.value, text.name, fieldErr)
-	}
-}
-
 func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
 	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
 
@@ -126,15 +89,6 @@ func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
 	// check for symbols: first-name, last-name, category, product
 	if isTextInvalid(s, symbolFilter) {
 		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any Symbols")
-	}
-}
-
-// // checks each string invoice field for symbols
-func validateFieldsForSymbols(inv *Invoice, fieldErr *InvoiceError) {
-	textFields := []textField{{"Fname", inv.Fname}, {"Lname", inv.Lname},
-		{"Category", inv.Category}, {"Product", inv.Product}, {"Shipping", inv.Shipping}}
-	for _, text := range textFields {
-		fieldHasSymbols(text.value, text.name, fieldErr)
 	}
 }
 
