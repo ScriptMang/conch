@@ -144,6 +144,23 @@ func isTextInvalid(fieldVal, charFilter string) bool {
 	return strings.IndexAny(fieldVal, charFilter) != -1
 }
 
+// checks a field for punctuation, digits, and symbols
+func checkGrammar(val *string, fieldName string, fieldErr *InvoiceError) {
+
+	isTextFieldEmpty(*val, fieldName, fieldErr)
+
+	if *val != "" && fieldName != "Shipping" && fieldName != "Product" {
+		fieldHasDigits(*val, fieldName, fieldErr)
+		fieldHasPunct(*val, fieldName, fieldErr)
+		fieldHasSymbols(*val, fieldName, fieldErr)
+	}
+
+	if fieldName == "Shipping" || fieldName == "Product" {
+		fieldHasPunct(*val, fieldName, fieldErr)
+		fieldHasSymbols(*val, fieldName, fieldErr)
+	}
+}
+
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateAllFields() InvoiceError {
 	// check for empty fields: for all the fields
@@ -259,22 +276,6 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	}
 	invs = append(invs, &inv)
 	return invs, fieldErr
-}
-
-func checkGrammar(val *string, fieldName string, fieldErr *InvoiceError) {
-
-	isTextFieldEmpty(*val, fieldName, fieldErr)
-
-	if *val != "" && fieldName != "Shipping" && fieldName != "Product" {
-		fieldHasDigits(*val, fieldName, fieldErr)
-		fieldHasPunct(*val, fieldName, fieldErr)
-		fieldHasSymbols(*val, fieldName, fieldErr)
-	}
-
-	if fieldName == "Shipping" || fieldName == "Product" {
-		fieldHasPunct(*val, fieldName, fieldErr)
-		fieldHasSymbols(*val, fieldName, fieldErr)
-	}
 }
 
 func validateFieldsForUpdate(inv *Invoice) InvoiceError {
