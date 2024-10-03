@@ -21,8 +21,8 @@ type Invoice struct {
 	Shipping string  `json:"shipping" form:"shipping"`
 }
 type textField struct {
-	name  string // field-name
-	value string // field-value
+	name  string  // field-name
+	value *string // field-value
 }
 type InvoiceError struct {
 	ErrMsgs []string
@@ -44,23 +44,23 @@ func (fieldErr *InvoiceError) AddMsg(statusCode int, str string) {
 
 // checks for empty text-fields in an invoice
 // if there an error its added to an error slice
-func isTextFieldEmpty(field, fieldName string, fieldErr *InvoiceError) {
-	if field == "" {
-		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't be empty")
+func isTextFieldEmpty(field textField, fieldErr *InvoiceError) {
+	if *field.value == "" {
+		fieldErr.AddMsg(BadRequest, "Error: "+field.name+" can't be empty")
 	}
 }
 
-func fieldHasDigits(s, fieldName string, fieldErr *InvoiceError) {
+func fieldHasDigits(field textField, fieldErr *InvoiceError) {
 	digitFilter := "0123456789"
-	if isTextInvalid(s, digitFilter) {
-		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any digits")
+	if isTextInvalid(*field.value, digitFilter) {
+		fieldErr.AddMsg(BadRequest, "Error: "+field.name+" can't have any digits")
 	}
 }
 
-func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
+func fieldHasPunct(field textField, fieldErr *InvoiceError) {
 	punctFilter := ".,?!'\"`:;"
 
-	switch fieldName {
+	switch field.name {
 	case "Fname", "Lname":
 		punctFilter = " .,?!'\"`:;"
 	case "Product":
@@ -69,15 +69,15 @@ func fieldHasPunct(s, fieldName string, fieldErr *InvoiceError) {
 		punctFilter = ".?!'\"`:;"
 	}
 
-	if isTextInvalid(s, punctFilter) {
-		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any punctuation")
+	if isTextInvalid(*field.value, punctFilter) {
+		fieldErr.AddMsg(BadRequest, "Error: "+field.name+" can't have any punctuation")
 	}
 }
 
-func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
+func fieldHasSymbols(field textField, fieldErr *InvoiceError) {
 	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
 
-	switch fieldName {
+	switch field.name {
 	case "Product":
 		symbolFilter = "~#$*{}[]_\\+=><^"
 	case "Category":
@@ -87,31 +87,33 @@ func fieldHasSymbols(s, fieldName string, fieldErr *InvoiceError) {
 	}
 
 	// check for symbols: first-name, last-name, category, product
-	if isTextInvalid(s, symbolFilter) {
-		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any Symbols")
+	if isTextInvalid(*field.value, symbolFilter) {
+		fieldErr.AddMsg(BadRequest, "Error: "+field.name+" can't have any Symbols")
 	}
 }
 
 // checks a string field against an invalid char sequence
 // if it returns a index then the text is invalid and it returns true
-func isTextInvalid(fieldVal, charFilter string) bool {
-	return strings.IndexAny(fieldVal, charFilter) != -1
+func isTextInvalid(val, charFilter string) bool {
+	return strings.IndexAny(val, charFilter) != -1
 }
 
 // checks a field for punctuation, digits, and symbols
-func checkGrammar(val *string, fieldName string, fieldErr *InvoiceError) {
+func checkGrammar(field textField, fieldErr *InvoiceError) {
 
-	isTextFieldEmpty(*val, fieldName, fieldErr)
+	isTextFieldEmpty(field, fieldErr)
 
-	if *val != "" && fieldName != "Shipping" && fieldName != "Product" {
-		fieldHasDigits(*val, fieldName, fieldErr)
-		fieldHasPunct(*val, fieldName, fieldErr)
-		fieldHasSymbols(*val, fieldName, fieldErr)
+	val := *field.value
+	name := field.name
+	if val != "" && name != "Shipping" && name != "Product" {
+		fieldHasDigits(field, fieldErr)
+		fieldHasPunct(field, fieldErr)
+		fieldHasSymbols(field, fieldErr)
 	}
 
-	if fieldName == "Shipping" || fieldName == "Product" {
-		fieldHasPunct(*val, fieldName, fieldErr)
-		fieldHasSymbols(*val, fieldName, fieldErr)
+	if name == "Shipping" || name == "Product" {
+		fieldHasPunct(field, fieldErr)
+		fieldHasSymbols(field, fieldErr)
 	}
 }
 
@@ -119,15 +121,15 @@ func checkGrammar(val *string, fieldName string, fieldErr *InvoiceError) {
 func (inv *Invoice) validateAllFields() InvoiceError {
 	// check for empty fields: for all the fields
 	textFields := []textField{
-		{name: "Fname", value: inv.Fname},
-		{name: "Lname", value: inv.Lname},
-		{name: "Category", value: inv.Category},
-		{name: "Product", value: inv.Product},
-		{name: "Shipping", value: inv.Shipping},
+		{name: "Fname", value: &inv.Fname},
+		{name: "Lname", value: &inv.Lname},
+		{name: "Category", value: &inv.Category},
+		{name: "Product", value: &inv.Product},
+		{name: "Shipping", value: &inv.Shipping},
 	}
 	var fieldErr InvoiceError
 	for _, text := range textFields {
-		checkGrammar(&text.value, text.name, &fieldErr)
+		checkGrammar(text, &fieldErr)
 	}
 
 	// check for negative values:  price and quantity
@@ -289,34 +291,40 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 	return invs, fieldErr
 }
 
-func checkGrammarForPatch(val *string, orig, fieldName string, fieldErr *InvoiceError) {
-	if *val == "" {
-		*val = orig // unique to patch requests
-	} else if *val != "" && fieldName != "Shipping" && fieldName != "Product" {
-		fieldHasDigits(*val, fieldName, fieldErr)
-		fieldHasPunct(*val, fieldName, fieldErr)
-		fieldHasSymbols(*val, fieldName, fieldErr)
+func checkGrammarForPatch(field *textField, orig string, fieldErr *InvoiceError) {
+	name := field.name
+	if *field.value == "" {
+		//fmt.Printf("CheckGrammarForPatch: %s field value is blank\n", field.name)
+		*field.value = orig // unique to patch requests
+		//fmt.Println("CheckGrammarForPatch: Swap for orig.value: ", field.value)
+	} else if *field.value != "" && name != "Shipping" && name != "Product" {
+		fieldHasDigits(*field, fieldErr)
+		fieldHasPunct(*field, fieldErr)
+		fieldHasSymbols(*field, fieldErr)
 	}
 
-	if fieldName == "Shipping" || fieldName == "Product" {
-		fieldHasPunct(*val, fieldName, fieldErr)
-		fieldHasSymbols(*val, fieldName, fieldErr)
+	if name == "Shipping" || name == "Product" {
+		fieldHasPunct(*field, fieldErr)
+		fieldHasSymbols(*field, fieldErr)
 	}
 }
 
 func validateFieldsForPatch(orig Invoice, inv *Invoice) InvoiceError {
 	// validate fields for Grammars
-	textFields := []textField{
-		{name: "Fname", value: inv.Fname},
-		{name: "Lname", value: inv.Lname},
-		{name: "Category", value: inv.Category},
-		{name: "Product", value: inv.Product},
-		{name: "Shipping", value: inv.Shipping},
+	modInv := inv
+	textFields := []*textField{
+		{name: "Fname", value: &modInv.Fname},
+		{name: "Lname", value: &modInv.Lname},
+		{name: "Product", value: &modInv.Product},
+		{name: "Category", value: &modInv.Category},
+		{name: "Shipping", value: &modInv.Shipping},
 	}
 	var fieldErr InvoiceError
 	origVals := []string{orig.Fname, orig.Lname, orig.Product, orig.Category, orig.Shipping}
 	for i, text := range textFields {
-		checkGrammarForPatch(&text.value, origVals[i], text.name, &fieldErr)
+		checkGrammarForPatch(text, origVals[i], &fieldErr)
+		//fmt.Println("GrammarPatch Returns: ", text.value)
+		//fmt.Printf("Modified Invoice is: %+v\n", *modInv)
 	}
 
 	if inv.Price == 0 {
@@ -353,6 +361,7 @@ func PatchInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 		return invs, fieldErr
 	}
 
+	//fmt.Println("PatchInvoice: modified invoice is ", inv)
 	rows, _ := db.Query(
 		ctx,
 		`UPDATE invoices SET fname=$1,lname=$2,product=$3,price=$4,quantity=$5,category=$6,shipping=$7 WHERE id=$8 RETURNING *`,
