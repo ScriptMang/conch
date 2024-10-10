@@ -26,14 +26,11 @@ SET default_table_access_method = heap;
 
 CREATE TABLE public.invoices (
     id integer NOT NULL,
-    usr_id integer,
-    fname character varying(50) NOT NULL,
-    lname character varying(50) NOT NULL,
+    user_id integer NOT NULL,
     product character varying(255) NOT NULL,
-    price numeric(5,2) NOT NULL,
-    quantity integer NOT NULL,
     category character varying(255) NOT NULL,
-    shipping character varying(255) NOT NULL
+    price numeric(5,2) NOT NULL,
+    quantity integer NOT NULL
 );
 
 
@@ -62,13 +59,50 @@ ALTER SEQUENCE public.invoices_id_seq OWNED BY public.invoices.id;
 
 
 --
+-- Name: passwords; Type: TABLE; Schema: public; Owner: <username>
+--
+
+CREATE TABLE public.passwords (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    password character varying(255) NOT NULL
+);
+
+
+ALTER TABLE public.passwords OWNER TO <username>;
+
+--
+-- Name: passwords_id_seq; Type: SEQUENCE; Schema: public; Owner: <username>
+--
+
+CREATE SEQUENCE public.passwords_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.passwords_id_seq OWNER TO <username>;
+
+--
+-- Name: passwords_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: <username>
+--
+
+ALTER SEQUENCE public.passwords_id_seq OWNED BY public.passwords.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: <username>
 --
 
 CREATE TABLE public.users (
     id integer NOT NULL,
-    username character varying(80),
-    password character varying(255)
+    username character varying(80) NOT NULL,
+    fname character varying(80) NOT NULL,
+    lname character varying(80) NOT NULL,
+    address character varying(255) NOT NULL
 );
 
 
@@ -104,6 +138,13 @@ ALTER TABLE ONLY public.invoices ALTER COLUMN id SET DEFAULT nextval('public.inv
 
 
 --
+-- Name: passwords id; Type: DEFAULT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.passwords ALTER COLUMN id SET DEFAULT nextval('public.passwords_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: <username>
 --
 
@@ -114,7 +155,15 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 -- Data for Name: invoices; Type: TABLE DATA; Schema: public; Owner: <username>
 --
 
-COPY public.invoices (id, usr_id, fname, lname, product, price, quantity, category, shipping) FROM stdin;
+COPY public.invoices (id, user_id, product, category, price, quantity) FROM stdin;
+\.
+
+
+--
+-- Data for Name: passwords; Type: TABLE DATA; Schema: public; Owner: <username>
+--
+
+COPY public.passwords (id, user_id, password) FROM stdin;
 \.
 
 
@@ -122,7 +171,7 @@ COPY public.invoices (id, usr_id, fname, lname, product, price, quantity, catego
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: <username>
 --
 
-COPY public.users (id, username, password) FROM stdin;
+COPY public.users (id, username, fname, lname, address) FROM stdin;
 \.
 
 
@@ -131,6 +180,13 @@ COPY public.users (id, username, password) FROM stdin;
 --
 
 SELECT pg_catalog.setval('public.invoices_id_seq', 1, false);
+
+
+--
+-- Name: passwords_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
+--
+
+SELECT pg_catalog.setval('public.passwords_id_seq', 1, false);
 
 
 --
@@ -149,6 +205,14 @@ ALTER TABLE ONLY public.invoices
 
 
 --
+-- Name: passwords passwords_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.passwords
+    ADD CONSTRAINT passwords_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
 --
 
@@ -157,11 +221,19 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: invoices invoices_usr_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: <username>
+-- Name: invoices invoices_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: <username>
 --
 
 ALTER TABLE ONLY public.invoices
-    ADD CONSTRAINT invoices_usr_id_fkey FOREIGN KEY (usr_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT invoices_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: passwords passwords_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.passwords
+    ADD CONSTRAINT passwords_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
