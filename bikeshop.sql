@@ -205,6 +205,14 @@ ALTER TABLE ONLY public.invoices
 
 
 --
+-- Name: passwords passwords_password_key; Type: CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.passwords
+    ADD CONSTRAINT passwords_password_key UNIQUE (password);
+
+
+--
 -- Name: passwords passwords_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
 --
 
@@ -213,11 +221,27 @@ ALTER TABLE ONLY public.passwords
 
 
 --
+-- Name: users users_fname_lname_address_key; Type: CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_fname_lname_address_key UNIQUE (fname, lname, address);
+
+
+--
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
 --
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users users_username_key; Type: CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_username_key UNIQUE (username);
 
 
 --
