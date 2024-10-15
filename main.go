@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -135,7 +136,30 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 	}
 }
 
-// // binds json data to an invoice and insert its to the database
+// this route is for providing account info prior to creation
+func acctCreationInfo(r *gin.Engine) *gin.Engine {
+	r.GET("/create/Account", func(c *gin.Context) {
+		// statuscode is implicitly 200 for write
+		_, err := c.Writer.Write([]byte(
+			"Welcome to the Account SignUp\n" +
+				"please provide your username and password\n" +
+				"as a json object {user: pswd: }.\n\n" +
+				"Username Req:\nmust be 8-16 chars long\n" +
+				"have at least one number\n" +
+				"symbols and punctuation are not allowed\n\n" +
+				"Password Req:\nmust be 8-16 chars long\n" +
+				"have at least 1 or more symbols\n" +
+				"and have at least 1 or more UpperCase letters\n",
+		))
+
+		if err != nil {
+			log.Fatalf("Error: %s\n", err)
+		}
+	})
+	return r
+}
+
+// binds json data to an invoice and insert its to the database
 func addInvoice(r *gin.Engine) *gin.Engine {
 	r.POST("/invoices/", func(c *gin.Context) {
 		var inv db.Invoice
@@ -234,6 +258,7 @@ func deleteEntry(r *gin.Engine) *gin.Engine {
 func main() {
 	r := setRouter()
 
+	r = acctCreationInfo(r)
 	r = readData(r)
 	r = readDataById(r)
 	r = addInvoice(r)
