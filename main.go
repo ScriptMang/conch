@@ -159,6 +159,14 @@ func acctCreationInfo(r *gin.Engine) *gin.Engine {
 	return r
 }
 
+// post request to create user account
+func createAcct(r *gin.Engine) *gin.Engine {
+	r.POST("/create/Account", func(c *gin.Context) {
+
+	})
+	return r
+}
+
 // binds json data to an invoice and insert its to the database
 func addInvoice(r *gin.Engine) *gin.Engine {
 	r.POST("/invoices/", func(c *gin.Context) {
@@ -259,6 +267,7 @@ func main() {
 	r := setRouter()
 
 	r = acctCreationInfo(r)
+	r = createAcct(r)
 	r = readData(r)
 	r = readDataById(r)
 	r = addInvoice(r)
