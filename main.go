@@ -142,8 +142,11 @@ func acctCreationInfo(r *gin.Engine) *gin.Engine {
 		// statuscode is implicitly 200 for write
 		_, err := c.Writer.Write([]byte(
 			"Welcome to the Account SignUp\n" +
-				"please provide your username and password\n" +
-				"as a json object {user: pswd: }.\n\n" +
+				"please provide the following info in json format\n" +
+				"{fname: , lname: , address:, username: , password: }.\n\n" +
+				"First & Last name Reqs:\n" +
+				"must be greater than 3 chars\n" +
+				"no symbols,numbers, or punctuation are allowed\n\n" +
 				"Username Req:\nmust be 8-16 chars long\n" +
 				"have at least one number\n" +
 				"symbols and punctuation are not allowed\n\n" +
