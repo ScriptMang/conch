@@ -138,7 +138,14 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 // post request to create user account
 func createAcct(r *gin.Engine) *gin.Engine {
 	r.POST("/create/Account", func(c *gin.Context) {
-
+		var acct db.Account
+		var acctErr db.AuthError
+		err := c.ShouldBind(&acct)
+		if err != nil {
+			acctErr.AddMsg(db.BadRequest,
+				"Binding Error: failed to bind object to the struct Account b/c mismatched data-types")
+		}
+		//log.Println("Account: ", acct)
 	})
 	return r
 }

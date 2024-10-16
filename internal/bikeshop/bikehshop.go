@@ -35,7 +35,13 @@ type textField struct {
 	name  string  // field-name
 	value *string // field-value
 }
+
 type InvoiceError struct {
+	ErrMsgs []string
+}
+
+// meant to hold err strings related to authentication and account creation
+type AuthError struct {
 	ErrMsgs []string
 }
 
@@ -51,6 +57,14 @@ const resourceNotFound = 404
 func (fieldErr *InvoiceError) AddMsg(statusCode int, str string) {
 	ErrorCode = statusCode
 	fieldErr.ErrMsgs = append(fieldErr.ErrMsgs, str)
+}
+
+// helper funct: takes a pointer to an Authentication Error, HttpStatusCode and a string msg
+// as parameters and sets the values for the AuthError struct.
+// By default content-type is of type 'application/json'
+func (credErr *AuthError) AddMsg(statusCode int, str string) {
+	ErrorCode = statusCode
+	credErr.ErrMsgs = append(credErr.ErrMsgs, str)
 }
 
 // checks for empty text-fields in an invoice
