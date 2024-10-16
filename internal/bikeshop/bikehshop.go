@@ -10,6 +10,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// meant to be binded to new acct info
+type Account struct {
+	ID       int    `json:"id" form:"id"`
+	Fname    string `json:"fname" form:"fname"`
+	Lname    string `json:"lname" form:"lname"`
+	Address  string `json:"address" form:"address"`
+	Username string `json:"username" form:"username"`
+	Password string `json:"password" form:"password"`
+}
+
 type Invoice struct {
 	ID       int     `json:"id,omitempty" form:"id,omitempty"`
 	Fname    string  `json:"fname" form:"fname"`
@@ -20,6 +30,7 @@ type Invoice struct {
 	Category string  `json:"category" form:"category"`
 	Shipping string  `json:"shipping" form:"shipping"`
 }
+
 type textField struct {
 	name  string  // field-name
 	value *string // field-value
