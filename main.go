@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -136,32 +135,6 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 	}
 }
 
-// this route is for providing account info prior to creation
-func acctCreationInfo(r *gin.Engine) *gin.Engine {
-	r.GET("/create/Account", func(c *gin.Context) {
-		// statuscode is implicitly 200 for write
-		_, err := c.Writer.Write([]byte(
-			"Welcome to the Account SignUp\n" +
-				"please provide the following info in json format\n" +
-				"{fname: , lname: , address:, username: , password: }.\n\n" +
-				"First & Last name Reqs:\n" +
-				"must be greater than 3 chars\n" +
-				"no symbols,numbers, or punctuation are allowed\n\n" +
-				"Username Req:\nmust be 8-16 chars long\n" +
-				"have at least one number\n" +
-				"symbols and punctuation are not allowed\n\n" +
-				"Password Req:\nmust be 8-16 chars long\n" +
-				"have at least 1 or more symbols\n" +
-				"and have at least 1 or more UpperCase letters\n",
-		))
-
-		if err != nil {
-			log.Fatalf("Error: %s\n", err)
-		}
-	})
-	return r
-}
-
 // post request to create user account
 func createAcct(r *gin.Engine) *gin.Engine {
 	r.POST("/create/Account", func(c *gin.Context) {
@@ -269,7 +242,6 @@ func deleteEntry(r *gin.Engine) *gin.Engine {
 func main() {
 	r := setRouter()
 
-	r = acctCreationInfo(r)
 	r = createAcct(r)
 	r = readData(r)
 	r = readDataById(r)
