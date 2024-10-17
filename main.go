@@ -144,6 +144,8 @@ func createAcct(r *gin.Engine) *gin.Engine {
 		if err != nil {
 			acctErr.AddMsg(db.BadRequest,
 				"Binding Error: failed to bind fields to account object, mismatched data-types")
+			c.JSON(db.ErrorCode, acctErr)
+			return
 		}
 
 		// encrypt password
