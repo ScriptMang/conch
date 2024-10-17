@@ -143,8 +143,18 @@ func createAcct(r *gin.Engine) *gin.Engine {
 		err := c.ShouldBind(&acct)
 		if err != nil {
 			acctErr.AddMsg(db.BadRequest,
-				"Binding Error: failed to bind object to the struct Account b/c mismatched data-types")
+				"Binding Error: failed to bind fields to account object, mismatched data-types")
 		}
+
+		// send response back
+		errMsgSize := len(acctErr.ErrMsgs)
+		switch {
+		case errMsgSize > 0:
+			c.JSON(db.ErrorCode, acctErr)
+		default:
+			c.JSON(statusOK, acct)
+		}
+
 		//log.Println("Account: ", acct)
 	})
 	return r
