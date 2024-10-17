@@ -175,6 +175,25 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 	return fieldErr
 }
 
+// validate fields for account
+func validateAccount(acct *Account, acctErr *AuthError) {
+	// validate fields for digits, symbols, punct
+	// validate username, fname, lname, address
+
+	textFields := []textField{
+		{name: "Fname", value: &acct.Fname},
+		{name: "Lname", value: &acct.Lname},
+		{name: "Address", value: &acct.Address},
+		{name: "Username", value: &acct.Username},
+		{name: "Password", value: &acct.Password},
+	}
+
+	for _, text := range textFields {
+		checkGrammar(text, &acctErr)
+	}
+
+}
+
 func EncryptPassword(val string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(val), 14)
 	return string(hash), err
