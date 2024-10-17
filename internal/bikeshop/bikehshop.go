@@ -8,6 +8,7 @@ import (
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // meant to be binded to new acct info
@@ -172,6 +173,11 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 	return fieldErr
+}
+
+func EncryptPassword(val string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(val), 14)
+	return string(hash), err
 }
 
 // Takes an invoice and adds it to the database
