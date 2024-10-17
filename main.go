@@ -12,7 +12,7 @@ import (
 
 type respBodyData struct {
 	Invs     []*db.Invoice
-	FieldErr db.InvoiceError
+	FieldErr db.GrammarError
 }
 
 type resultingInv struct {
@@ -105,7 +105,7 @@ func validateRouteID(c *gin.Context, rqstData *respBodyData) int {
 	return id
 }
 
-// serialize Invoice or InvoiceError as json to response body
+// serialize Invoice or GrammarError as json to response body
 func sendResponse(c *gin.Context, rqstData *respBodyData) {
 	invs := rqstData.Invs
 	fieldErr := rqstData.FieldErr

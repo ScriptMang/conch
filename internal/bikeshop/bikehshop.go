@@ -37,7 +37,7 @@ type textField struct {
 	value *string // field-value
 }
 
-type InvoiceError struct {
+type GrammarError struct {
 	ErrMsgs []string
 }
 
@@ -53,9 +53,9 @@ const BadRequest = 400
 const resourceNotFound = 404
 
 // helper funct: takes a pointer to an InvoiceErorr, HttpStatusCode and a string msg
-// as parameters and sets the values for the InvoiceError struct.
+// as parameters and sets the values for the GrammarError struct.
 // By default content-type is of type 'application/json'
-func (fieldErr *InvoiceError) AddMsg(statusCode int, str string) {
+func (fieldErr *GrammarError) AddMsg(statusCode int, str string) {
 	ErrorCode = statusCode
 	fieldErr.ErrMsgs = append(fieldErr.ErrMsgs, str)
 }
@@ -70,20 +70,20 @@ func (credErr *AuthError) AddMsg(statusCode int, str string) {
 
 // checks for empty text-fields in an invoice
 // if there an error its added to an error slice
-func isTextFieldEmpty(field textField, fieldErr *InvoiceError) {
+func isTextFieldEmpty(field textField, fieldErr *GrammarError) {
 	if *field.value == "" {
 		fieldErr.AddMsg(BadRequest, "Error: "+field.name+" can't be empty")
 	}
 }
 
-func fieldHasDigits(field textField, fieldErr *InvoiceError) {
+func fieldHasDigits(field textField, fieldErr *GrammarError) {
 	digitFilter := "0123456789"
 	if isTextInvalid(*field.value, digitFilter) {
 		fieldErr.AddMsg(BadRequest, "Error: "+field.name+" can't have any digits")
 	}
 }
 
-func fieldHasPunct(field textField, fieldErr *InvoiceError) {
+func fieldHasPunct(field textField, fieldErr *GrammarError) {
 	punctFilter := ".,?!'\"`:;"
 
 	switch field.name {
@@ -100,7 +100,7 @@ func fieldHasPunct(field textField, fieldErr *InvoiceError) {
 	}
 }
 
-func fieldHasSymbols(field textField, fieldErr *InvoiceError) {
+func fieldHasSymbols(field textField, fieldErr *GrammarError) {
 	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
 
 	switch field.name {
@@ -125,7 +125,7 @@ func isTextInvalid(val, charFilter string) bool {
 }
 
 // checks a field for punctuation, digits, and symbols
-func checkGrammar(field textField, fieldErr *InvoiceError) {
+func checkGrammar(field textField, fieldErr *GrammarError) {
 
 	isTextFieldEmpty(field, fieldErr)
 
@@ -144,7 +144,7 @@ func checkGrammar(field textField, fieldErr *InvoiceError) {
 }
 
 // takes an invoice and throws an error for any field with an invalid input
-func (inv *Invoice) validateAllFields() InvoiceError {
+func (inv *Invoice) validateAllFields() GrammarError {
 	// check for empty fields: for all the fields
 	textFields := []textField{
 		{name: "Fname", value: &inv.Fname},
@@ -153,7 +153,7 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 		{name: "Product", value: &inv.Product},
 		{name: "Shipping", value: &inv.Shipping},
 	}
-	var fieldErr InvoiceError
+	var fieldErr GrammarError
 	for _, text := range textFields {
 		checkGrammar(text, &fieldErr)
 	}
@@ -176,7 +176,7 @@ func (inv *Invoice) validateAllFields() InvoiceError {
 }
 
 // validate fields for account
-func validateAccount(acct *Account, acctErr *AuthError) {
+func validateAccount(acct *Account, acctErr *GrammarError) {
 	// validate fields for digits, symbols, punct
 	// validate username, fname, lname, address
 
@@ -189,7 +189,7 @@ func validateAccount(acct *Account, acctErr *AuthError) {
 	}
 
 	for _, text := range textFields {
-		checkGrammar(text, &acctErr)
+		checkGrammar(text, acctErr)
 	}
 
 }
@@ -200,7 +200,7 @@ func EncryptPassword(val string) (string, error) {
 }
 
 // Takes an invoice and adds it to the database
-func InsertOp(inv Invoice) ([]*Invoice, InvoiceError) {
+func InsertOp(inv Invoice) ([]*Invoice, GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
@@ -238,12 +238,12 @@ func InsertOp(inv Invoice) ([]*Invoice, InvoiceError) {
 }
 
 // returns all the invoices in the database a slice []*Invoice
-func ReadInvoices() ([]*Invoice, InvoiceError) {
+func ReadInvoices() ([]*Invoice, GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
 	var invs Invoices
-	fieldErr := InvoiceError{ErrMsgs: []string{""}}
+	fieldErr := GrammarError{ErrMsgs: []string{""}}
 	rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
 	err := pgxscan.ScanAll(&invs, rows)
 	if err != nil {
@@ -261,7 +261,7 @@ func ReadInvoices() ([]*Invoice, InvoiceError) {
 
 // return the invoice given the id
 // if the id doesn't exist it returns all invoices
-func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
+func ReadInvoiceByID(id int) ([]*Invoice, GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
@@ -294,18 +294,18 @@ func ReadInvoiceByID(id int) ([]*Invoice, InvoiceError) {
 	return invs, fieldErr
 }
 
-func validateFieldsForUpdate(inv *Invoice) InvoiceError {
+func validateFieldsForUpdate(inv *Invoice) GrammarError {
 	return inv.validateAllFields()
 }
 
 // updates and returns the given invoice by id
-func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
+func UpdateInvoice(inv Invoice, id int) ([]*Invoice, GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
 	var inv2 Invoice // resulting invoice
 	var invs []*Invoice
-	var fieldErr InvoiceError
+	var fieldErr GrammarError
 	_, fieldErr = ReadInvoiceByID(id)
 	// msgLen := len(fieldErr.ErrMsgs)
 	// fmt.Printf("There are %d field err messages\n", msgLen)
@@ -341,7 +341,7 @@ func UpdateInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 	return invs, fieldErr
 }
 
-func checkGrammarForPatch(field *textField, orig string, fieldErr *InvoiceError) {
+func checkGrammarForPatch(field *textField, orig string, fieldErr *GrammarError) {
 	name := field.name
 	if *field.value == "" {
 		//fmt.Printf("CheckGrammarForPatch: %s field value is blank\n", field.name)
@@ -359,7 +359,7 @@ func checkGrammarForPatch(field *textField, orig string, fieldErr *InvoiceError)
 	}
 }
 
-func validateFieldsForPatch(orig Invoice, inv *Invoice) InvoiceError {
+func validateFieldsForPatch(orig Invoice, inv *Invoice) GrammarError {
 	// validate fields for Grammars
 	modInv := inv
 	textFields := []*textField{
@@ -369,7 +369,7 @@ func validateFieldsForPatch(orig Invoice, inv *Invoice) InvoiceError {
 		{name: "Category", value: &modInv.Category},
 		{name: "Shipping", value: &modInv.Shipping},
 	}
-	var fieldErr InvoiceError
+	var fieldErr GrammarError
 	origVals := []string{orig.Fname, orig.Lname, orig.Product, orig.Category, orig.Shipping}
 	for i, text := range textFields {
 		checkGrammarForPatch(text, origVals[i], &fieldErr)
@@ -393,7 +393,7 @@ func validateFieldsForPatch(orig Invoice, inv *Invoice) InvoiceError {
 	return fieldErr
 }
 
-func PatchInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
+func PatchInvoice(inv Invoice, id int) ([]*Invoice, GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
@@ -437,7 +437,7 @@ func PatchInvoice(inv Invoice, id int) ([]*Invoice, InvoiceError) {
 
 // delete's the given invoice based on id
 // and return the deleted invoice
-func DeleteInvoice(id int) ([]*Invoice, InvoiceError) {
+func DeleteInvoice(id int) ([]*Invoice, GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
