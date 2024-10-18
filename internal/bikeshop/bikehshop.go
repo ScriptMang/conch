@@ -131,15 +131,22 @@ func checkGrammar(field textField, fieldErr *GrammarError) {
 
 	val := *field.value
 	name := field.name
-	if val != "" && name != "Shipping" && name != "Product" {
+	if val != "" && name != "Address" &&
+		name != "Product" && name != "Username" &&
+		name != "Password" {
 		fieldHasDigits(field, fieldErr)
 		fieldHasPunct(field, fieldErr)
 		fieldHasSymbols(field, fieldErr)
 	}
 
-	if name == "Shipping" || name == "Product" {
+	if name == "Username" ||
+		name == "Address" || name == "Product" {
 		fieldHasPunct(field, fieldErr)
 		fieldHasSymbols(field, fieldErr)
+	}
+
+	if name == "Password" {
+		fieldHasPunct(field, fieldErr)
 	}
 }
 
@@ -176,7 +183,7 @@ func (inv *Invoice) validateAllFields() GrammarError {
 }
 
 // validate fields for account
-func validateAccount(acct *Account, acctErr *GrammarError) {
+func ValidateAccount(acct *Account, acctErr *GrammarError) {
 	// validate fields for digits, symbols, punct
 	// validate username, fname, lname, address
 

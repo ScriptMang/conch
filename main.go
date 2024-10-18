@@ -140,6 +140,7 @@ func createAcct(r *gin.Engine) *gin.Engine {
 	r.POST("/create/Account", func(c *gin.Context) {
 		var acct db.Account
 		var acctErr db.AuthError
+		var fieldErr db.GrammarError
 		err := c.ShouldBind(&acct)
 		if err != nil {
 			acctErr.AddMsg(db.BadRequest,
@@ -148,6 +149,12 @@ func createAcct(r *gin.Engine) *gin.Engine {
 			return
 		}
 
+		// validate account info
+		db.ValidateAccount(&acct, &fieldErr)
+		if len(fieldErr.ErrMsgs) > 0 {
+			c.JSON(db.ErrorCode, fieldErr)
+			return
+		}
 		// encrypt password
 		acct.Password, err = db.EncryptPassword(acct.Password)
 		if err != nil {
