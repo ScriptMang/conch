@@ -150,20 +150,10 @@ func createAcct(r *gin.Engine) *gin.Engine {
 		}
 
 		// validate account info
-		db.ValidateAccount(&acct, &fieldErr)
-		if len(fieldErr.ErrMsgs) > 0 {
-			c.JSON(db.ErrorCode, fieldErr)
-			return
-		}
-		// encrypt password
-		acct.Password, err = db.EncryptPassword(acct.Password)
-		if err != nil {
-			acctErr.AddMsg(db.BadRequest,
-				"Hashing Error: password longer than 72 bytes, can't hash")
-		}
+		fieldErr = db.AddAccount(acct)
 
 		// send response back
-		errMsgSize := len(acctErr.ErrMsgs)
+		errMsgSize := len(fieldErr.ErrMsgs)
 		switch {
 		case errMsgSize > 0:
 			c.JSON(db.ErrorCode, acctErr)

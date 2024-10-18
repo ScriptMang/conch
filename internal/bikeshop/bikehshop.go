@@ -22,6 +22,20 @@ type Account struct {
 	Password string `json:"password" form:"password"`
 }
 
+type Users struct {
+	ID       int    `json:"id" form:"id"`
+	Fname    string `json:"fname" form:"fname"`
+	Lname    string `json:"lname" form:"lname"`
+	Address  string `json:"address" form:"address"`
+	Username string `json:"username" form:"username"`
+}
+
+type Passwords struct {
+	ID        int    `json:"id" form:"id"`
+	UserID    int    `json:"user_id" form:"user_id"`
+	Passwords string `json:"passwords" form:"passwords"`
+}
+
 type Invoice struct {
 	ID       int     `json:"id,omitempty" form:"id,omitempty"`
 	Fname    string  `json:"fname" form:"fname"`
@@ -203,7 +217,7 @@ func (inv *Invoice) validateAllFields() GrammarError {
 }
 
 // validate fields for account
-func ValidateAccount(acct *Account, acctErr *GrammarError) {
+func validateAccount(acct *Account, acctErr *GrammarError) {
 	// validate fields for digits, symbols, punct
 	// validate username, fname, lname, address
 
@@ -224,6 +238,71 @@ func ValidateAccount(acct *Account, acctErr *GrammarError) {
 func EncryptPassword(val string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(val), 14)
 	return string(hash), err
+}
+
+// helper funct that adds hash to the passwords table
+func AddPassword(acct *Account) ([]*Account, GrammarError) {
+	ctx, db := connect()
+	defer db.Close()
+
+}
+
+// helper funct that adds all user-info to users table
+func AddUser(acct *Account) ([]*Account, GrammarError) {
+	ctx, db := connect()
+	defer db.Close()
+
+}
+
+// adds the account info to the appropiate tables w/ the database
+func AddAccount(acct *Account) ([]*Account, GrammarError) {
+	ctx, db := connect()
+	defer db.Close()
+
+	var insertedAcct Account
+	var accts []*Account
+	var acctErr GrammarError
+	validateAccount(acct, &acctErr)
+
+	if len(fieldErr.ErrMsgs) > 0 {
+		c.JSON(db.ErrorCode, fieldErr)
+		return nil, acctErr
+	}
+
+	// encrypt password
+	acct.Password, err = db.EncryptPassword(acct.Password)
+	if err != nil {
+		acctErr.AddMsg(db.BadRequest,
+			"Hashing Error: password longer than 72 bytes, can't hash")
+		return nil, acctErr
+	}
+
+	// if no errors add info to appropiate tables
+
+	rows, _ := db.Query(
+		ctx,
+		`INSERT INTO Users (username, fname,lname,address) VALUES($1, $2
+         $3, $4) RETURNING *`,
+		acct.Username, acct.Fname, acct.Lname, acct.Address,
+	)
+
+	err := pgxscan.ScanOne(&insertedAcct, rows)
+	if err != nil {
+		qryError := err.Error()
+		if strings.Contains(qryError, "numeric field overflow") {
+			fieldErr.AddMsg(BadRequest, "numeric field overflow, provide a value between 1.00 - 999.99")
+		}
+		if strings.Contains(qryError, "greater than maximum value for int4") {
+			fieldErr.AddMsg(BadRequest, "integer overflow, value must be between 1 - 2147483647")
+		}
+		if strings.Contains(qryError, "value too long for type character varying") {
+			fieldErr.AddMsg(BadRequest, "varchar too long, use varchar length between 1-255")
+		}
+		fieldErr.AddMsg(BadRequest, qryError)
+	}
+	accts = append(accts & insertedAcct)
+
+	return accts, fieldErr
 }
 
 // Takes an invoice and adds it to the database
