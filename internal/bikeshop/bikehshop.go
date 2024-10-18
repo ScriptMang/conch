@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -124,6 +125,21 @@ func isTextInvalid(val, charFilter string) bool {
 	return strings.IndexAny(val, charFilter) != -1
 }
 
+// checks the field to see if it exceeds or falls below a given char limit
+// if it doesn't match the upper or lower limit an error message is added
+// to the list of grammar errors
+func isFieldTooLong(field textField, gramErr *GrammarError, minimum, maximum int) {
+	fieldLen := len(*field.value)
+	if fieldLen < minimum {
+		gramErr.AddMsg(BadRequest, "Error: "+field.name+" is too short, expected "+
+			strconv.Itoa(minimum)+"-"+strconv.Itoa(maximum)+" chars")
+	}
+	if fieldLen > maximum {
+		gramErr.AddMsg(BadRequest, "Error: "+field.name+" is too long, expected "+
+			strconv.Itoa(minimum)+"-"+strconv.Itoa(maximum)+" chars")
+	}
+}
+
 // checks a field for punctuation, digits, and symbols
 func checkGrammar(field textField, fieldErr *GrammarError) {
 
@@ -145,6 +161,10 @@ func checkGrammar(field textField, fieldErr *GrammarError) {
 		fieldHasSymbols(field, fieldErr)
 	}
 
+	if name == "Username" ||
+		name == "Password" {
+		isFieldTooLong(field, fieldErr, 8, 16)
+	}
 	if name == "Password" {
 		fieldHasPunct(field, fieldErr)
 	}
