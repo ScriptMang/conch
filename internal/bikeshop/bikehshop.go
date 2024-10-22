@@ -38,13 +38,11 @@ type Passwords struct {
 
 type Invoice struct {
 	ID       int     `json:"id,omitempty" form:"id,omitempty"`
-	Fname    string  `json:"fname" form:"fname"`
-	Lname    string  `json:"lname" form:"lname"`
+	UserID   int     `json:"user_id" form:"user_id"`
 	Product  string  `json:"product" form:"product"`
+	Category string  `json:"category" form:"category"`
 	Price    float32 `json:"price" form:"price"`
 	Quantity int     `json:"quantity" form:"quantity"`
-	Category string  `json:"category" form:"category"`
-	Shipping string  `json:"shipping" form:"shipping"`
 }
 
 type textField struct {
