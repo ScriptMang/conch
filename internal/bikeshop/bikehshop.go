@@ -106,7 +106,7 @@ func fieldHasPunct(field textField, fieldErr *GrammarError) {
 		punctFilter = " .,?!'\"`:;"
 	case "Product":
 		punctFilter = "?!'\";"
-	case "Category", "Shipping":
+	case "Category", "Shipping", "Address":
 		punctFilter = ".?!'\"`:;"
 	}
 
@@ -241,68 +241,103 @@ func EncryptPassword(val string) (string, error) {
 }
 
 // helper funct that adds hash to the passwords table
-func AddPassword(acct *Account) ([]*Account, GrammarError) {
-	ctx, db := connect()
-	defer db.Close()
-
-}
-
-// helper funct that adds all user-info to users table
-func AddUser(acct *Account) ([]*Account, GrammarError) {
-	ctx, db := connect()
-	defer db.Close()
-
-}
-
-// adds the account info to the appropiate tables w/ the database
-func AddAccount(acct *Account) ([]*Account, GrammarError) {
+func AddPassword(acct *Account, acctErr *GrammarError) ([]*Account, GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
 	var insertedAcct Account
 	var accts []*Account
-	var acctErr GrammarError
-	validateAccount(acct, &acctErr)
+	var err error
+	validateAccount(acct, acctErr)
 
-	if len(fieldErr.ErrMsgs) > 0 {
-		c.JSON(db.ErrorCode, fieldErr)
-		return nil, acctErr
+	if len(acctErr.ErrMsgs) > 0 {
+		return nil, *acctErr
 	}
 
 	// encrypt password
-	acct.Password, err = db.EncryptPassword(acct.Password)
+	acct.Password, err = EncryptPassword(acct.Password)
 	if err != nil {
-		acctErr.AddMsg(db.BadRequest,
+		acctErr.AddMsg(BadRequest,
 			"Hashing Error: password longer than 72 bytes, can't hash")
-		return nil, acctErr
+		return nil, *acctErr
 	}
 
 	// if no errors add info to appropiate tables
+	rows, _ := db.Query(
+		ctx,
+		`INSERT INTO Passwords (password) VALUES($1) RETURNING *`,
+		acct.Password,
+	)
+
+	err = pgxscan.ScanOne(&insertedAcct, rows)
+	if err != nil {
+		qryError := err.Error()
+		if strings.Contains(qryError, "value too long for type character varying") {
+			acctErr.AddMsg(BadRequest, "password too long,chars must be less than 72 bytes")
+		}
+		acctErr.AddMsg(BadRequest, qryError)
+	}
+	accts = append(accts, &insertedAcct)
+
+	return accts, *acctErr
+}
+
+// helper funct that adds all user-info to users table
+func AddUser(acct *Account, acctErr *GrammarError) []*Account {
+	ctx, db := connect()
+	defer db.Close()
+
+	var insertedAcct Account
+	var accts []*Account
+
+	if len(acctErr.ErrMsgs) > 0 {
+		fmt.Println("Errs exist in AddUser Funct return nil")
+		return nil
+	}
 
 	rows, _ := db.Query(
 		ctx,
-		`INSERT INTO Users (username, fname,lname,address) VALUES($1, $2
-         $3, $4) RETURNING *`,
+		`INSERT INTO Users (username, fname,lname,address) VALUES($1, $2, $3, $4) RETURNING *`,
 		acct.Username, acct.Fname, acct.Lname, acct.Address,
 	)
 
 	err := pgxscan.ScanOne(&insertedAcct, rows)
 	if err != nil {
 		qryError := err.Error()
-		if strings.Contains(qryError, "numeric field overflow") {
-			fieldErr.AddMsg(BadRequest, "numeric field overflow, provide a value between 1.00 - 999.99")
-		}
-		if strings.Contains(qryError, "greater than maximum value for int4") {
-			fieldErr.AddMsg(BadRequest, "integer overflow, value must be between 1 - 2147483647")
-		}
 		if strings.Contains(qryError, "value too long for type character varying") {
-			fieldErr.AddMsg(BadRequest, "varchar too long, use varchar length between 1-255")
+			acctErr.AddMsg(BadRequest, "varchar too long, use varchar length between 1-255")
+		} else {
+			acctErr.AddMsg(BadRequest, qryError)
 		}
-		fieldErr.AddMsg(BadRequest, qryError)
 	}
-	accts = append(accts & insertedAcct)
+	//	fmt.Printf("Errors so far when adding a user: %s\n", acctErr.ErrMsgs)
+	//	fmt.Printf("New User to be added: %+v\n", insertedAcct)
+	accts = append(accts, &insertedAcct)
+	return accts
 
-	return accts, fieldErr
+}
+
+// adds the account info to the appropiate tables w/ the database
+func AddAccount(acct *Account) ([]*Account, GrammarError) {
+	var insertedAcct Account
+	var accts []*Account
+	acctErr := &GrammarError{}
+	validateAccount(acct, acctErr)
+
+	if acctErr.ErrMsgs != nil {
+		// fmt.Printf("Errors in AddAccount Func, %v\n", acctErr.ErrMsgs)
+		return nil, *acctErr
+	}
+
+	// if no errors add info to appropiate tables
+	accts = AddUser(acct, acctErr)
+	if acctErr.ErrMsgs != nil {
+		// fmt.Printf("Errors in AddAccount Func, %v\n", acctErr.ErrMsgs)
+		return nil, *acctErr
+	}
+
+	accts = append(accts, &insertedAcct)
+	return accts, *acctErr
 }
 
 // Takes an invoice and adds it to the database

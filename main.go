@@ -138,9 +138,9 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 // post request to create user account
 func createAcct(r *gin.Engine) *gin.Engine {
 	r.POST("/create/Account", func(c *gin.Context) {
-		var acct db.Account
-		var acctErr db.AuthError
-		var fieldErr db.GrammarError
+		var acct *db.Account
+		var acctErr db.GrammarError
+		var respData []*db.Account
 		err := c.ShouldBind(&acct)
 		if err != nil {
 			acctErr.AddMsg(db.BadRequest,
@@ -150,15 +150,18 @@ func createAcct(r *gin.Engine) *gin.Engine {
 		}
 
 		// validate account info
-		fieldErr = db.AddAccount(acct)
+		respData, acctErr = db.AddAccount(acct)
 
+		if len(respData) == 0 {
+			fmt.Println("Thats strange, no accounts were added")
+		}
 		// send response back
-		errMsgSize := len(fieldErr.ErrMsgs)
+		errMsgSize := len(acctErr.ErrMsgs)
 		switch {
 		case errMsgSize > 0:
 			c.JSON(db.ErrorCode, acctErr)
 		default:
-			c.JSON(statusOK, acct)
+			c.JSON(statusOK, *respData[0])
 		}
 
 		//log.Println("Account: ", acct)
