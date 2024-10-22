@@ -154,6 +154,15 @@ func isFieldTooLong(field textField, gramErr *GrammarError, minimum, maximum int
 	}
 }
 
+// check for any capital letters in string val
+// adds an new error to fieldErrs if true
+func fieldHasNoCapLetters(field textField, fieldErr *GrammarError) {
+	capLst := "ABCDEFGHIJKLMNOPQRYTUVWXYZ"
+	if !strings.ContainsAny(*field.value, capLst) {
+		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more capital letters")
+	}
+}
+
 // checks a field for punctuation, digits, and symbols
 func checkGrammar(field textField, fieldErr *GrammarError) {
 
@@ -178,6 +187,10 @@ func checkGrammar(field textField, fieldErr *GrammarError) {
 	if name == "Username" ||
 		name == "Password" {
 		isFieldTooLong(field, fieldErr, 8, 16)
+	}
+
+	if name == "Password" {
+		fieldHasNoCapLetters(field, fieldErr)
 	}
 	// if name == "Password" {
 	// 	fieldHasPunct(field, fieldErr)
