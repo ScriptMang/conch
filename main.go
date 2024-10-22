@@ -185,96 +185,96 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 	return r
 }
 
-// reads the tablerows from the database
-func readData(r *gin.Engine) *gin.Engine {
-	r.GET("/invoices", func(c *gin.Context) {
-		var rqstData respBodyData
-		rqstData.Invs, rqstData.FieldErr = db.ReadInvoices()
-		code = statusOK
-		sendResponse(c, &rqstData)
-	})
-	return r
-}
+// // reads the tablerows from the database
+// func readData(r *gin.Engine) *gin.Engine {
+// 	r.GET("/invoices", func(c *gin.Context) {
+// 		var rqstData respBodyData
+// 		rqstData.Invs, rqstData.FieldErr = db.ReadInvoices()
+// 		code = statusOK
+// 		sendResponse(c, &rqstData)
+// 	})
+// 	return r
+// }
 
-// read a tablerow based on id
-func readDataById(r *gin.Engine) *gin.Engine {
-	r.GET("/invoice/:id", func(c *gin.Context) {
-		var rqstData respBodyData
-		id := validateRouteID(c, &rqstData)
-		if id != 0 {
-			rqstData.Invs, rqstData.FieldErr = db.ReadInvoiceByID(id)
-			code = statusOK
-			sendResponse(c, &rqstData)
-		}
-	})
-	return r
-}
+// // read a tablerow based on id
+// func readDataById(r *gin.Engine) *gin.Engine {
+// 	r.GET("/invoice/:id", func(c *gin.Context) {
+// 		var rqstData respBodyData
+// 		id := validateRouteID(c, &rqstData)
+// 		if id != 0 {
+// 			rqstData.Invs, rqstData.FieldErr = db.ReadInvoiceByID(id)
+// 			code = statusOK
+// 			sendResponse(c, &rqstData)
+// 		}
+// 	})
+// 	return r
+// }
 
-// updates an invoice entry by id
-// require the user to pass the entire invoice
-// to change any field
-func updateEntry(r *gin.Engine) *gin.Engine {
-	r.PUT("/invoice/:id", func(c *gin.Context) {
-		var inv db.Invoice
-		var bindingOk bool
-		var rqstData respBodyData
-		id := validateRouteID(c, &rqstData)
-		if id != 0 {
-			inv, bindingOk = validateInvoiceBinding(c, &rqstData)
-			if bindingOk {
-				rqstData.Invs, rqstData.FieldErr = db.UpdateInvoice(inv, id)
-				code = statusOK
-				sendResponse(c, &rqstData)
-			}
-		}
-	})
-	return r
-}
+// // updates an invoice entry by id
+// // require the user to pass the entire invoice
+// // to change any field
+// func updateEntry(r *gin.Engine) *gin.Engine {
+// 	r.PUT("/invoice/:id", func(c *gin.Context) {
+// 		var inv db.Invoice
+// 		var bindingOk bool
+// 		var rqstData respBodyData
+// 		id := validateRouteID(c, &rqstData)
+// 		if id != 0 {
+// 			inv, bindingOk = validateInvoiceBinding(c, &rqstData)
+// 			if bindingOk {
+// 				rqstData.Invs, rqstData.FieldErr = db.UpdateInvoice(inv, id)
+// 				code = statusOK
+// 				sendResponse(c, &rqstData)
+// 			}
+// 		}
+// 	})
+// 	return r
+// }
 
-// similar to the updateEntry except you don't have
-// to pass all the fields in a invoice to update a field
-func patchEntry(r *gin.Engine) *gin.Engine {
-	r.PATCH("/invoice/:id", func(c *gin.Context) {
-		var inv db.Invoice
-		var bindingOk bool
-		var rqstData respBodyData
-		id := validateRouteID(c, &rqstData)
-		if id != 0 {
-			inv, bindingOk = validateInvoiceBinding(c, &rqstData)
-			if bindingOk {
-				rqstData.Invs, rqstData.FieldErr = db.PatchInvoice(inv, id)
-				code = statusOK
-				sendResponse(c, &rqstData)
-			}
-		}
-	})
-	return r
-}
+// // similar to the updateEntry except you don't have
+// // to pass all the fields in a invoice to update a field
+// func patchEntry(r *gin.Engine) *gin.Engine {
+// 	r.PATCH("/invoice/:id", func(c *gin.Context) {
+// 		var inv db.Invoice
+// 		var bindingOk bool
+// 		var rqstData respBodyData
+// 		id := validateRouteID(c, &rqstData)
+// 		if id != 0 {
+// 			inv, bindingOk = validateInvoiceBinding(c, &rqstData)
+// 			if bindingOk {
+// 				rqstData.Invs, rqstData.FieldErr = db.PatchInvoice(inv, id)
+// 				code = statusOK
+// 				sendResponse(c, &rqstData)
+// 			}
+// 		}
+// 	})
+// 	return r
+// }
 
-// deletes an invoice entry based on id
-func deleteEntry(r *gin.Engine) *gin.Engine {
-	r.DELETE("/invoice/:id", func(c *gin.Context) {
-		var rqstData respBodyData
-		id := validateRouteID(c, &rqstData)
-		if id != 0 {
-			rqstData.Invs, rqstData.FieldErr = db.DeleteInvoice(id)
-			code = statusOK
-			sendResponse(c, &rqstData)
-		}
-	})
-	return r
-}
+// // deletes an invoice entry based on id
+// func deleteEntry(r *gin.Engine) *gin.Engine {
+// 	r.DELETE("/invoice/:id", func(c *gin.Context) {
+// 		var rqstData respBodyData
+// 		id := validateRouteID(c, &rqstData)
+// 		if id != 0 {
+// 			rqstData.Invs, rqstData.FieldErr = db.DeleteInvoice(id)
+// 			code = statusOK
+// 			sendResponse(c, &rqstData)
+// 		}
+// 	})
+// 	return r
+// }
 
 func main() {
 	r := setRouter()
 
 	r = createAcct(r)
-	r = readData(r)
-	r = readDataById(r)
+	// r = readData(r)
+	// r = readDataById(r)
 	r = addInvoice(r)
-	r = updateEntry(r)
-	r = patchEntry(r)
-	r = deleteEntry(r)
+	// r = updateEntry(r)
+	// r = patchEntry(r)
+	// r = deleteEntry(r)
 
 	r.Run()
 }

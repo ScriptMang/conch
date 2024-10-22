@@ -402,237 +402,237 @@ func InsertOp(inv Invoice) ([]*Invoice, GrammarError) {
 	return invs, fieldErr
 }
 
-// returns all the invoices in the database a slice []*Invoice
-func ReadInvoices() ([]*Invoice, GrammarError) {
-	ctx, db := connect()
-	defer db.Close()
+// // returns all the invoices in the database a slice []*Invoice
+// func ReadInvoices() ([]*Invoice, GrammarError) {
+// 	ctx, db := connect()
+// 	defer db.Close()
 
-	var invs Invoices
-	fieldErr := GrammarError{ErrMsgs: []string{""}}
-	rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
-	err := pgxscan.ScanAll(&invs, rows)
-	if err != nil {
-		errMsg := err.Error()
+// 	var invs Invoices
+// 	fieldErr := GrammarError{ErrMsgs: []string{""}}
+// 	rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
+// 	err := pgxscan.ScanAll(&invs, rows)
+// 	if err != nil {
+// 		errMsg := err.Error()
 
-		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.ErrMsgs = nil
-			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
-		}
-		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-	}
+// 		if strings.Contains(errMsg, "\"username\" does not exist") {
+// 			fieldErr.ErrMsgs = nil
+// 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+// 		}
+// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+// 	}
 
-	return invs, fieldErr
-}
+// 	return invs, fieldErr
+// }
 
-// return the invoice given the id
-// if the id doesn't exist it returns all invoices
-func ReadInvoiceByID(id int) ([]*Invoice, GrammarError) {
-	ctx, db := connect()
-	defer db.Close()
+// // return the invoice given the id
+// // if the id doesn't exist it returns all invoices
+// func ReadInvoiceByID(id int) ([]*Invoice, GrammarError) {
+// 	ctx, db := connect()
+// 	defer db.Close()
 
-	var inv Invoice
-	var invs []*Invoice
-	_, fieldErr := ReadInvoices()
+// 	var inv Invoice
+// 	var invs []*Invoice
+// 	_, fieldErr := ReadInvoices()
 
-	if strings.Contains(fieldErr.ErrMsgs[0], "\"username\" does not exist") {
-		return invs, fieldErr
-	}
+// 	if strings.Contains(fieldErr.ErrMsgs[0], "\"username\" does not exist") {
+// 		return invs, fieldErr
+// 	}
 
-	row, _ := db.Query(ctx, `SELECT * FROM invoices WHERE id=$1`, id)
+// 	row, _ := db.Query(ctx, `SELECT * FROM invoices WHERE id=$1`, id)
 
-	err := pgxscan.ScanOne(&inv, row)
-	if err != nil {
-		errMsg := err.Error()
-		fieldErr.ErrMsgs = nil
-		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
-		}
+// 	err := pgxscan.ScanOne(&inv, row)
+// 	if err != nil {
+// 		errMsg := err.Error()
+// 		fieldErr.ErrMsgs = nil
+// 		if strings.Contains(errMsg, "\"username\" does not exist") {
+// 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+// 		}
 
-		if strings.Contains(errMsg, "no rows in result set") {
-			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
-		}
+// 		if strings.Contains(errMsg, "no rows in result set") {
+// 			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
+// 		}
 
-		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
-		return invs, fieldErr
-	}
-	invs = append(invs, &inv)
-	return invs, fieldErr
-}
+// 		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
+// 		return invs, fieldErr
+// 	}
+// 	invs = append(invs, &inv)
+// 	return invs, fieldErr
+// }
 
-func validateFieldsForUpdate(inv *Invoice) GrammarError {
-	return inv.validateAllFields()
-}
+// func validateFieldsForUpdate(inv *Invoice) GrammarError {
+// 	return inv.validateAllFields()
+// }
 
-// updates and returns the given invoice by id
-func UpdateInvoice(inv Invoice, id int) ([]*Invoice, GrammarError) {
-	ctx, db := connect()
-	defer db.Close()
+// // updates and returns the given invoice by id
+// func UpdateInvoice(inv Invoice, id int) ([]*Invoice, GrammarError) {
+// 	ctx, db := connect()
+// 	defer db.Close()
 
-	var inv2 Invoice // resulting invoice
-	var invs []*Invoice
-	var fieldErr GrammarError
-	_, fieldErr = ReadInvoiceByID(id)
-	// msgLen := len(fieldErr.ErrMsgs)
-	// fmt.Printf("There are %d field err messages\n", msgLen)
-	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-		return invs, fieldErr
-	}
+// 	var inv2 Invoice // resulting invoice
+// 	var invs []*Invoice
+// 	var fieldErr GrammarError
+// 	_, fieldErr = ReadInvoiceByID(id)
+// 	// msgLen := len(fieldErr.ErrMsgs)
+// 	// fmt.Printf("There are %d field err messages\n", msgLen)
+// 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+// 		return invs, fieldErr
+// 	}
 
-	fieldErr = validateFieldsForUpdate(&inv)
-	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-		return invs, fieldErr
-	}
+// 	fieldErr = validateFieldsForUpdate(&inv)
+// 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+// 		return invs, fieldErr
+// 	}
 
-	rows, _ := db.Query(
-		ctx,
-		`UPDATE invoices SET fname=$1,lname=$2,product=$3,price=$4,quantity=$5,category=$6,shipping=$7 WHERE id=$8 RETURNING *`,
-		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping, id,
-	)
+// 	rows, _ := db.Query(
+// 		ctx,
+// 		`UPDATE invoices SET fname=$1,lname=$2,product=$3,price=$4,quantity=$5,category=$6,shipping=$7 WHERE id=$8 RETURNING *`,
+// 		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping, id,
+// 	)
 
-	err := pgxscan.ScanOne(&inv2, rows)
-	if err != nil {
-		errMsg := err.Error()
-		fieldErr.ErrMsgs = nil
-		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
-		} else {
-			fieldErr.AddMsg(BadRequest, "Invoices are empty")
-		}
-		// fmt.Println("%s\n", errMsg)
-		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-	}
-	invs = append(invs, &inv2)
+// 	err := pgxscan.ScanOne(&inv2, rows)
+// 	if err != nil {
+// 		errMsg := err.Error()
+// 		fieldErr.ErrMsgs = nil
+// 		if strings.Contains(errMsg, "\"username\" does not exist") {
+// 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+// 		} else {
+// 			fieldErr.AddMsg(BadRequest, "Invoices are empty")
+// 		}
+// 		// fmt.Println("%s\n", errMsg)
+// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+// 	}
+// 	invs = append(invs, &inv2)
 
-	return invs, fieldErr
-}
+// 	return invs, fieldErr
+// }
 
-func checkGrammarForPatch(field *textField, orig string, fieldErr *GrammarError) {
-	name := field.name
-	if *field.value == "" {
-		//fmt.Printf("CheckGrammarForPatch: %s field value is blank\n", field.name)
-		*field.value = orig // unique to patch requests
-		//fmt.Println("CheckGrammarForPatch: Swap for orig.value: ", field.value)
-	} else if *field.value != "" && name != "Shipping" && name != "Product" {
-		fieldHasDigits(*field, fieldErr)
-		fieldHasPunct(*field, fieldErr)
-		fieldHasSymbols(*field, fieldErr)
-	}
+// func checkGrammarForPatch(field *textField, orig string, fieldErr *GrammarError) {
+// 	name := field.name
+// 	if *field.value == "" {
+// 		//fmt.Printf("CheckGrammarForPatch: %s field value is blank\n", field.name)
+// 		*field.value = orig // unique to patch requests
+// 		//fmt.Println("CheckGrammarForPatch: Swap for orig.value: ", field.value)
+// 	} else if *field.value != "" && name != "Shipping" && name != "Product" {
+// 		fieldHasDigits(*field, fieldErr)
+// 		fieldHasPunct(*field, fieldErr)
+// 		fieldHasSymbols(*field, fieldErr)
+// 	}
 
-	if name == "Shipping" || name == "Product" {
-		fieldHasPunct(*field, fieldErr)
-		fieldHasSymbols(*field, fieldErr)
-	}
-}
+// 	if name == "Shipping" || name == "Product" {
+// 		fieldHasPunct(*field, fieldErr)
+// 		fieldHasSymbols(*field, fieldErr)
+// 	}
+// }
 
-func validateFieldsForPatch(orig Invoice, inv *Invoice) GrammarError {
-	// validate fields for Grammars
-	modInv := inv
-	textFields := []*textField{
-		{name: "Fname", value: &modInv.Fname},
-		{name: "Lname", value: &modInv.Lname},
-		{name: "Product", value: &modInv.Product},
-		{name: "Category", value: &modInv.Category},
-		{name: "Shipping", value: &modInv.Shipping},
-	}
-	var fieldErr GrammarError
-	origVals := []string{orig.Fname, orig.Lname, orig.Product, orig.Category, orig.Shipping}
-	for i, text := range textFields {
-		checkGrammarForPatch(text, origVals[i], &fieldErr)
-		//fmt.Println("GrammarPatch Returns: ", text.value)
-		//fmt.Printf("Modified Invoice is: %+v\n", *modInv)
-	}
+// func validateFieldsForPatch(orig Invoice, inv *Invoice) GrammarError {
+// 	// validate fields for Grammars
+// 	modInv := inv
+// 	textFields := []*textField{
+// 		{name: "Fname", value: &modInv.Fname},
+// 		{name: "Lname", value: &modInv.Lname},
+// 		{name: "Product", value: &modInv.Product},
+// 		{name: "Category", value: &modInv.Category},
+// 		{name: "Shipping", value: &modInv.Shipping},
+// 	}
+// 	var fieldErr GrammarError
+// 	origVals := []string{orig.Fname, orig.Lname, orig.Product, orig.Category, orig.Shipping}
+// 	for i, text := range textFields {
+// 		checkGrammarForPatch(text, origVals[i], &fieldErr)
+// 		//fmt.Println("GrammarPatch Returns: ", text.value)
+// 		//fmt.Printf("Modified Invoice is: %+v\n", *modInv)
+// 	}
 
-	if inv.Price == 0 {
-		inv.Price = orig.Price // unique to patch requests
-	} else if inv.Price != 0.00 && inv.Price < 0.00 {
-		fieldErr.AddMsg(BadRequest, "Error: The price can't be negative")
-		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-	}
+// 	if inv.Price == 0 {
+// 		inv.Price = orig.Price // unique to patch requests
+// 	} else if inv.Price != 0.00 && inv.Price < 0.00 {
+// 		fieldErr.AddMsg(BadRequest, "Error: The price can't be negative")
+// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+// 	}
 
-	if inv.Quantity == 0 {
-		inv.Quantity = orig.Quantity // unique to patch requests
-	} else if inv.Quantity != 0 && inv.Quantity < 0 {
-		fieldErr.AddMsg(BadRequest, "Error: The quantity can't be negative")
-		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-	}
-	return fieldErr
-}
+// 	if inv.Quantity == 0 {
+// 		inv.Quantity = orig.Quantity // unique to patch requests
+// 	} else if inv.Quantity != 0 && inv.Quantity < 0 {
+// 		fieldErr.AddMsg(BadRequest, "Error: The quantity can't be negative")
+// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+// 	}
+// 	return fieldErr
+// }
 
-func PatchInvoice(inv Invoice, id int) ([]*Invoice, GrammarError) {
-	ctx, db := connect()
-	defer db.Close()
+// func PatchInvoice(inv Invoice, id int) ([]*Invoice, GrammarError) {
+// 	ctx, db := connect()
+// 	defer db.Close()
 
-	var inv2 Invoice // resulting invoice
-	var invs []*Invoice
-	orig, fieldErr := ReadInvoiceByID(id)
-	// msgLen := len(fieldErr.ErrMsgs)
-	// fmt.Printf("There are %d field err messages\n", msgLen)
-	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-		return invs, fieldErr
-	}
+// 	var inv2 Invoice // resulting invoice
+// 	var invs []*Invoice
+// 	orig, fieldErr := ReadInvoiceByID(id)
+// 	// msgLen := len(fieldErr.ErrMsgs)
+// 	// fmt.Printf("There are %d field err messages\n", msgLen)
+// 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+// 		return invs, fieldErr
+// 	}
 
-	fieldErr = validateFieldsForPatch(*orig[0], &inv)
-	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-		return invs, fieldErr
-	}
+// 	fieldErr = validateFieldsForPatch(*orig[0], &inv)
+// 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+// 		return invs, fieldErr
+// 	}
 
-	//fmt.Println("PatchInvoice: modified invoice is ", inv)
-	rows, _ := db.Query(
-		ctx,
-		`UPDATE invoices SET fname=$1,lname=$2,product=$3,price=$4,quantity=$5,category=$6,shipping=$7 WHERE id=$8 RETURNING *`,
-		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping, id,
-	)
+// 	//fmt.Println("PatchInvoice: modified invoice is ", inv)
+// 	rows, _ := db.Query(
+// 		ctx,
+// 		`UPDATE invoices SET fname=$1,lname=$2,product=$3,price=$4,quantity=$5,category=$6,shipping=$7 WHERE id=$8 RETURNING *`,
+// 		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping, id,
+// 	)
 
-	err := pgxscan.ScanOne(&inv2, rows)
-	if err != nil {
-		errMsg := err.Error()
-		fieldErr.ErrMsgs = nil
-		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
-		} else {
-			fieldErr.AddMsg(BadRequest, "Invoices are empty")
-		}
-		// fmt.Println("%s\n", errMsg)
-		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-	}
-	invs = append(invs, &inv2)
+// 	err := pgxscan.ScanOne(&inv2, rows)
+// 	if err != nil {
+// 		errMsg := err.Error()
+// 		fieldErr.ErrMsgs = nil
+// 		if strings.Contains(errMsg, "\"username\" does not exist") {
+// 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+// 		} else {
+// 			fieldErr.AddMsg(BadRequest, "Invoices are empty")
+// 		}
+// 		// fmt.Println("%s\n", errMsg)
+// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+// 	}
+// 	invs = append(invs, &inv2)
 
-	return invs, fieldErr
-}
+// 	return invs, fieldErr
+// }
 
-// delete's the given invoice based on id
-// and return the deleted invoice
-func DeleteInvoice(id int) ([]*Invoice, GrammarError) {
-	ctx, db := connect()
-	defer db.Close()
+// // delete's the given invoice based on id
+// // and return the deleted invoice
+// func DeleteInvoice(id int) ([]*Invoice, GrammarError) {
+// 	ctx, db := connect()
+// 	defer db.Close()
 
-	var inv Invoice
-	var invs []*Invoice
-	_, fieldErr := ReadInvoices()
+// 	var inv Invoice
+// 	var invs []*Invoice
+// 	_, fieldErr := ReadInvoices()
 
-	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-		// fmt.Printf("Error messages is empty for Delete-OP")
-		return invs, fieldErr
-	}
+// 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+// 		// fmt.Printf("Error messages is empty for Delete-OP")
+// 		return invs, fieldErr
+// 	}
 
-	row, _ := db.Query(ctx, `DELETE FROM invoices WHERE id=$1 RETURNING *`, id)
-	err := pgxscan.ScanOne(&inv, row)
-	if err != nil {
-		errMsg := err.Error()
-		fieldErr.ErrMsgs = nil
-		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
-		}
+// 	row, _ := db.Query(ctx, `DELETE FROM invoices WHERE id=$1 RETURNING *`, id)
+// 	err := pgxscan.ScanOne(&inv, row)
+// 	if err != nil {
+// 		errMsg := err.Error()
+// 		fieldErr.ErrMsgs = nil
+// 		if strings.Contains(errMsg, "\"username\" does not exist") {
+// 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+// 		}
 
-		if strings.Contains(errMsg, "no rows in result set") {
-			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
-		}
-		//fmt.Printf("%s\n", errMsg)
-		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-	}
-	invs = append(invs, &inv)
-	return invs, fieldErr
-}
+// 		if strings.Contains(errMsg, "no rows in result set") {
+// 			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
+// 		}
+// 		//fmt.Printf("%s\n", errMsg)
+// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+// 	}
+// 	invs = append(invs, &inv)
+// 	return invs, fieldErr
+// }
 
 // Create a New Database Connection to bikeshop
 func connect() (context.Context, *pgxpool.Pool) {
