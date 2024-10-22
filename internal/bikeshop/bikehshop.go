@@ -31,9 +31,9 @@ type Users struct {
 }
 
 type Passwords struct {
-	ID        int    `json:"id" form:"id"`
-	UserID    int    `json:"user_id" form:"user_id"`
-	Passwords string `json:"passwords" form:"passwords"`
+	ID       int    `json:"id" form:"id"`
+	UserID   int    `json:"user_id" form:"user_id"`
+	Password string `json:"password" form:"password"`
 }
 
 type Invoice struct {
@@ -179,9 +179,9 @@ func checkGrammar(field textField, fieldErr *GrammarError) {
 		name == "Password" {
 		isFieldTooLong(field, fieldErr, 8, 16)
 	}
-	if name == "Password" {
-		fieldHasPunct(field, fieldErr)
-	}
+	// if name == "Password" {
+	// 	fieldHasPunct(field, fieldErr)
+	// }
 }
 
 // takes an invoice and throws an error for any field with an invalid input
@@ -241,17 +241,15 @@ func EncryptPassword(val string) (string, error) {
 }
 
 // helper funct that adds hash to the passwords table
-func AddPassword(acct *Account, acctErr *GrammarError) ([]*Account, GrammarError) {
+func AddPassword(acct *Account, acctErr *GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
-	var insertedAcct Account
-	var accts []*Account
+	var pswds Passwords
 	var err error
-	validateAccount(acct, acctErr)
 
 	if len(acctErr.ErrMsgs) > 0 {
-		return nil, *acctErr
+		return
 	}
 
 	// encrypt password
@@ -259,17 +257,17 @@ func AddPassword(acct *Account, acctErr *GrammarError) ([]*Account, GrammarError
 	if err != nil {
 		acctErr.AddMsg(BadRequest,
 			"Hashing Error: password longer than 72 bytes, can't hash")
-		return nil, *acctErr
+		return
 	}
 
 	// if no errors add info to appropiate tables
 	rows, _ := db.Query(
 		ctx,
-		`INSERT INTO Passwords (password) VALUES($1) RETURNING *`,
-		acct.Password,
+		`INSERT INTO Passwords (user_id, password) VALUES($1, $2) RETURNING *`,
+		acct.ID, acct.Password,
 	)
 
-	err = pgxscan.ScanOne(&insertedAcct, rows)
+	err = pgxscan.ScanOne(&pswds, rows)
 	if err != nil {
 		qryError := err.Error()
 		if strings.Contains(qryError, "value too long for type character varying") {
@@ -277,9 +275,6 @@ func AddPassword(acct *Account, acctErr *GrammarError) ([]*Account, GrammarError
 		}
 		acctErr.AddMsg(BadRequest, qryError)
 	}
-	accts = append(accts, &insertedAcct)
-
-	return accts, *acctErr
 }
 
 // helper funct that adds all user-info to users table
@@ -331,6 +326,14 @@ func AddAccount(acct *Account) ([]*Account, GrammarError) {
 
 	// if no errors add info to appropiate tables
 	accts = AddUser(acct, acctErr)
+	if acctErr.ErrMsgs != nil {
+		// fmt.Printf("Errors in AddAccount Func, %v\n", acctErr.ErrMsgs)
+		return nil, *acctErr
+	}
+
+	// add passwords to table, don't if err existf
+	// fmt.Printf("User added into Users: %v\n", *accts[0])
+	AddPassword(accts[0], acctErr)
 	if acctErr.ErrMsgs != nil {
 		// fmt.Printf("Errors in AddAccount Func, %v\n", acctErr.ErrMsgs)
 		return nil, *acctErr
