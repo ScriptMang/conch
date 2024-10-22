@@ -154,8 +154,8 @@ func isFieldTooLong(field textField, gramErr *GrammarError, minimum, maximum int
 	}
 }
 
-// check for any capital letters in string val
-// adds an new error to fieldErrs if true
+// checks to see if there any capital letters in string val
+// adds an new error to fieldErrs if none exist true
 func fieldHasNoCapLetters(field textField, fieldErr *GrammarError) {
 	capLst := "ABCDEFGHIJKLMNOPQRYTUVWXYZ"
 	if !strings.ContainsAny(*field.value, capLst) {
