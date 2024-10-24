@@ -12,18 +12,20 @@ import (
 
 type respBodyData struct {
 	Invs     []*db.Invoice
+	Users    []*db.Users
 	FieldErr db.GrammarError
 }
 
-type resultingInv struct {
+type Order struct {
 	ID       int
+	UserID   int
 	Fname    string
 	Lname    string
 	Product  string
 	Price    json.Number
 	Quantity int
 	Category string
-	Shipping string
+	Address  string
 }
 
 var code int //httpstatuscode
@@ -97,7 +99,7 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 }
 
 func validateRouteID(c *gin.Context, rqstData *respBodyData) int {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("usr_id"))
 	if err != nil {
 		rqstData.FieldErr.AddMsg(db.BadRequest, "Bad Request: id can't be converted to an integer")
 		sendResponse(c, rqstData)
@@ -108,30 +110,36 @@ func validateRouteID(c *gin.Context, rqstData *respBodyData) int {
 // serialize Invoice or GrammarError as json to response body
 func sendResponse(c *gin.Context, rqstData *respBodyData) {
 	invs := rqstData.Invs
+	usrs := rqstData.Users
 	fieldErr := rqstData.FieldErr
 	switch {
 	case fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "":
 		c.JSON(db.ErrorCode, fieldErr)
 	default:
 
-		var rsltInv resultingInv
-		var invLst []resultingInv
+		var receipt Order
+		var receipts []Order
 
 		// change price of type float to string
 		// add it to resultingInv struct then invLst
-		for _, val := range invs {
-			rsltInv.ID = val.ID
-			rsltInv.Fname = val.Fname
-			rsltInv.Lname = val.Lname
-			rsltInv.Product = val.Product
-			rsltInv.Price = json.Number(fmt.Sprintf("%.2f", val.Price))
-			rsltInv.Quantity = val.Quantity
-			rsltInv.Category = val.Category
-			rsltInv.Shipping = val.Shipping
-			invLst = append(invLst, rsltInv)
+		for _, usr := range usrs {
+			for _, inv := range invs {
+				if inv.UserID != usr.ID {
+					continue
+				}
+				receipt.ID = inv.ID
+				receipt.UserID = inv.UserID
+				receipt.Product = inv.Product
+				receipt.Price = json.Number(fmt.Sprintf("%.2f", inv.Price))
+				receipt.Quantity = inv.Quantity
+				receipt.Category = inv.Category
+				receipt.Fname = usr.Fname
+				receipt.Lname = usr.Lname
+				receipt.Address = usr.Address
+				receipts = append(receipts, receipt)
+			}
 		}
-
-		c.JSON(code, invLst)
+		c.JSON(code, receipts)
 	}
 }
 
@@ -171,13 +179,29 @@ func createAcct(r *gin.Engine) *gin.Engine {
 
 // binds json data to an invoice and insert its to the database
 func addInvoice(r *gin.Engine) *gin.Engine {
-	r.POST("/invoices/", func(c *gin.Context) {
+	r.POST("/user/:usr_id/invoices/", func(c *gin.Context) {
 		var inv db.Invoice
 		var rqstData respBodyData
 		var bindingOk bool
+		id := validateRouteID(c, &rqstData)
+		// fmt.Printf("ID in addInvoice funct is: %d\n", id)
 		inv, bindingOk = validateInvoiceBinding(c, &rqstData)
-		if bindingOk {
-			rqstData.Invs, rqstData.FieldErr = db.InsertOp(inv)
+		// fmt.Printf("Invoice in addInvoice funct is: %+v\n", inv)
+		if id != 0 && bindingOk {
+			var fieldErr db.GrammarError
+			rqstData.Users, fieldErr = db.ReadUserByID(id)
+			usrs := rqstData.Users
+			// fmt.Printf("User in addInvoice funct is: %+v\n", *usrs[0])
+			// fmt.Printf("The length of fieldErrs after ReadUserByID is: %d\n", len(fieldErr.ErrMsgs))
+			if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+				rqstData.FieldErr = fieldErr
+				sendResponse(c, &rqstData)
+				return
+			}
+			rqstData.Invs, fieldErr = db.InsertOp(*usrs[0], inv)
+			rqstData.FieldErr = fieldErr
+			// fmt.Printf("Invoice after InsertOP is: %+v\n", *rqstData.Invs[0])
+			// fmt.Printf("FieldErrs after InsertOP is: %v\n", fieldErr.ErrMsgs)
 			code = statusCreated
 			sendResponse(c, &rqstData)
 		}
