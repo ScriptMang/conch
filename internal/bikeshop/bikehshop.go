@@ -129,7 +129,7 @@ func fieldHasSymbols(fieldName string, val *string, fieldErr *GrammarError) {
 // checks a string field against an invalid char sequence
 // if it returns a index then the text is invalid and it returns true
 func isTextInvalid(val, charFilter string) bool {
-	return strings.IndexAny(val, charFilter) != -1
+	return strings.ContainsAny(val, charFilter)
 }
 
 // checks the field to see if it exceeds or falls below a given char limit
