@@ -45,11 +45,6 @@ type Invoice struct {
 	Quantity int     `json:"quantity" form:"quantity"`
 }
 
-type textField struct {
-	name  string  // field-name
-	value *string // field-value
-}
-
 type GrammarError struct {
 	ErrMsgs []string
 }
@@ -83,40 +78,40 @@ func (credErr *AuthError) AddMsg(statusCode int, str string) {
 
 // checks for empty text-fields in an invoice
 // if there an error its added to an error slice
-func isTextFieldEmpty(field textField, fieldErr *GrammarError) {
-	if *field.value == "" {
-		fieldErr.AddMsg(BadRequest, "Error: "+field.name+" can't be empty")
+func isTextFieldEmpty(fieldName string, val *string, fieldErr *GrammarError) {
+	if *val == "" {
+		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't be empty")
 	}
 }
 
-func fieldHasDigits(field textField, fieldErr *GrammarError) {
+func fieldHasDigits(fieldName string, val *string, fieldErr *GrammarError) {
 	digitFilter := "0123456789"
-	if isTextInvalid(*field.value, digitFilter) {
-		fieldErr.AddMsg(BadRequest, "Error: "+field.name+" can't have any digits")
+	if isTextInvalid(*val, digitFilter) {
+		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any digits")
 	}
 }
 
-func fieldHasPunct(field textField, fieldErr *GrammarError) {
+func fieldHasPunct(fieldName string, val *string, fieldErr *GrammarError) {
 	punctFilter := ".,?!'\"`:;"
 
-	switch field.name {
+	switch fieldName {
 	case "Fname", "Lname":
 		punctFilter = " .,?!'\"`:;"
 	case "Product":
 		punctFilter = "?!'\";"
-	case "Category", "Shipping", "Address":
+	case "Category", "Address":
 		punctFilter = ".?!'\"`:;"
 	}
 
-	if isTextInvalid(*field.value, punctFilter) {
-		fieldErr.AddMsg(BadRequest, "Error: "+field.name+" can't have any punctuation")
+	if isTextInvalid(*val, punctFilter) {
+		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any punctuation")
 	}
 }
 
-func fieldHasSymbols(field textField, fieldErr *GrammarError) {
+func fieldHasSymbols(fieldName string, val *string, fieldErr *GrammarError) {
 	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
 
-	switch field.name {
+	switch fieldName {
 	case "Product":
 		symbolFilter = "~#$*{}[]_\\+=><^"
 	case "Category":
@@ -126,8 +121,8 @@ func fieldHasSymbols(field textField, fieldErr *GrammarError) {
 	}
 
 	// check for symbols: first-name, last-name, category, product
-	if isTextInvalid(*field.value, symbolFilter) {
-		fieldErr.AddMsg(BadRequest, "Error: "+field.name+" can't have any Symbols")
+	if isTextInvalid(*val, symbolFilter) {
+		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any Symbols")
 	}
 }
 
@@ -140,65 +135,64 @@ func isTextInvalid(val, charFilter string) bool {
 // checks the field to see if it exceeds or falls below a given char limit
 // if it doesn't match the upper or lower limit an error message is added
 // to the list of grammar errors
-func isFieldTooLong(field textField, gramErr *GrammarError, minimum, maximum int) {
-	fieldLen := len(*field.value)
+func isFieldTooLong(fieldName string, val *string, gramErr *GrammarError, minimum, maximum int) {
+	fieldLen := len(*val)
 	if fieldLen < minimum {
-		gramErr.AddMsg(BadRequest, "Error: "+field.name+" is too short, expected "+
+		gramErr.AddMsg(BadRequest, "Error: "+fieldName+" is too short, expected "+
 			strconv.Itoa(minimum)+"-"+strconv.Itoa(maximum)+" chars")
 	}
 	if fieldLen > maximum {
-		gramErr.AddMsg(BadRequest, "Error: "+field.name+" is too long, expected "+
+		gramErr.AddMsg(BadRequest, "Error: "+fieldName+" is too long, expected "+
 			strconv.Itoa(minimum)+"-"+strconv.Itoa(maximum)+" chars")
 	}
 }
 
 // checks to see if there any capital letters in string val
 // adds an new error to fieldErrs if none exist
-func fieldHasNoCapLetters(field textField, fieldErr *GrammarError) {
+func fieldHasNoCapLetters(val *string, fieldErr *GrammarError) {
 	capLst := "ABCDEFGHIJKLMNOPQRYTUVWXYZ"
-	if !strings.ContainsAny(*field.value, capLst) {
+	if !strings.ContainsAny(*val, capLst) {
 		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more capital letters")
 	}
 }
 
 // checks to see if there are any digits in string val
 // adds an new error to fieldErrs if none exist
-func fieldHasNoNums(field textField, fieldErr *GrammarError) {
+func fieldHasNoNums(val *string, fieldErr *GrammarError) {
 	nums := "0123456789"
-	if !strings.ContainsAny(*field.value, nums) {
+	if !strings.ContainsAny(*val, nums) {
 		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more digits")
 	}
 }
 
 // checks a field for punctuation, digits, and symbols
-func checkGrammar(field textField, fieldErr *GrammarError) {
+func checkGrammar(fieldName string, val *string, fieldErr *GrammarError) {
 
-	isTextFieldEmpty(field, fieldErr)
+	isTextFieldEmpty(fieldName, val, fieldErr)
 
-	val := *field.value
-	name := field.name
-	if val != "" && name != "Address" &&
+	name := fieldName
+	if *val != "" && name != "Address" &&
 		name != "Product" && name != "Username" &&
 		name != "Password" {
-		fieldHasDigits(field, fieldErr)
-		fieldHasPunct(field, fieldErr)
-		fieldHasSymbols(field, fieldErr)
+		fieldHasDigits(name, val, fieldErr)
+		fieldHasPunct(name, val, fieldErr)
+		fieldHasSymbols(name, val, fieldErr)
 	}
 
 	if name == "Username" ||
 		name == "Address" || name == "Product" {
-		fieldHasPunct(field, fieldErr)
-		fieldHasSymbols(field, fieldErr)
+		fieldHasPunct(name, val, fieldErr)
+		fieldHasSymbols(name, val, fieldErr)
 	}
 
 	if name == "Username" ||
 		name == "Password" {
-		isFieldTooLong(field, fieldErr, 8, 16)
+		isFieldTooLong(name, val, fieldErr, 8, 16)
 	}
 
 	if name == "Password" {
-		fieldHasNoCapLetters(field, fieldErr)
-		fieldHasNoNums(field, fieldErr)
+		fieldHasNoCapLetters(val, fieldErr)
+		fieldHasNoNums(val, fieldErr)
 	}
 	// if name == "Password" {
 	// 	fieldHasPunct(field, fieldErr)
@@ -208,16 +202,16 @@ func checkGrammar(field textField, fieldErr *GrammarError) {
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateAllFields(user Users) GrammarError {
 	// check for empty fields: for all the fields
-	textFields := []textField{
-		{name: "Fname", value: &user.Fname},
-		{name: "Lname", value: &user.Lname},
-		{name: "Category", value: &inv.Category},
-		{name: "Product", value: &inv.Product},
-		{name: "Address", value: &user.Address},
+	textFields := map[string]*string{
+		"Fname":    &user.Fname,
+		"Lname":    &user.Lname,
+		"Category": &inv.Category,
+		"Product":  &inv.Product,
+		"Address":  &user.Address,
 	}
 	var fieldErr GrammarError
-	for _, text := range textFields {
-		checkGrammar(text, &fieldErr)
+	for field, val := range textFields {
+		checkGrammar(field, val, &fieldErr)
 	}
 
 	// check for negative values:  price and quantity
@@ -237,21 +231,19 @@ func (inv *Invoice) validateAllFields(user Users) GrammarError {
 	return fieldErr
 }
 
-// validate fields for account
+// validate username, fname, lname, address fields for digits, symbols, punct
 func validateAccount(acct *Account, acctErr *GrammarError) {
-	// validate fields for digits, symbols, punct
-	// validate username, fname, lname, address
 
-	textFields := []textField{
-		{name: "Fname", value: &acct.Fname},
-		{name: "Lname", value: &acct.Lname},
-		{name: "Address", value: &acct.Address},
-		{name: "Username", value: &acct.Username},
-		{name: "Password", value: &acct.Password},
+	textFields := map[string]*string{
+		"Fname":    &acct.Fname,
+		"Lname":    &acct.Lname,
+		"Address":  &acct.Address,
+		"Username": &acct.Username,
+		"Password": &acct.Password,
 	}
 
-	for _, text := range textFields {
-		checkGrammar(text, acctErr)
+	for field, val := range textFields {
+		checkGrammar(field, val, acctErr)
 	}
 
 }
