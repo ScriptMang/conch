@@ -209,6 +209,21 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 	return r
 }
 
+func readUserData(r *gin.Engine) *gin.Engine {
+	r.GET("/users", func(c *gin.Context) {
+		var rqstData respBodyData
+		rqstData.Users, rqstData.FieldErr = db.ReadUsers()
+		fieldErr := rqstData.FieldErr
+		code = statusOK
+		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+			sendResponse(c, &rqstData)
+			return
+		}
+		c.JSON(code, rqstData.Users)
+	})
+	return r
+}
+
 // // reads the tablerows from the database
 // func readData(r *gin.Engine) *gin.Engine {
 // 	r.GET("/invoices", func(c *gin.Context) {
@@ -293,6 +308,7 @@ func main() {
 	r := setRouter()
 
 	r = createAcct(r)
+	r = readUserData(r)
 	// r = readData(r)
 	// r = readDataById(r)
 	r = addInvoice(r)
