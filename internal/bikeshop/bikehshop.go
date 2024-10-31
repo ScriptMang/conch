@@ -454,26 +454,98 @@ func InsertOp(usr Users, inv Invoice) ([]*Invoice, GrammarError) {
 }
 
 // // returns all the invoices in the database a slice []*Invoice
-// func ReadInvoices() ([]*Invoice, GrammarError) {
-// 	ctx, db := connect()
-// 	defer db.Close()
+func ReadInvoices() ([]*Invoice, GrammarError) {
+	ctx, db := connect()
+	defer db.Close()
 
-// 	var invs Invoices
-// 	fieldErr := GrammarError{ErrMsgs: []string{""}}
-// 	rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
-// 	err := pgxscan.ScanAll(&invs, rows)
-// 	if err != nil {
-// 		errMsg := err.Error()
+	var invs Invoices
+	fieldErr := GrammarError{ErrMsgs: []string{""}}
+	rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
+	err := pgxscan.ScanAll(&invs, rows)
+	if err != nil {
+		errMsg := err.Error()
 
-// 		if strings.Contains(errMsg, "\"username\" does not exist") {
-// 			fieldErr.ErrMsgs = nil
-// 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
-// 		}
-// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-// 	}
+		if strings.Contains(errMsg, "\"username\" does not exist") {
+			fieldErr.ErrMsgs = nil
+			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+		}
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+	}
 
-// 	return invs, fieldErr
-// }
+	return invs, fieldErr
+}
+
+func ReadInvoicesByUserID(id int) ([]*Invoice, GrammarError) {
+	ctx, db := connect()
+	defer db.Close()
+
+	var invs []*Invoice
+	_, fieldErr := ReadInvoices()
+
+	if strings.Contains(fieldErr.ErrMsgs[0], "\"username\" does not exist") {
+		// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist")
+		return invs, fieldErr
+	}
+
+	rows, _ := db.Query(ctx, `SELECT * FROM invoices WHERE user_id = $1`, id)
+
+	err := pgxscan.ScanAll(&invs, rows)
+	if err != nil {
+		errMsg := err.Error()
+		fieldErr.ErrMsgs = nil
+		if strings.Contains(errMsg, "\"username\" does not exist") {
+			// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist\n")
+			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+		} else if strings.Contains(errMsg, "no rows in result set") {
+			// fmt.Printf("ReadInvoicesByUserID funct: error invoice with specified id doesn't exist\n")
+			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
+		} else {
+			// fmt.Printf("ReadInvoicesByUserID funct: error %s\n", err.Error())
+			fieldErr.AddMsg(BadRequest, err.Error())
+
+		}
+
+		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
+		return invs, fieldErr
+	}
+	return invs, fieldErr
+}
+
+func ReadInvoiceByUserID(userID, invID int) ([]*Invoice, GrammarError) {
+	ctx, db := connect()
+	defer db.Close()
+
+	var invs []*Invoice
+	_, fieldErr := ReadInvoices()
+
+	if strings.Contains(fieldErr.ErrMsgs[0], "\"username\" does not exist") {
+		// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist")
+		return invs, fieldErr
+	}
+
+	rows, _ := db.Query(ctx, `SELECT * FROM invoices WHERE user_id = $1 and id = $2`, userID, invID)
+
+	err := pgxscan.ScanAll(&invs, rows)
+	if err != nil {
+		errMsg := err.Error()
+		fieldErr.ErrMsgs = nil
+		if strings.Contains(errMsg, "\"username\" does not exist") {
+			// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist\n")
+			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+		} else if strings.Contains(errMsg, "no rows in result set") {
+			// fmt.Printf("ReadInvoicesByUserID funct: error invoice with specified id doesn't exist\n")
+			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
+		} else {
+			// fmt.Printf("ReadInvoicesByUserID funct: error %s\n", err.Error())
+			fieldErr.AddMsg(BadRequest, err.Error())
+
+		}
+
+		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
+		return invs, fieldErr
+	}
+	return invs, fieldErr
+}
 
 // // return the invoice given the id
 // // if the id doesn't exist it returns all invoices

@@ -98,8 +98,19 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 	return inv, false
 }
 
-func validateRouteID(c *gin.Context, rqstData *respBodyData) int {
+// validates the user id route parameter
+func validateRouteUserID(c *gin.Context, rqstData *respBodyData) int {
 	id, err := strconv.Atoi(c.Param("usr_id"))
+	if err != nil {
+		rqstData.FieldErr.AddMsg(db.BadRequest, "Bad Request: id can't be converted to an integer")
+		sendResponse(c, rqstData)
+	}
+	return id
+}
+
+// validates the invoice id route parameter
+func validateRouteInvID(c *gin.Context, rqstData *respBodyData) int {
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		rqstData.FieldErr.AddMsg(db.BadRequest, "Bad Request: id can't be converted to an integer")
 		sendResponse(c, rqstData)
@@ -183,7 +194,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 		var inv db.Invoice
 		var rqstData respBodyData
 		var bindingOk bool
-		id := validateRouteID(c, &rqstData)
+		id := validateRouteUserID(c, &rqstData)
 		// fmt.Printf("ID in addInvoice funct is: %d\n", id)
 		inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 		// fmt.Printf("Invoice in addInvoice funct is: %+v\n", inv)
@@ -209,6 +220,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 	return r
 }
 
+// returns the list of all users
 func readUserData(r *gin.Engine) *gin.Engine {
 	r.GET("/users", func(c *gin.Context) {
 		var rqstData respBodyData
@@ -224,30 +236,77 @@ func readUserData(r *gin.Engine) *gin.Engine {
 	return r
 }
 
-// // reads the tablerows from the database
-// func readData(r *gin.Engine) *gin.Engine {
-// 	r.GET("/invoices", func(c *gin.Context) {
-// 		var rqstData respBodyData
-// 		rqstData.Invs, rqstData.FieldErr = db.ReadInvoices()
-// 		code = statusOK
-// 		sendResponse(c, &rqstData)
-// 	})
-// 	return r
-// }
+// returns a user given its id
+func readUserDataByID(r *gin.Engine) *gin.Engine {
+	r.GET("/user/:usr_id", func(c *gin.Context) {
+		var rqstData respBodyData
+		id := validateRouteUserID(c, &rqstData)
+		rqstData.Users, rqstData.FieldErr = db.ReadUserByID(id)
+		fieldErr := rqstData.FieldErr
+		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+			// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
+			sendResponse(c, &rqstData)
+			return
+		}
+		code = statusOK
+		c.JSON(code, *rqstData.Users[0])
+	})
+	return r
+}
 
-// // read a tablerow based on id
-// func readDataById(r *gin.Engine) *gin.Engine {
-// 	r.GET("/invoice/:id", func(c *gin.Context) {
-// 		var rqstData respBodyData
-// 		id := validateRouteID(c, &rqstData)
-// 		if id != 0 {
-// 			rqstData.Invs, rqstData.FieldErr = db.ReadInvoiceByID(id)
-// 			code = statusOK
-// 			sendResponse(c, &rqstData)
-// 		}
-// 	})
-// 	return r
-// }
+// // returns all the invoices within the database
+func readInvoiceData(r *gin.Engine) *gin.Engine {
+	r.GET("/users/invoices", func(c *gin.Context) {
+		var rqstData respBodyData
+		rqstData.Invs, rqstData.FieldErr = db.ReadInvoices()
+		fieldErr := rqstData.FieldErr
+		code = statusOK
+		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+			sendResponse(c, &rqstData)
+			return
+		}
+		c.JSON(code, rqstData.Invs)
+	})
+	return r
+}
+
+// returns all the invoices for a given user
+func readUserInvoices(r *gin.Engine) *gin.Engine {
+	r.GET("/user/:usr_id/invoices", func(c *gin.Context) {
+		var rqstData respBodyData
+		id := validateRouteUserID(c, &rqstData)
+		rqstData.Invs, rqstData.FieldErr = db.ReadInvoicesByUserID(id)
+		fieldErr := rqstData.FieldErr
+		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+			// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
+			sendResponse(c, &rqstData)
+			return
+		}
+		code = statusOK
+		c.JSON(code, rqstData.Invs)
+	})
+	return r
+}
+
+// returns a specific invoice for a specific user
+// given the user id and invoice id
+func readUserInvoiceByID(r *gin.Engine) *gin.Engine {
+	r.GET("/user/:usr_id/invoice/:id", func(c *gin.Context) {
+		var rqstData respBodyData
+		userID := validateRouteUserID(c, &rqstData)
+		invID := validateRouteInvID(c, &rqstData)
+		rqstData.Invs, rqstData.FieldErr = db.ReadInvoiceByUserID(userID, invID)
+		fieldErr := rqstData.FieldErr
+		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+			// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
+			sendResponse(c, &rqstData)
+			return
+		}
+		code = statusOK
+		c.JSON(code, rqstData.Invs)
+	})
+	return r
+}
 
 // // updates an invoice entry by id
 // // require the user to pass the entire invoice
@@ -309,8 +368,10 @@ func main() {
 
 	r = createAcct(r)
 	r = readUserData(r)
-	// r = readData(r)
-	// r = readDataById(r)
+	r = readInvoiceData(r)
+	r = readUserDataByID(r)
+	r = readUserInvoices(r)
+	r = readUserInvoiceByID(r)
 	r = addInvoice(r)
 	// r = updateEntry(r)
 	// r = patchEntry(r)
