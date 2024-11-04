@@ -16,23 +16,11 @@ type Invoice struct {
 	Quantity int     `json:"quantity" form:"quantity"`
 }
 
-type GrammarError struct {
-	ErrMsgs []string
-}
-
 type Invoices []*Invoice
 
 var ErrorCode int // http-status code for errors
 const BadRequest = 400
 const resourceNotFound = 404
-
-// helper funct: takes a pointer to an InvoiceErorr, HttpStatusCode and a string msg
-// as parameters and sets the values for the GrammarError struct.
-// By default content-type is of type 'application/json'
-func (fieldErr *GrammarError) AddMsg(statusCode int, str string) {
-	ErrorCode = statusCode
-	fieldErr.ErrMsgs = append(fieldErr.ErrMsgs, str)
-}
 
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateAllFields(user bikeshop.Users) GrammarError {
