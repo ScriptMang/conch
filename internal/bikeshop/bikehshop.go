@@ -63,24 +63,6 @@ func AddPassword(acct *Account, acctErr *GrammarError) {
 	}
 }
 
-// func checkGrammarForPatch(field *textField, orig string, fieldErr *GrammarError) {
-// 	name := field.name
-// 	if *field.value == "" {
-// 		//fmt.Printf("CheckGrammarForPatch: %s field value is blank\n", field.name)
-// 		*field.value = orig // unique to patch requests
-// 		//fmt.Println("CheckGrammarForPatch: Swap for orig.value: ", field.value)
-// 	} else if *field.value != "" && name != "Shipping" && name != "Product" {
-// 		fieldHasDigits(*field, fieldErr)
-// 		fieldHasPunct(*field, fieldErr)
-// 		fieldHasSymbols(*field, fieldErr)
-// 	}
-
-// 	if name == "Shipping" || name == "Product" {
-// 		fieldHasPunct(*field, fieldErr)
-// 		fieldHasSymbols(*field, fieldErr)
-// 	}
-// }
-
 // Create a New Database Connection to bikeshop
 func Connect() (context.Context, *pgxpool.Pool) {
 	uri := "postgres://username@localhost:5432/bikeshop"

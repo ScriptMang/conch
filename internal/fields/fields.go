@@ -106,3 +106,21 @@ func CheckGrammar(fieldName string, val *string, fieldErr *GrammarError) {
 		fieldHasNoNums(val, fieldErr)
 	}
 }
+
+// func checkGrammarForPatch(field *textField, orig string, fieldErr *GrammarError) {
+// 	name := field.name
+// 	if *field.value == "" {
+// 		//fmt.Printf("CheckGrammarForPatch: %s field value is blank\n", field.name)
+// 		*field.value = orig // unique to patch requests
+// 		//fmt.Println("CheckGrammarForPatch: Swap for orig.value: ", field.value)
+// 	} else if *field.value != "" && name != "Shipping" && name != "Product" {
+// 		fieldHasDigits(*field, fieldErr)
+// 		fieldHasPunct(*field, fieldErr)
+// 		fieldHasSymbols(*field, fieldErr)
+// 	}
+
+// 	if name == "Shipping" || name == "Product" {
+// 		fieldHasPunct(*field, fieldErr)
+// 		fieldHasSymbols(*field, fieldErr)
+// 	}
+// }
