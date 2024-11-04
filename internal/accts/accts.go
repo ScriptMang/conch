@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ScriptMang/conch/internal/fields"
 	"github.com/georgysavva/scany/pgxscan"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -51,7 +52,7 @@ func (credErr *AuthError) AddMsg(statusCode int, str string) {
 }
 
 // helper funct that adds all user-info to users table
-func AddUser(acct *Account, acctErr *invs.GrammarError) []*Account {
+func AddUser(acct *Account, acctErr *fields.GrammarError) []*Account {
 	ctx, db := connect()
 	defer db.Close()
 
@@ -91,7 +92,7 @@ func encryptPassword(val string) (string, error) {
 }
 
 // helper funct that adds hash to the passwords table
-func addPassword(acct *Account, acctErr *GrammarError) {
+func addPassword(acct *Account, acctErr *fields.GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
@@ -128,10 +129,10 @@ func addPassword(acct *Account, acctErr *GrammarError) {
 }
 
 // adds the account info to the appropiate tables w/ the database
-func AddAccount(acct *Account) ([]*Account, invs.GrammarError) {
+func AddAccount(acct *Account) ([]*Account, fields.GrammarError) {
 	var insertedAcct Account
 	var accts []*Account
-	acctErr := &GrammarError{}
+	acctErr := &fields.GrammarError{}
 	validateAccount(acct, acctErr)
 
 	if acctErr.ErrMsgs != nil {
@@ -159,12 +160,12 @@ func AddAccount(acct *Account) ([]*Account, invs.GrammarError) {
 }
 
 // returns the list of all existing users
-func ReadUsers() ([]*Users, invs.GrammarError) {
+func ReadUsers() ([]*Users, fields.GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
 	var usrs []*Users
-	fieldErr := GrammarError{ErrMsgs: []string{""}}
+	fieldErr := fields.GrammarError{ErrMsgs: []string{""}}
 	rows, _ := db.Query(ctx, `SELECT * FROM Users`)
 	err := pgxscan.ScanAll(&usrs, rows)
 	if err != nil {
@@ -182,7 +183,7 @@ func ReadUsers() ([]*Users, invs.GrammarError) {
 
 // returns a user given the id
 // if the id doesn't exist it error
-func ReadUserByID(id int) ([]*Users, invs.GrammarError) {
+func ReadUserByID(id int) ([]*Users, fields.GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
@@ -217,7 +218,7 @@ func ReadUserByID(id int) ([]*Users, invs.GrammarError) {
 }
 
 // validate username, fname, lname, address fields for digits, symbols, punct
-func validateAccount(acct *Account, acctErr *invs.GrammarError) {
+func validateAccount(acct *Account, acctErr *fields.GrammarError) {
 
 	textFields := map[string]*string{
 		"Fname":    &acct.Fname,
@@ -236,7 +237,7 @@ func validateAccount(acct *Account, acctErr *invs.GrammarError) {
 // checks the field to see if it exceeds or falls below a given char limit
 // if it doesn't match the upper or lower limit an error message is added
 // to the list of grammar errors
-func isFieldTooLong(fieldName string, val *string, gramErr *GrammarError, minimum, maximum int) {
+func isFieldTooLong(fieldName string, val *string, gramErr *fields.GrammarError, minimum, maximum int) {
 	fieldLen := len(*val)
 	if fieldLen < minimum {
 		gramErr.AddMsg(BadRequest, "Error: "+fieldName+" is too short, expected "+
@@ -250,7 +251,7 @@ func isFieldTooLong(fieldName string, val *string, gramErr *GrammarError, minimu
 
 // checks to see if there any capital letters in string val
 // adds an new error to fieldErrs if none exist
-func fieldHasNoCapLetters(val *string, fieldErr *GrammarError) {
+func fieldHasNoCapLetters(val *string, fieldErr *fields.GrammarError) {
 	capLst := "ABCDEFGHIJKLMNOPQRYTUVWXYZ"
 	if !strings.ContainsAny(*val, capLst) {
 		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more capital letters")
@@ -259,7 +260,7 @@ func fieldHasNoCapLetters(val *string, fieldErr *GrammarError) {
 
 // checks to see if there are any digits in string val
 // adds an new error to fieldErrs if none exist
-func fieldHasNoNums(val *string, fieldErr *GrammarError) {
+func fieldHasNoNums(val *string, fieldErr *fields.GrammarError) {
 	nums := "0123456789"
 	if !strings.ContainsAny(*val, nums) {
 		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more digits")
