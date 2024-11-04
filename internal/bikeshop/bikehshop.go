@@ -4,64 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/crypto/bcrypt"
 )
-
-type Passwords struct {
-	ID       int    `json:"id" form:"id"`
-	UserID   int    `json:"user_id" form:"user_id"`
-	Password string `json:"password" form:"password"`
-}
-
-var ErrorCode int // http-status code for errors
-const BadRequest = 400
-const resourceNotFound = 404
-
-func EncryptPassword(val string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(val), 14)
-	return string(hash), err
-}
-
-// helper funct that adds hash to the passwords table
-func AddPassword(acct *Account, acctErr *GrammarError) {
-	ctx, db := connect()
-	defer db.Close()
-
-	var pswds Passwords
-	var err error
-
-	if len(acctErr.ErrMsgs) > 0 {
-		return
-	}
-
-	// encrypt password
-	acct.Password, err = EncryptPassword(acct.Password)
-	if err != nil {
-		acctErr.AddMsg(BadRequest,
-			"Hashing Error: password longer than 72 bytes, can't hash")
-		return
-	}
-
-	// if no errors add info to appropiate tables
-	rows, _ := db.Query(
-		ctx,
-		`INSERT INTO Passwords (user_id, password) VALUES($1, $2) RETURNING *`,
-		acct.ID, acct.Password,
-	)
-
-	err = pgxscan.ScanOne(&pswds, rows)
-	if err != nil {
-		qryError := err.Error()
-		if strings.Contains(qryError, "value too long for type character varying") {
-			acctErr.AddMsg(BadRequest, "password too long,chars must be less than 72 bytes")
-		}
-		acctErr.AddMsg(BadRequest, qryError)
-	}
-}
 
 // Create a New Database Connection to bikeshop
 func Connect() (context.Context, *pgxpool.Pool) {
