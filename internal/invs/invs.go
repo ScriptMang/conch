@@ -35,7 +35,7 @@ func (fieldErr *GrammarError) AddMsg(statusCode int, str string) {
 }
 
 // takes an invoice and throws an error for any field with an invalid input
-func (inv *Invoice) validateAllFields(user Users) GrammarError {
+func (inv *Invoice) validateAllFields(user bikeshop.Users) GrammarError {
 	// check for empty fields: for all the fields
 	textFields := map[string]*string{
 		"Fname":    &user.Fname,
@@ -66,7 +66,7 @@ func (inv *Invoice) validateAllFields(user Users) GrammarError {
 	return fieldErr
 }
 
-func InsertOp(usr Users, inv Invoice) ([]*Invoice, GrammarError) {
+func InsertOp(usr bikeshop.Users, inv Invoice) ([]*Invoice, GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
