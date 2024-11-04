@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ScriptMang/conch/internal/invs"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
@@ -55,20 +56,20 @@ func (credErr *AuthError) AddMsg(statusCode int, str string) {
 
 // checks for empty text-fields in an invoice
 // if there an error its added to an error slice
-func isTextFieldEmpty(fieldName string, val *string, fieldErr *GrammarError) {
+func isTextFieldEmpty(fieldName string, val *string, fieldErr *invs.GrammarError) {
 	if *val == "" {
 		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't be empty")
 	}
 }
 
-func fieldHasDigits(fieldName string, val *string, fieldErr *GrammarError) {
+func fieldHasDigits(fieldName string, val *string, fieldErr *invs.GrammarError) {
 	digitFilter := "0123456789"
 	if isTextInvalid(*val, digitFilter) {
 		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any digits")
 	}
 }
 
-func fieldHasPunct(fieldName string, val *string, fieldErr *GrammarError) {
+func fieldHasPunct(fieldName string, val *string, fieldErr *invs.GrammarError) {
 	punctFilter := ".,?!'\"`:;"
 
 	switch fieldName {
@@ -112,7 +113,7 @@ func isTextInvalid(val, charFilter string) bool {
 // checks the field to see if it exceeds or falls below a given char limit
 // if it doesn't match the upper or lower limit an error message is added
 // to the list of grammar errors
-func isFieldTooLong(fieldName string, val *string, gramErr *GrammarError, minimum, maximum int) {
+func isFieldTooLong(fieldName string, val *string, gramErr *invs.GrammarError, minimum, maximum int) {
 	fieldLen := len(*val)
 	if fieldLen < minimum {
 		gramErr.AddMsg(BadRequest, "Error: "+fieldName+" is too short, expected "+
@@ -126,7 +127,7 @@ func isFieldTooLong(fieldName string, val *string, gramErr *GrammarError, minimu
 
 // checks to see if there any capital letters in string val
 // adds an new error to fieldErrs if none exist
-func fieldHasNoCapLetters(val *string, fieldErr *GrammarError) {
+func fieldHasNoCapLetters(val *string, fieldErr *invs.GrammarError) {
 	capLst := "ABCDEFGHIJKLMNOPQRYTUVWXYZ"
 	if !strings.ContainsAny(*val, capLst) {
 		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more capital letters")
@@ -143,7 +144,7 @@ func fieldHasNoNums(val *string, fieldErr *GrammarError) {
 }
 
 // checks a field for punctuation, digits, and symbols
-func checkGrammar(fieldName string, val *string, fieldErr *GrammarError) {
+func checkGrammar(fieldName string, val *string, fieldErr *invs.GrammarError) {
 
 	isTextFieldEmpty(fieldName, val, fieldErr)
 
@@ -177,7 +178,7 @@ func checkGrammar(fieldName string, val *string, fieldErr *GrammarError) {
 }
 
 // validate username, fname, lname, address fields for digits, symbols, punct
-func validateAccount(acct *Account, acctErr *GrammarError) {
+func validateAccount(acct *Account, acctErr *invs.GrammarError) {
 
 	textFields := map[string]*string{
 		"Fname":    &acct.Fname,
@@ -236,7 +237,7 @@ func AddPassword(acct *Account, acctErr *GrammarError) {
 }
 
 // helper funct that adds all user-info to users table
-func AddUser(acct *Account, acctErr *GrammarError) []*Account {
+func AddUser(acct *Account, acctErr *invs.GrammarError) []*Account {
 	ctx, db := connect()
 	defer db.Close()
 
@@ -271,7 +272,7 @@ func AddUser(acct *Account, acctErr *GrammarError) []*Account {
 }
 
 // adds the account info to the appropiate tables w/ the database
-func AddAccount(acct *Account) ([]*Account, GrammarError) {
+func AddAccount(acct *Account) ([]*Account, invs.GrammarError) {
 	var insertedAcct Account
 	var accts []*Account
 	acctErr := &GrammarError{}
@@ -302,7 +303,7 @@ func AddAccount(acct *Account) ([]*Account, GrammarError) {
 }
 
 // returns the list of all existing users
-func ReadUsers() ([]*Users, GrammarError) {
+func ReadUsers() ([]*Users, invs.GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
@@ -325,7 +326,7 @@ func ReadUsers() ([]*Users, GrammarError) {
 
 // returns a user given the id
 // if the id doesn't exist it error
-func ReadUserByID(id int) ([]*Users, GrammarError) {
+func ReadUserByID(id int) ([]*Users, invs.GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
 
