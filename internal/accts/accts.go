@@ -53,7 +53,7 @@ func (credErr *AuthError) AddMsg(statusCode int, str string) {
 }
 
 // helper funct that adds all user-info to users table
-func AddUser(acct *Account, acctErr *fields.GrammarError) []*Account {
+func addUser(acct *Account, acctErr *fields.GrammarError) []*Account {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
