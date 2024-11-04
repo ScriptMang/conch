@@ -378,7 +378,7 @@ func ReadUserByID(id int) ([]*Users, GrammarError) {
 // }
 
 // Create a New Database Connection to bikeshop
-func connect() (context.Context, *pgxpool.Pool) {
+func Connect() (context.Context, *pgxpool.Pool) {
 	uri := "postgres://username@localhost:5432/bikeshop"
 	os.Setenv("DATABASE_URL", uri)
 	ctx := context.Background()
