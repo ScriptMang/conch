@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ScriptMang/conch/internal/bikeshop"
 	"github.com/ScriptMang/conch/internal/fields"
 	"github.com/georgysavva/scany/pgxscan"
 	"golang.org/x/crypto/bcrypt"
@@ -53,7 +54,7 @@ func (credErr *AuthError) AddMsg(statusCode int, str string) {
 
 // helper funct that adds all user-info to users table
 func AddUser(acct *Account, acctErr *fields.GrammarError) []*Account {
-	ctx, db := connect()
+	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
 	var insertedAcct Account
@@ -93,7 +94,7 @@ func encryptPassword(val string) (string, error) {
 
 // helper funct that adds hash to the passwords table
 func addPassword(acct *Account, acctErr *fields.GrammarError) {
-	ctx, db := connect()
+	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
 	var pswds Passwords
@@ -161,7 +162,7 @@ func AddAccount(acct *Account) ([]*Account, fields.GrammarError) {
 
 // returns the list of all existing users
 func ReadUsers() ([]*Users, fields.GrammarError) {
-	ctx, db := connect()
+	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
 	var usrs []*Users
@@ -173,7 +174,7 @@ func ReadUsers() ([]*Users, fields.GrammarError) {
 
 		if strings.Contains(errMsg, "\"username\" does not exist") {
 			fieldErr.ErrMsgs = nil
-			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(BadRequest, "Error: failed to bikeshop.Connect to database, username doesn't exist")
 		}
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
@@ -184,7 +185,7 @@ func ReadUsers() ([]*Users, fields.GrammarError) {
 // returns a user given the id
 // if the id doesn't exist it error
 func ReadUserByID(id int) ([]*Users, fields.GrammarError) {
-	ctx, db := connect()
+	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
 	var usr Users
@@ -203,7 +204,7 @@ func ReadUserByID(id int) ([]*Users, fields.GrammarError) {
 		errMsg := err.Error()
 		fieldErr.ErrMsgs = nil
 		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(BadRequest, "Error: failed to bikeshop.Connect to database, username doesn't exist")
 		}
 
 		if strings.Contains(errMsg, "no rows in result set") {
