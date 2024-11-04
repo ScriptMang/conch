@@ -144,7 +144,7 @@ func fieldHasNoNums(val *string, fieldErr *GrammarError) {
 }
 
 // checks a field for punctuation, digits, and symbols
-func checkGrammar(fieldName string, val *string, fieldErr *invs.GrammarError) {
+func CheckGrammar(fieldName string, val *string, fieldErr *invs.GrammarError) {
 
 	isTextFieldEmpty(fieldName, val, fieldErr)
 

@@ -46,7 +46,7 @@ func (inv *Invoice) validateAllFields(user bikeshop.Users) GrammarError {
 	}
 	var fieldErr GrammarError
 	for field, val := range textFields {
-		checkGrammar(field, val, &fieldErr)
+		bikeshop.CheckGrammar(field, val, &fieldErr)
 	}
 
 	// check for negative values:  price and quantity
