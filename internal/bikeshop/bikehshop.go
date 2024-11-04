@@ -86,7 +86,7 @@ func fieldHasPunct(fieldName string, val *string, fieldErr *invs.GrammarError) {
 	}
 }
 
-func fieldHasSymbols(fieldName string, val *string, fieldErr *GrammarError) {
+func fieldHasSymbols(fieldName string, val *string, fieldErr *invs.GrammarError) {
 	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
 
 	switch fieldName {
