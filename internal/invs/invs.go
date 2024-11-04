@@ -22,6 +22,10 @@ type GrammarError struct {
 
 type Invoices []*Invoice
 
+var ErrorCode int // http-status code for errors
+const BadRequest = 400
+const resourceNotFound = 404
+
 // helper funct: takes a pointer to an InvoiceErorr, HttpStatusCode and a string msg
 // as parameters and sets the values for the GrammarError struct.
 // By default content-type is of type 'application/json'
