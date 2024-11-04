@@ -515,6 +515,8 @@ func ReadInvoicesByUserID(id int) ([]*Invoice, GrammarError) {
 	return invs, fieldErr
 }
 
+// // return the invoice given the user and invoice id
+// // if the ids don't exist it returns an error
 func ReadInvoiceByUserID(userID, invID int) ([]*Invoice, GrammarError) {
 	ctx, db := connect()
 	defer db.Close()
@@ -550,41 +552,6 @@ func ReadInvoiceByUserID(userID, invID int) ([]*Invoice, GrammarError) {
 	}
 	return invs, fieldErr
 }
-
-// // return the invoice given the id
-// // if the id doesn't exist it returns all invoices
-// func ReadInvoiceByID(id int) ([]*Invoice, GrammarError) {
-// 	ctx, db := connect()
-// 	defer db.Close()
-
-// 	var inv Invoice
-// 	var invs []*Invoice
-// 	_, fieldErr := ReadInvoices()
-
-// 	if strings.Contains(fieldErr.ErrMsgs[0], "\"username\" does not exist") {
-// 		return invs, fieldErr
-// 	}
-
-// 	row, _ := db.Query(ctx, `SELECT * FROM invoices WHERE id=$1`, id)
-
-// 	err := pgxscan.ScanOne(&inv, row)
-// 	if err != nil {
-// 		errMsg := err.Error()
-// 		fieldErr.ErrMsgs = nil
-// 		if strings.Contains(errMsg, "\"username\" does not exist") {
-// 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
-// 		}
-
-// 		if strings.Contains(errMsg, "no rows in result set") {
-// 			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
-// 		}
-
-// 		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
-// 		return invs, fieldErr
-// 	}
-// 	invs = append(invs, &inv)
-// 	return invs, fieldErr
-// }
 
 // func validateFieldsForUpdate(inv *Invoice) GrammarError {
 // 	return inv.validateAllFields()
