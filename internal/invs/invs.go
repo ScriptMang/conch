@@ -3,7 +3,9 @@ package invs
 import (
 	"strings"
 
+	"github.com/ScriptMang/conch/internal/accts"
 	"github.com/ScriptMang/conch/internal/bikeshop"
+	"github.com/ScriptMang/conch/internal/fields"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -23,7 +25,7 @@ const BadRequest = 400
 const resourceNotFound = 404
 
 // takes an invoice and throws an error for any field with an invalid input
-func (inv *Invoice) validateAllFields(user bikeshop.Users) GrammarError {
+func (inv *Invoice) validateAllFields(user accts.Users) fields.GrammarError {
 	// check for empty fields: for all the fields
 	textFields := map[string]*string{
 		"Fname":    &user.Fname,
@@ -32,7 +34,7 @@ func (inv *Invoice) validateAllFields(user bikeshop.Users) GrammarError {
 		"Product":  &inv.Product,
 		"Address":  &user.Address,
 	}
-	var fieldErr GrammarError
+	var fieldErr fields.GrammarError
 	for field, val := range textFields {
 		bikeshop.CheckGrammar(field, val, &fieldErr)
 	}
@@ -54,7 +56,7 @@ func (inv *Invoice) validateAllFields(user bikeshop.Users) GrammarError {
 	return fieldErr
 }
 
-func InsertOp(usr bikeshop.Users, inv Invoice) ([]*Invoice, GrammarError) {
+func InsertOp(usr accts.Users, inv Invoice) ([]*Invoice, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
@@ -98,12 +100,12 @@ func InsertOp(usr bikeshop.Users, inv Invoice) ([]*Invoice, GrammarError) {
 }
 
 // // returns all the invoices in the database a slice []*Invoice
-func ReadInvoices() ([]*Invoice, GrammarError) {
+func ReadInvoices() ([]*Invoice, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
 	var invs Invoices
-	fieldErr := GrammarError{ErrMsgs: []string{""}}
+	fieldErr := fields.GrammarError{ErrMsgs: []string{""}}
 	rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
 	err := pgxscan.ScanAll(&invs, rows)
 	if err != nil {
@@ -119,7 +121,7 @@ func ReadInvoices() ([]*Invoice, GrammarError) {
 	return invs, fieldErr
 }
 
-func ReadInvoicesByUserID(id int) ([]*Invoice, GrammarError) {
+func ReadInvoicesByUserID(id int) ([]*Invoice, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
@@ -157,7 +159,7 @@ func ReadInvoicesByUserID(id int) ([]*Invoice, GrammarError) {
 
 // // return the invoice given the user and invoice id
 // // if the ids don't exist it returns an error
-func ReadInvoiceByUserID(userID, invID int) ([]*Invoice, GrammarError) {
+func ReadInvoiceByUserID(userID, invID int) ([]*Invoice, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
