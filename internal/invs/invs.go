@@ -20,10 +20,6 @@ type Invoice struct {
 
 type Invoices []*Invoice
 
-var ErrorCode int // http-status code for errors
-const BadRequest = 400
-const resourceNotFound = 404
-
 // takes an invoice and throws an error for any field with an invalid input
 func (inv *Invoice) validateAllFields(user accts.Users) fields.GrammarError {
 	// check for empty fields: for all the fields
@@ -36,21 +32,21 @@ func (inv *Invoice) validateAllFields(user accts.Users) fields.GrammarError {
 	}
 	var fieldErr fields.GrammarError
 	for field, val := range textFields {
-		bikeshop.CheckGrammar(field, val, &fieldErr)
+		fields.CheckGrammar(field, val, &fieldErr)
 	}
 
 	// check for negative values:  price and quantity
 	if inv.Price == 0.00 {
-		fieldErr.AddMsg(BadRequest, "Error: Price can't be zero")
+		fieldErr.AddMsg(fields.BadRequest, "Error: Price can't be zero")
 	} else if inv.Price < 0.00 {
-		fieldErr.AddMsg(BadRequest, "Error: The price can't be negative")
+		fieldErr.AddMsg(fields.BadRequest, "Error: The price can't be negative")
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 
 	if inv.Quantity == 0 {
-		fieldErr.AddMsg(BadRequest, "Error: Quantity can't be zero")
+		fieldErr.AddMsg(fields.BadRequest, "Error: Quantity can't be zero")
 	} else if inv.Quantity < 0 {
-		fieldErr.AddMsg(BadRequest, "Error: The quantity can't be negative")
+		fieldErr.AddMsg(fields.BadRequest, "Error: The quantity can't be negative")
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 	return fieldErr
@@ -83,14 +79,16 @@ func InsertOp(usr accts.Users, inv Invoice) ([]*Invoice, fields.GrammarError) {
 		switch {
 		case strings.Contains(qryError, "numeric field overflow"):
 			// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist\n")
-			fieldErr.AddMsg(BadRequest, "numeric field overflow, provide a value between 1.00 - 999.99")
+			fieldErr.AddMsg(fields.BadRequest,
+				"numeric field overflow, provide a value between 1.00 - 999.99")
 		case strings.Contains(qryError, "greater than maximum value for int4"):
 			// fmt.Printf("ReadInvoicesByUserID funct: error invoice with specified id doesn't exist\n")
-			fieldErr.AddMsg(BadRequest, "integer overflow, value must be between 1 - 2147483647")
+			fieldErr.AddMsg(fields.BadRequest,
+				"integer overflow, value must be between 1 - 2147483647")
 		case strings.Contains(qryError, "value too long for type character varying"):
-			fieldErr.AddMsg(BadRequest, "varchar too long, use varchar length between 1-255")
+			fieldErr.AddMsg(fields.BadRequest, "varchar too long, use varchar length between 1-255")
 		default:
-			fieldErr.AddMsg(BadRequest, qryError)
+			fieldErr.AddMsg(fields.BadRequest, qryError)
 		}
 
 	}
@@ -113,7 +111,8 @@ func ReadInvoices() ([]*Invoice, fields.GrammarError) {
 
 		if strings.Contains(errMsg, "\"username\" does not exist") {
 			fieldErr.ErrMsgs = nil
-			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(fields.BadRequest,
+				"Error: failed to connect to database, username doesn't exist")
 		}
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
@@ -142,13 +141,15 @@ func ReadInvoicesByUserID(id int) ([]*Invoice, fields.GrammarError) {
 		switch {
 		case strings.Contains(errMsg, "\"username\" does not exist"):
 			// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist\n")
-			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(fields.BadRequest,
+				"Error: failed to connect to database, username doesn't exist")
 		case strings.Contains(errMsg, "no rows in result set"):
 			// fmt.Printf("ReadInvoicesByUserID funct: error invoice with specified id doesn't exist\n")
-			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
+			fieldErr.AddMsg(fields.ResourceNotFound,
+				"Resource Not Found: invoice with specified id does not exist")
 		default:
 			// fmt.Printf("ReadInvoicesByUserID funct: error %s\n", err.Error())
-			fieldErr.AddMsg(BadRequest, err.Error())
+			fieldErr.AddMsg(fields.BadRequest, err.Error())
 		}
 
 		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
@@ -181,13 +182,15 @@ func ReadInvoiceByUserID(userID, invID int) ([]*Invoice, fields.GrammarError) {
 		switch {
 		case strings.Contains(errMsg, "\"username\" does not exist"):
 			// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist\n")
-			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+			fieldErr.AddMsg(fields.BadRequest,
+				"Error: failed to connect to database, username doesn't exist")
 		case strings.Contains(errMsg, "no rows in result set"):
 			// fmt.Printf("ReadInvoicesByUserID funct: error invoice with specified id doesn't exist\n")
-			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
+			fieldErr.AddMsg(fields.ResourceNotFound,
+				"Resource Not Found: invoice with specified id does not exist")
 		default:
 			// fmt.Printf("ReadInvoicesByUserID funct: error %s\n", err.Error())
-			fieldErr.AddMsg(BadRequest, err.Error())
+			fieldErr.AddMsg(fields.BadRequest, err.Error())
 		}
 		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
 		return invs, fieldErr
