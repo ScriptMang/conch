@@ -84,19 +84,19 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 		}
 		edit5 := strings.Join(wordLst, " ") + temp
 		editedErrMsg = editErrMsg(edit5, "  ", " ")
-		rqstData.FieldErr.AddMsg(db.BadRequest, editedErrMsg)
+		rqstData.FieldErr.AddMsg(fields.BadRequest, editedErrMsg)
 	case 2:
 		edit := editErrMsg(err, "invalid", "Error: invalid")
 		editedErrMsg = editErrMsg(edit,
 			"' looking for beginning of value",
 			"', value must be wrapped in double quotes")
-		rqstData.FieldErr.AddMsg(db.BadRequest, editedErrMsg)
+		rqstData.FieldErr.AddMsg(fields.BadRequest, editedErrMsg)
 	default:
 		editedErrMsg = editErrMsg(err, "invalid", "Error: invalid")
-		rqstData.FieldErr.AddMsg(db.BadRequest, editedErrMsg)
+		rqstData.FieldErr.AddMsg(fields.BadRequest, editedErrMsg)
 	}
 
-	c.AbortWithStatusJSON(db.ErrorCode, rqstData.FieldErr)
+	c.AbortWithStatusJSON(fields.ErrorCode, rqstData.FieldErr)
 	return inv, false
 }
 
@@ -104,7 +104,7 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice,
 func validateRouteUserID(c *gin.Context, rqstData *respBodyData) int {
 	id, err := strconv.Atoi(c.Param("usr_id"))
 	if err != nil {
-		rqstData.FieldErr.AddMsg(db.BadRequest, "Bad Request: id can't be converted to an integer")
+		rqstData.FieldErr.AddMsg(fields.BadRequest, "Bad Request: id can't be converted to an integer")
 		sendResponse(c, rqstData)
 	}
 	return id
@@ -114,7 +114,7 @@ func validateRouteUserID(c *gin.Context, rqstData *respBodyData) int {
 func validateRouteInvID(c *gin.Context, rqstData *respBodyData) int {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		rqstData.FieldErr.AddMsg(db.BadRequest, "Bad Request: id can't be converted to an integer")
+		rqstData.FieldErr.AddMsg(fields.BadRequest, "Bad Request: id can't be converted to an integer")
 		sendResponse(c, rqstData)
 	}
 	return id
@@ -164,9 +164,9 @@ func createAcct(r *gin.Engine) *gin.Engine {
 		var respData []*accts.Account
 		err := c.ShouldBind(&acct)
 		if err != nil {
-			acctErr.AddMsg(db.BadRequest,
+			acctErr.AddMsg(fields.BadRequest,
 				"Binding Error: failed to bind fields to account object, mismatched data-types")
-			c.JSON(db.ErrorCode, acctErr)
+			c.JSON(fields.ErrorCode, acctErr)
 			return
 		}
 
@@ -180,7 +180,7 @@ func createAcct(r *gin.Engine) *gin.Engine {
 		errMsgSize := len(acctErr.ErrMsgs)
 		switch {
 		case errMsgSize > 0:
-			c.JSON(db.ErrorCode, acctErr)
+			c.JSON(fields.ErrorCode, acctErr)
 		default:
 			c.JSON(statusOK, *respData[0])
 		}
