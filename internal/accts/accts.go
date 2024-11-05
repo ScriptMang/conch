@@ -6,7 +6,7 @@ import (
 
 	"github.com/ScriptMang/conch/internal/bikeshop"
 	"github.com/ScriptMang/conch/internal/fields"
-	"github.com/georgysavva/scany/pgxscan"
+	"github.com/georgysavva/scany/v2/pgxscan"
 	"golang.org/x/crypto/bcrypt"
 )
 
