@@ -80,7 +80,7 @@ func isTextInvalid(val, charFilter string) bool {
 // checks the field to see if it exceeds or falls below a given char limit
 // if it doesn't match the upper or lower limit an error message is added
 // to the list of grammar errors
-func isFieldTooLong(fieldName string, val *string, gramErr *fields.GrammarError, minimum, maximum int) {
+func isFieldTooLong(fieldName string, val *string, gramErr *GrammarError, minimum, maximum int) {
 	fieldLen := len(*val)
 	if fieldLen < minimum {
 		gramErr.AddMsg(BadRequest, "Error: "+fieldName+" is too short, expected "+
@@ -94,7 +94,7 @@ func isFieldTooLong(fieldName string, val *string, gramErr *fields.GrammarError,
 
 // checks to see if there any capital letters in string val
 // adds an new error to fieldErrs if none exist
-func fieldHasNoCapLetters(val *string, fieldErr *fields.GrammarError) {
+func fieldHasNoCapLetters(val *string, fieldErr *GrammarError) {
 	capLst := "ABCDEFGHIJKLMNOPQRYTUVWXYZ"
 	if !strings.ContainsAny(*val, capLst) {
 		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more capital letters")
@@ -103,7 +103,7 @@ func fieldHasNoCapLetters(val *string, fieldErr *fields.GrammarError) {
 
 // checks to see if there are any digits in string val
 // adds an new error to fieldErrs if none exist
-func fieldHasNoNums(val *string, fieldErr *fields.GrammarError) {
+func fieldHasNoNums(val *string, fieldErr *GrammarError) {
 	nums := "0123456789"
 	if !strings.ContainsAny(*val, nums) {
 		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more digits")
