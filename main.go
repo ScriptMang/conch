@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"strings"
 
-	db "github.com/ScriptMang/conch/internal/bikeshop"
+	"github.com/ScriptMang/conch/internal/invs"
 	"github.com/gin-gonic/gin"
 )
 
 type respBodyData struct {
-	Invs     []*db.Invoice
+	Invs     []*invs.Invoice
 	Users    []*db.Users
 	FieldErr db.GrammarError
 }
@@ -58,7 +58,7 @@ func editErrMsg(orig, match, edit string) string {
 // binds an empty invoice to client's data in the response body
 // returns the given invoice and an invoice error
 func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice, bool) {
-	var inv db.Invoice
+	var inv invs.Invoice
 	bindingErr := c.ShouldBind(&inv)
 
 	if bindingErr == nil {
@@ -191,7 +191,7 @@ func createAcct(r *gin.Engine) *gin.Engine {
 // binds json data to an invoice and insert its to the database
 func addInvoice(r *gin.Engine) *gin.Engine {
 	r.POST("/user/:usr_id/invoices/", func(c *gin.Context) {
-		var inv db.Invoice
+		var inv invs.Invoice
 		var rqstData respBodyData
 		var bindingOk bool
 		id := validateRouteUserID(c, &rqstData)
@@ -209,7 +209,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 				sendResponse(c, &rqstData)
 				return
 			}
-			rqstData.Invs, fieldErr = db.InsertOp(*usrs[0], inv)
+			rqstData.Invs, fieldErr = invs.InsertOp(*usrs[0], inv)
 			rqstData.FieldErr = fieldErr
 			// fmt.Printf("Invoice after InsertOP is: %+v\n", *rqstData.Invs[0])
 			// fmt.Printf("FieldErrs after InsertOP is: %v\n", fieldErr.ErrMsgs)
@@ -258,7 +258,7 @@ func readUserDataByID(r *gin.Engine) *gin.Engine {
 func readInvoiceData(r *gin.Engine) *gin.Engine {
 	r.GET("/users/invoices", func(c *gin.Context) {
 		var rqstData respBodyData
-		rqstData.Invs, rqstData.FieldErr = db.ReadInvoices()
+		rqstData.Invs, rqstData.FieldErr = invs.ReadInvoices()
 		fieldErr := rqstData.FieldErr
 		code = statusOK
 		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
@@ -275,7 +275,7 @@ func readUserInvoices(r *gin.Engine) *gin.Engine {
 	r.GET("/user/:usr_id/invoices", func(c *gin.Context) {
 		var rqstData respBodyData
 		id := validateRouteUserID(c, &rqstData)
-		rqstData.Invs, rqstData.FieldErr = db.ReadInvoicesByUserID(id)
+		rqstData.Invs, rqstData.FieldErr = invs.ReadInvoicesByUserID(id)
 		fieldErr := rqstData.FieldErr
 		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 			// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
@@ -295,7 +295,7 @@ func readUserInvoiceByID(r *gin.Engine) *gin.Engine {
 		var rqstData respBodyData
 		userID := validateRouteUserID(c, &rqstData)
 		invID := validateRouteInvID(c, &rqstData)
-		rqstData.Invs, rqstData.FieldErr = db.ReadInvoiceByUserID(userID, invID)
+		rqstData.Invs, rqstData.FieldErr = invs.ReadInvoiceByUserID(userID, invID)
 		fieldErr := rqstData.FieldErr
 		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 			// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
