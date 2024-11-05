@@ -59,7 +59,7 @@ func editErrMsg(orig, match, edit string) string {
 
 // binds an empty invoice to client's data in the response body
 // returns the given invoice and an invoice error
-func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (db.Invoice, bool) {
+func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (invs.Invoice, bool) {
 	var inv invs.Invoice
 	bindingErr := c.ShouldBind(&inv)
 
@@ -127,7 +127,7 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 	fieldErr := rqstData.FieldErr
 	switch {
 	case fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "":
-		c.JSON(db.ErrorCode, fieldErr)
+		c.JSON(fields.ErrorCode, fieldErr)
 	default:
 
 		var receipt Order
@@ -202,7 +202,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 		// fmt.Printf("Invoice in addInvoice funct is: %+v\n", inv)
 		if id != 0 && bindingOk {
 			var fieldErr fields.GrammarError
-			rqstData.Users, fieldErr = db.ReadUserByID(id)
+			rqstData.Users, fieldErr = accts.ReadUserByID(id)
 			usrs := rqstData.Users
 			// fmt.Printf("User in addInvoice funct is: %+v\n", *usrs[0])
 			// fmt.Printf("The length of fieldErrs after ReadUserByID is: %d\n", len(fieldErr.ErrMsgs))
