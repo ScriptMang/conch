@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ScriptMang/conch/internal/accts"
+	"github.com/ScriptMang/conch/internal/fields"
 	"github.com/ScriptMang/conch/internal/invs"
 	"github.com/gin-gonic/gin"
 )
@@ -14,7 +15,7 @@ import (
 type respBodyData struct {
 	Invs     []*invs.Invoice
 	Users    []*accts.Users
-	FieldErr db.GrammarError
+	FieldErr fields.GrammarError
 }
 
 type Order struct {
@@ -159,7 +160,7 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 func createAcct(r *gin.Engine) *gin.Engine {
 	r.POST("/create/Account", func(c *gin.Context) {
 		var acct *accts.Account
-		var acctErr db.GrammarError
+		var acctErr fields.GrammarError
 		var respData []*accts.Account
 		err := c.ShouldBind(&acct)
 		if err != nil {
@@ -200,7 +201,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 		inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 		// fmt.Printf("Invoice in addInvoice funct is: %+v\n", inv)
 		if id != 0 && bindingOk {
-			var fieldErr db.GrammarError
+			var fieldErr fields.GrammarError
 			rqstData.Users, fieldErr = db.ReadUserByID(id)
 			usrs := rqstData.Users
 			// fmt.Printf("User in addInvoice funct is: %+v\n", *usrs[0])
