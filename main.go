@@ -6,13 +6,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ScriptMang/conch/internal/accts"
 	"github.com/ScriptMang/conch/internal/invs"
 	"github.com/gin-gonic/gin"
 )
 
 type respBodyData struct {
 	Invs     []*invs.Invoice
-	Users    []*db.Users
+	Users    []*accts.Users
 	FieldErr db.GrammarError
 }
 
@@ -157,9 +158,9 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 // post request to create user account
 func createAcct(r *gin.Engine) *gin.Engine {
 	r.POST("/create/Account", func(c *gin.Context) {
-		var acct *db.Account
+		var acct *accts.Account
 		var acctErr db.GrammarError
-		var respData []*db.Account
+		var respData []*accts.Account
 		err := c.ShouldBind(&acct)
 		if err != nil {
 			acctErr.AddMsg(db.BadRequest,
@@ -169,7 +170,7 @@ func createAcct(r *gin.Engine) *gin.Engine {
 		}
 
 		// validate account info
-		respData, acctErr = db.AddAccount(acct)
+		respData, acctErr = accts.AddAccount(acct)
 
 		if len(respData) == 0 {
 			fmt.Println("Thats strange, no accounts were added")
@@ -224,7 +225,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 func readUserData(r *gin.Engine) *gin.Engine {
 	r.GET("/users", func(c *gin.Context) {
 		var rqstData respBodyData
-		rqstData.Users, rqstData.FieldErr = db.ReadUsers()
+		rqstData.Users, rqstData.FieldErr = accts.ReadUsers()
 		fieldErr := rqstData.FieldErr
 		code = statusOK
 		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
@@ -241,7 +242,7 @@ func readUserDataByID(r *gin.Engine) *gin.Engine {
 	r.GET("/user/:usr_id", func(c *gin.Context) {
 		var rqstData respBodyData
 		id := validateRouteUserID(c, &rqstData)
-		rqstData.Users, rqstData.FieldErr = db.ReadUserByID(id)
+		rqstData.Users, rqstData.FieldErr = accts.ReadUserByID(id)
 		fieldErr := rqstData.FieldErr
 		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 			// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
