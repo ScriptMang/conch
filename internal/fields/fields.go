@@ -1,6 +1,7 @@
 package fields
 
 import (
+	"strconv"
 	"strings"
 )
 
@@ -74,6 +75,39 @@ func fieldHasSymbols(fieldName string, val *string, fieldErr *GrammarError) {
 // if it returns a index then the text is invalid and it returns true
 func isTextInvalid(val, charFilter string) bool {
 	return strings.ContainsAny(val, charFilter)
+}
+
+// checks the field to see if it exceeds or falls below a given char limit
+// if it doesn't match the upper or lower limit an error message is added
+// to the list of grammar errors
+func isFieldTooLong(fieldName string, val *string, gramErr *fields.GrammarError, minimum, maximum int) {
+	fieldLen := len(*val)
+	if fieldLen < minimum {
+		gramErr.AddMsg(BadRequest, "Error: "+fieldName+" is too short, expected "+
+			strconv.Itoa(minimum)+"-"+strconv.Itoa(maximum)+" chars")
+	}
+	if fieldLen > maximum {
+		gramErr.AddMsg(BadRequest, "Error: "+fieldName+" is too long, expected "+
+			strconv.Itoa(minimum)+"-"+strconv.Itoa(maximum)+" chars")
+	}
+}
+
+// checks to see if there any capital letters in string val
+// adds an new error to fieldErrs if none exist
+func fieldHasNoCapLetters(val *string, fieldErr *fields.GrammarError) {
+	capLst := "ABCDEFGHIJKLMNOPQRYTUVWXYZ"
+	if !strings.ContainsAny(*val, capLst) {
+		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more capital letters")
+	}
+}
+
+// checks to see if there are any digits in string val
+// adds an new error to fieldErrs if none exist
+func fieldHasNoNums(val *string, fieldErr *fields.GrammarError) {
+	nums := "0123456789"
+	if !strings.ContainsAny(*val, nums) {
+		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more digits")
+	}
 }
 
 // checks a field for punctuation, digits, and symbols
