@@ -173,7 +173,7 @@ func ReadUsers() ([]*Users, fields.GrammarError) {
 		// log.Printf("Error in ReadUsers: %s\n", errMsg)
 		if strings.Contains(errMsg, "failed to connect to `user=username") {
 			fieldErr.ErrMsgs = nil
-			fieldErr.AddMsg(BadRequest, "Error: failed to bikeshop.Connect to database, username doesn't exist")
+			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
 		}
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
@@ -192,7 +192,8 @@ func ReadUserByID(id int) ([]*Users, fields.GrammarError) {
 	_, fieldErr := ReadUsers()
 
 	// make sure the table isn't empty
-	if strings.Contains(fieldErr.ErrMsgs[0], "\"username\" does not exist") {
+
+	if fieldErr.ErrMsgs != nil {
 		return usrs, fieldErr
 	}
 
