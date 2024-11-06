@@ -103,13 +103,13 @@ func ReadInvoices() ([]*Invoice, fields.GrammarError) {
 	defer db.Close()
 
 	var invs Invoices
-	fieldErr := fields.GrammarError{ErrMsgs: []string{""}}
+	fieldErr := fields.GrammarError{}
 	rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
 	err := pgxscan.ScanAll(&invs, rows)
 	if err != nil {
 		errMsg := err.Error()
 
-		if strings.Contains(errMsg, "\"username\" does not exist") {
+		if strings.Contains(errMsg, "failed to connect to `user=username") {
 			fieldErr.ErrMsgs = nil
 			fieldErr.AddMsg(fields.BadRequest,
 				"Error: failed to connect to database, username doesn't exist")

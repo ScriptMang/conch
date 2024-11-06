@@ -263,11 +263,11 @@ func readInvoiceData(r *gin.Engine) *gin.Engine {
 		var rqstData respBodyData
 		rqstData.Invs, rqstData.FieldErr = invs.ReadInvoices()
 		fieldErr := rqstData.FieldErr
-		code = statusOK
 		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 			sendResponse(c, &rqstData)
 			return
 		}
+		code = statusOK
 		c.JSON(code, rqstData.Invs)
 	})
 	return r
