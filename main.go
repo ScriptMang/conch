@@ -228,11 +228,12 @@ func readUserData(r *gin.Engine) *gin.Engine {
 		var rqstData respBodyData
 		rqstData.Users, rqstData.FieldErr = accts.ReadUsers()
 		fieldErr := rqstData.FieldErr
-		code = statusOK
 		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+			// log.Printf("Error in ReadUserData funct: %v\n", fieldErr.ErrMsgs)
 			sendResponse(c, &rqstData)
 			return
 		}
+		code = statusOK
 		c.JSON(code, rqstData.Users)
 	})
 	return r

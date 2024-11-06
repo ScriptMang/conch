@@ -165,13 +165,13 @@ func ReadUsers() ([]*Users, fields.GrammarError) {
 	defer db.Close()
 
 	var usrs []*Users
-	fieldErr := fields.GrammarError{ErrMsgs: []string{""}}
+	fieldErr := fields.GrammarError{}
 	rows, _ := db.Query(ctx, `SELECT * FROM Users`)
 	err := pgxscan.ScanAll(&usrs, rows)
 	if err != nil {
 		errMsg := err.Error()
-
-		if strings.Contains(errMsg, "\"username\" does not exist") {
+		// log.Printf("Error in ReadUsers: %s\n", errMsg)
+		if strings.Contains(errMsg, "failed to connect to `user=username") {
 			fieldErr.ErrMsgs = nil
 			fieldErr.AddMsg(BadRequest, "Error: failed to bikeshop.Connect to database, username doesn't exist")
 		}
