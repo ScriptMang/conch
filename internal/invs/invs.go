@@ -106,9 +106,10 @@ func ReadInvoices() ([]*Invoice, fields.GrammarError) {
 	fieldErr := fields.GrammarError{}
 	rows, _ := db.Query(ctx, `SELECT * FROM invoices`)
 	err := pgxscan.ScanAll(&invs, rows)
+	// fmt.Printf("So Far no errs in ReadInvoices\n")
 	if err != nil {
 		errMsg := err.Error()
-
+		// fmt.Printf("Houston there's an err in ReadInvoices\n")
 		if strings.Contains(errMsg, "failed to connect to `user=username") {
 			fieldErr.ErrMsgs = nil
 			fieldErr.AddMsg(fields.BadRequest,
@@ -124,38 +125,31 @@ func ReadInvoicesByUserID(id int) ([]*Invoice, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
-	var invs []*Invoice
+	var invoices []*Invoice
 	_, fieldErr := ReadInvoices()
 
-	if strings.Contains(fieldErr.ErrMsgs[0], "\"username\" does not exist") {
-		// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist")
-		return invs, fieldErr
+	if fieldErr.ErrMsgs != nil &&
+		strings.Contains(fieldErr.ErrMsgs[0], "failed to connect to `user=username") {
+		// log.Printf("ReadInvoicesByUserID funct: Error: username doesn't exist")
+		return nil, fieldErr
 	}
 
 	rows, _ := db.Query(ctx, `SELECT * FROM invoices WHERE user_id = $1`, id)
+	err := pgxscan.ScanAll(&invoices, rows)
 
-	err := pgxscan.ScanAll(&invs, rows)
-	if err != nil {
-		errMsg := err.Error()
-		fieldErr.ErrMsgs = nil
-		switch {
-		case strings.Contains(errMsg, "\"username\" does not exist"):
-			// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist\n")
-			fieldErr.AddMsg(fields.BadRequest,
-				"Error: failed to connect to database, username doesn't exist")
-		case strings.Contains(errMsg, "no rows in result set"):
-			// fmt.Printf("ReadInvoicesByUserID funct: error invoice with specified id doesn't exist\n")
-			fieldErr.AddMsg(fields.ResourceNotFound,
-				"Resource Not Found: invoice with specified id does not exist")
-		default:
-			// fmt.Printf("ReadInvoicesByUserID funct: error %s\n", err.Error())
-			fieldErr.AddMsg(fields.BadRequest, err.Error())
-		}
-
-		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
-		return invs, fieldErr
+	if len(invoices) == 0 {
+		// log.Println("Err: No Rows were Found for the Specified User")
+		fieldErr.AddMsg(fields.ResourceNotFound, "Resource Not Found: user with specified id doesn't exist")
+		return nil, fieldErr
 	}
-	return invs, fieldErr
+
+	if err != nil {
+		// log.Println("Found an Error Iterating in Getting All the Invoices for the Specified User")
+		fieldErr.AddMsg(fields.BadRequest, err.Error())
+		return nil, fieldErr
+	}
+
+	return invoices, fieldErr
 }
 
 // // return the invoice given the user and invoice id
