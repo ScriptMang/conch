@@ -161,7 +161,8 @@ func ReadInvoiceByUserID(userID, invID int) ([]*Invoice, fields.GrammarError) {
 	var invs []*Invoice
 	_, fieldErr := ReadInvoices()
 
-	if strings.Contains(fieldErr.ErrMsgs[0], "\"username\" does not exist") {
+	if fieldErr.ErrMsgs != nil &&
+		strings.Contains(fieldErr.ErrMsgs[0], "failed to connect to `user=username") {
 		// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist")
 		return invs, fieldErr
 	}

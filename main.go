@@ -104,8 +104,7 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (invs.Invoic
 func validateRouteUserID(c *gin.Context, rqstData *respBodyData) int {
 	id, err := strconv.Atoi(c.Param("usr_id"))
 	if err != nil {
-		rqstData.FieldErr.AddMsg(fields.BadRequest, "Bad Request: id can't be converted to an integer")
-		sendResponse(c, rqstData)
+		rqstData.FieldErr.AddMsg(fields.BadRequest, "Bad Request: user id can't be converted to an integer")
 	}
 	return id
 }
@@ -114,8 +113,7 @@ func validateRouteUserID(c *gin.Context, rqstData *respBodyData) int {
 func validateRouteInvID(c *gin.Context, rqstData *respBodyData) int {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		rqstData.FieldErr.AddMsg(fields.BadRequest, "Bad Request: id can't be converted to an integer")
-		sendResponse(c, rqstData)
+		rqstData.FieldErr.AddMsg(fields.BadRequest, "Bad Request: invoice id can't be converted to an integer")
 	}
 	return id
 }
@@ -306,6 +304,11 @@ func readUserInvoiceByID(r *gin.Engine) *gin.Engine {
 		var rqstData respBodyData
 		userID := validateRouteUserID(c, &rqstData)
 		invID := validateRouteInvID(c, &rqstData)
+		var invalidID = rqstData.FieldErr.ErrMsgs
+		if invalidID != nil {
+			sendResponse(c, &rqstData)
+			return
+		}
 		rqstData.Invs, rqstData.FieldErr = invs.ReadInvoiceByUserID(userID, invID)
 		fieldErr := rqstData.FieldErr
 		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
