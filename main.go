@@ -244,6 +244,7 @@ func readUserDataByID(r *gin.Engine) *gin.Engine {
 		id := validateRouteUserID(c, &rqstData)
 		var invalidID = rqstData.FieldErr.ErrMsgs
 		if invalidID != nil {
+			sendResponse(c, &rqstData)
 			return
 		}
 		rqstData.Users, rqstData.FieldErr = accts.ReadUserByID(id)
@@ -282,6 +283,7 @@ func readUserInvoices(r *gin.Engine) *gin.Engine {
 		id := validateRouteUserID(c, &rqstData)
 		var invalidID = rqstData.FieldErr.ErrMsgs
 		if invalidID != nil {
+			sendResponse(c, &rqstData)
 			return
 		}
 		rqstData.Invs, rqstData.FieldErr = invs.ReadInvoicesByUserID(id)
