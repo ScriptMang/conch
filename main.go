@@ -196,6 +196,11 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 		var bindingOk bool
 		id := validateRouteUserID(c, &rqstData)
 		// fmt.Printf("ID in addInvoice funct is: %d\n", id)
+		var invalidID = rqstData.FieldErr.ErrMsgs
+		if invalidID != nil {
+			sendResponse(c, &rqstData)
+			return
+		}
 		inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 		// fmt.Printf("Invoice in addInvoice funct is: %+v\n", inv)
 		if id != 0 && bindingOk {
@@ -308,6 +313,7 @@ func readUserInvoiceByID(r *gin.Engine) *gin.Engine {
 		invID := validateRouteInvID(c, &rqstData)
 		var invalidID = rqstData.FieldErr.ErrMsgs
 		if invalidID != nil {
+			// fmt.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
 			sendResponse(c, &rqstData)
 			return
 		}

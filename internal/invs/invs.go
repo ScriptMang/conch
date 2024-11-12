@@ -158,39 +158,36 @@ func ReadInvoiceByUserID(userID, invID int) ([]*Invoice, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
-	var invs []*Invoice
-	_, fieldErr := ReadInvoices()
+	var invoices []*Invoice
+	users, fieldErr := accts.ReadUserByID(userID)
 
-	if fieldErr.ErrMsgs != nil &&
-		strings.Contains(fieldErr.ErrMsgs[0], "failed to connect to `user=username") {
-		// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist")
-		return invs, fieldErr
+	if fieldErr.ErrMsgs != nil {
+		// log.Printf("ReadInvoicesByUserID funct: error username doesn't exist")
+		return invoices, fieldErr
+	}
+
+	if len(users) == 0 {
+		fieldErr.AddMsg(fields.ResourceNotFound, "Resource Not Found: user with specified id doesn't exist")
+		return invoices, fieldErr
 	}
 
 	rows, _ := db.Query(ctx, `SELECT * FROM invoices WHERE user_id = $1 and id = $2`, userID, invID)
 
-	err := pgxscan.ScanAll(&invs, rows)
-	if err != nil {
-		errMsg := err.Error()
-		fieldErr.ErrMsgs = nil
+	err := pgxscan.ScanAll(&invoices, rows)
 
-		switch {
-		case strings.Contains(errMsg, "\"username\" does not exist"):
-			// fmt.Printf("ReadInvoicesByUserID funct: error username doesn't exist\n")
-			fieldErr.AddMsg(fields.BadRequest,
-				"Error: failed to connect to database, username doesn't exist")
-		case strings.Contains(errMsg, "no rows in result set"):
-			// fmt.Printf("ReadInvoicesByUserID funct: error invoice with specified id doesn't exist\n")
-			fieldErr.AddMsg(fields.ResourceNotFound,
-				"Resource Not Found: invoice with specified id does not exist")
-		default:
-			// fmt.Printf("ReadInvoicesByUserID funct: error %s\n", err.Error())
-			fieldErr.AddMsg(fields.BadRequest, err.Error())
-		}
-		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
-		return invs, fieldErr
+	if len(invoices) == 0 {
+		// log.Println("Err: No Rows were Found for the Specified User")
+		fieldErr.AddMsg(fields.ResourceNotFound, "Resource Not Found: invoice with specified id doesn't exist")
+		return nil, fieldErr
 	}
-	return invs, fieldErr
+
+	if err != nil {
+		// log.Println("Found an Error Iterating in Getting All the Invoices for the Specified User")
+		fieldErr.AddMsg(fields.BadRequest, err.Error())
+		return nil, fieldErr
+	}
+
+	return invoices, fieldErr
 }
 
 // func validateFieldsForUpdate(inv *Invoice) GrammarError {

@@ -208,7 +208,7 @@ func ReadUserByID(id int) ([]*Users, fields.GrammarError) {
 		}
 
 		if strings.Contains(errMsg, "no rows in result set") {
-			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
+			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: user with specified id does not exist")
 		}
 
 		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
