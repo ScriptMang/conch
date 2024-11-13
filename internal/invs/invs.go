@@ -1,12 +1,14 @@
 package invs
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/ScriptMang/conch/internal/accts"
 	"github.com/ScriptMang/conch/internal/bikeshop"
 	"github.com/ScriptMang/conch/internal/fields"
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
 )
 
 type Invoice struct {
@@ -190,52 +192,54 @@ func ReadInvoiceByUserID(userID, invID int) ([]*Invoice, fields.GrammarError) {
 	return invoices, fieldErr
 }
 
-// func validateFieldsForUpdate(inv *Invoice) GrammarError {
-// 	return inv.validateAllFields()
-// }
+func (inv *Invoice) validateFieldsForUpdate(user accts.Users) fields.GrammarError {
+	return inv.validateAllFields(user)
+}
 
-// // updates and returns the given invoice by id
-// func UpdateInvoice(inv Invoice, id int) ([]*Invoice, GrammarError) {
-// 	ctx, db := connect()
-// 	defer db.Close()
+// updates and returns the given invoice by id
+func UpdateInvoiceByUserID(inv Invoice, userID, invID int) ([]*Invoice, fields.GrammarError) {
+	ctx, db := bikeshop.Connect()
+	defer db.Close()
 
-// 	var inv2 Invoice // resulting invoice
-// 	var invs []*Invoice
-// 	var fieldErr GrammarError
-// 	_, fieldErr = ReadInvoiceByID(id)
-// 	// msgLen := len(fieldErr.ErrMsgs)
-// 	// fmt.Printf("There are %d field err messages\n", msgLen)
-// 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-// 		return invs, fieldErr
-// 	}
+	var inv2 Invoice // resulting invoice
+	var invoices []*Invoice
+	usrs, _ := accts.ReadUserByID(userID)
+	_, fieldErr := ReadInvoiceByUserID(userID, invID)
 
-// 	fieldErr = validateFieldsForUpdate(&inv)
-// 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-// 		return invs, fieldErr
-// 	}
+	// check readuserbyid for errs
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		return invoices, fieldErr
+	}
 
-// 	rows, _ := db.Query(
-// 		ctx,
-// 		`UPDATE invoices SET fname=$1,lname=$2,product=$3,price=$4,quantity=$5,category=$6,shipping=$7 WHERE id=$8 RETURNING *`,
-// 		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping, id,
-// 	)
+	// check invoice for errs
+	user := *usrs[0]
+	fieldErr = inv.validateFieldsForUpdate(user)
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		return invoices, fieldErr
+	}
 
-// 	err := pgxscan.ScanOne(&inv2, rows)
-// 	if err != nil {
-// 		errMsg := err.Error()
-// 		fieldErr.ErrMsgs = nil
-// 		if strings.Contains(errMsg, "\"username\" does not exist") {
-// 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
-// 		} else {
-// 			fieldErr.AddMsg(BadRequest, "Invoices are empty")
-// 		}
-// 		// fmt.Println("%s\n", errMsg)
-// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-// 	}
-// 	invs = append(invs, &inv2)
+	rows, _ := db.Query(
+		ctx,
+		`UPDATE invoices SET product=$1, category=$2, price=$3, quantity=$4 WHERE user_id=$5 and id=$6 RETURNING *`,
+		inv.Product, inv.Category, inv.Price, inv.Quantity, userID, invID,
+	)
 
-// 	return invs, fieldErr
-// }
+	err := pgxscan.ScanOne(&inv2, rows)
+	if errors.Is(err, pgx.ErrNoRows) {
+		// log.Println("Err: No Rows were Found for the Specified User")
+		fieldErr.AddMsg(fields.ResourceNotFound, "Resource Not Found: invoice with specified id doesn't exist")
+		return nil, fieldErr
+	}
+
+	if err != nil {
+		// log.Println("Found an Error Iterating in Getting All the Invoices for the Specified User")
+		fieldErr.AddMsg(fields.BadRequest, err.Error())
+		return nil, fieldErr
+	}
+
+	invoices = append(invoices, &inv2)
+	return invoices, fieldErr
+}
 
 // func validateFieldsForPatch(orig Invoice, inv *Invoice) GrammarError {
 // 	// validate fields for Grammars
