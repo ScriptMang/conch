@@ -141,20 +141,34 @@ func CheckGrammar(fieldName string, val *string, fieldErr *GrammarError) {
 	}
 }
 
-// func checkGrammarForPatch(field *textField, orig string, fieldErr *GrammarError) {
-// 	name := field.name
-// 	if *field.value == "" {
-// 		//fmt.Printf("CheckGrammarForPatch: %s field value is blank\n", field.name)
-// 		*field.value = orig // unique to patch requests
-// 		//fmt.Println("CheckGrammarForPatch: Swap for orig.value: ", field.value)
-// 	} else if *field.value != "" && name != "Shipping" && name != "Product" {
-// 		fieldHasDigits(*field, fieldErr)
-// 		fieldHasPunct(*field, fieldErr)
-// 		fieldHasSymbols(*field, fieldErr)
-// 	}
+// swaps the orig values of an invoice for new ones
+func CheckGrammarForPatch(val *string, fieldName string, orig string, fieldErr *GrammarError) {
+	name := fieldName
+	if *val == "" {
+		// fmt.Printf("CheckGrammarForPatch: %s field value is blank\n", field.name)
+		*val = orig // unique to patch requests
+		// fmt.Println("CheckGrammarForPatch: Swap for orig.value: ", field.value)
+	} else if *val != "" && name != "Address" &&
+		name != "Product" && name != "Username" &&
+		name != "Password" {
+		fieldHasDigits(fieldName, val, fieldErr)
+		fieldHasPunct(fieldName, val, fieldErr)
+		fieldHasSymbols(fieldName, val, fieldErr)
+	}
 
-// 	if name == "Shipping" || name == "Product" {
-// 		fieldHasPunct(*field, fieldErr)
-// 		fieldHasSymbols(*field, fieldErr)
-// 	}
-// }
+	if name == "Username" ||
+		name == "Address" || name == "Product" {
+		fieldHasPunct(fieldName, val, fieldErr)
+		fieldHasSymbols(fieldName, val, fieldErr)
+	}
+
+	if name == "Username" ||
+		name == "Password" {
+		isFieldTooLong(name, val, fieldErr, 8, 16)
+	}
+
+	if name == "Password" {
+		fieldHasNoCapLetters(val, fieldErr)
+		fieldHasNoNums(val, fieldErr)
+	}
+}

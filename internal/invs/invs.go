@@ -241,81 +241,97 @@ func UpdateInvoiceByUserID(inv Invoice, userID, invID int) ([]*Invoice, fields.G
 	return invoices, fieldErr
 }
 
-// func validateFieldsForPatch(orig Invoice, inv *Invoice) GrammarError {
-// 	// validate fields for Grammars
-// 	modInv := inv
-// 	textFields := []*textField{
-// 		{name: "Fname", value: &modInv.Fname},
-// 		{name: "Lname", value: &modInv.Lname},
-// 		{name: "Product", value: &modInv.Product},
-// 		{name: "Category", value: &modInv.Category},
-// 		{name: "Shipping", value: &modInv.Shipping},
-// 	}
-// 	var fieldErr GrammarError
-// 	origVals := []string{orig.Fname, orig.Lname, orig.Product, orig.Category, orig.Shipping}
-// 	for i, text := range textFields {
-// 		checkGrammarForPatch(text, origVals[i], &fieldErr)
-// 		//fmt.Println("GrammarPatch Returns: ", text.value)
-// 		//fmt.Printf("Modified Invoice is: %+v\n", *modInv)
-// 	}
+// modifies an invoice's product, category, price, or quantity field
+// if an invoice edit exist. can update multiple or a single field
+func validateFieldsForPatch(invEdit *Invoice, origInv Invoice) fields.GrammarError {
+	// validate fields for Grammars
 
-// 	if inv.Price == 0 {
-// 		inv.Price = orig.Price // unique to patch requests
-// 	} else if inv.Price != 0.00 && inv.Price < 0.00 {
-// 		fieldErr.AddMsg(BadRequest, "Error: The price can't be negative")
-// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-// 	}
+	// the original user and invoice value
+	textFields := map[string]*string{
+		"Product":  &invEdit.Product,
+		"Category": &invEdit.Category,
+	}
 
-// 	if inv.Quantity == 0 {
-// 		inv.Quantity = orig.Quantity // unique to patch requests
-// 	} else if inv.Quantity != 0 && inv.Quantity < 0 {
-// 		fieldErr.AddMsg(BadRequest, "Error: The quantity can't be negative")
-// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-// 	}
-// 	return fieldErr
-// }
+	i := 0
+	var fieldErr fields.GrammarError
+	origVals := []string{origInv.Product, origInv.Category}
+	for field, val := range textFields {
+		fields.CheckGrammarForPatch(val, field, origVals[i], &fieldErr)
+		i++
+	}
 
-// func PatchInvoice(inv Invoice, id int) ([]*Invoice, GrammarError) {
-// 	ctx, db := connect()
-// 	defer db.Close()
+	// check for negative values:  price and quantity
+	if invEdit.Price == 0 {
+		invEdit.Price = origInv.Price // unique to patch requests
+	} else if invEdit.Price != 0.00 && invEdit.Price < 0.00 {
+		fieldErr.AddMsg(fields.BadRequest, "Error: The price can't be negative")
+		// log.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+	}
 
-// 	var inv2 Invoice // resulting invoice
-// 	var invs []*Invoice
-// 	orig, fieldErr := ReadInvoiceByID(id)
-// 	// msgLen := len(fieldErr.ErrMsgs)
-// 	// fmt.Printf("There are %d field err messages\n", msgLen)
-// 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-// 		return invs, fieldErr
-// 	}
+	if invEdit.Quantity == 0 {
+		invEdit.Quantity = origInv.Quantity // unique to patch requests
+	} else if invEdit.Quantity != 0 && invEdit.Quantity < 0 {
+		fieldErr.AddMsg(fields.BadRequest, "Error: The quantity can't be negative")
+		// log.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+	}
+	return fieldErr
+}
 
-// 	fieldErr = validateFieldsForPatch(*orig[0], &inv)
-// 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-// 		return invs, fieldErr
-// 	}
+func PatchInvoice(inv Invoice, userID, invID int) ([]*Invoice, fields.GrammarError) {
+	ctx, db := bikeshop.Connect()
+	defer db.Close()
 
-// 	//fmt.Println("PatchInvoice: modified invoice is ", inv)
-// 	rows, _ := db.Query(
-// 		ctx,
-// 		`UPDATE invoices SET fname=$1,lname=$2,product=$3,price=$4,quantity=$5,category=$6,shipping=$7 WHERE id=$8 RETURNING *`,
-// 		inv.Fname, inv.Lname, inv.Product, inv.Price, inv.Quantity, inv.Category, inv.Shipping, id,
-// 	)
+	inv.ID = invID
+	var inv2 Invoice // resulting invoice
+	var invs []*Invoice
 
-// 	err := pgxscan.ScanOne(&inv2, rows)
-// 	if err != nil {
-// 		errMsg := err.Error()
-// 		fieldErr.ErrMsgs = nil
-// 		if strings.Contains(errMsg, "\"username\" does not exist") {
-// 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
-// 		} else {
-// 			fieldErr.AddMsg(BadRequest, "Invoices are empty")
-// 		}
-// 		// fmt.Println("%s\n", errMsg)
-// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-// 	}
-// 	invs = append(invs, &inv2)
+	origInv, fieldErr := ReadInvoiceByUserID(userID, invID)
+	// msgLen := len(fieldErr.ErrMsgs)
+	// fmt.Printf("There are %d field err messages\n", msgLen)
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		return invs, fieldErr
+	}
 
-// 	return invs, fieldErr
-// }
+	fieldErr = validateFieldsForPatch(&inv, *origInv[0])
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		return invs, fieldErr
+	}
+
+	// fmt.Println("PatchInvoice: modified invoice is ", inv)
+	rows, _ := db.Query(
+		ctx,
+		`UPDATE invoices SET product=$1, price=$2, category=$3, quantity=$4 WHERE id=$5 RETURNING *`,
+		inv.Product, inv.Price, inv.Category, inv.Quantity, inv.ID,
+	)
+
+	err := pgxscan.ScanOne(&inv2, rows)
+	if errors.Is(err, pgx.ErrNoRows) {
+		// log.Println("Err: No Rows were Found for the Specified User")
+		fieldErr.AddMsg(fields.ResourceNotFound, "Resource Not Found: invoice with specified id doesn't exist")
+		return nil, fieldErr
+	}
+
+	if err != nil {
+		qryError := err.Error()
+		switch {
+		case strings.Contains(qryError, "numeric field overflow"):
+			fieldErr.AddMsg(fields.BadRequest,
+				"numeric field overflow, provide a value between 1.00 - 999.99")
+		case strings.Contains(qryError, "greater than maximum value for int4"):
+			// fmt.Printf("ReadInvoicesByUserID funct: error invoice with specified id doesn't exist\n")
+			fieldErr.AddMsg(fields.BadRequest,
+				"integer overflow, value must be between 1 - 2147483647")
+		case strings.Contains(qryError, "value too long for type character varying"):
+			fieldErr.AddMsg(fields.BadRequest, "varchar too long, use varchar length between 1-255")
+		default:
+			fieldErr.AddMsg(fields.BadRequest, qryError)
+		}
+		return nil, fieldErr
+	}
+
+	invs = append(invs, &inv2)
+	return invs, fieldErr
+}
 
 // // delete's the given invoice based on id
 // // and return the deleted invoice

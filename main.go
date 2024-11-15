@@ -360,25 +360,35 @@ func updateInvoiceEntry(r *gin.Engine) *gin.Engine {
 	return r
 }
 
-// // similar to the updateEntry except you don't have
-// // to pass all the fields in a invoice to update a field
-// func patchEntry(r *gin.Engine) *gin.Engine {
-// 	r.PATCH("/invoice/:id", func(c *gin.Context) {
-// 		var inv db.Invoice
-// 		var bindingOk bool
-// 		var rqstData respBodyData
-// 		id := validateRouteID(c, &rqstData)
-// 		if id != 0 {
-// 			inv, bindingOk = validateInvoiceBinding(c, &rqstData)
-// 			if bindingOk {
-// 				rqstData.Invs, rqstData.FieldErr = db.PatchInvoice(inv, id)
-// 				code = statusOK
-// 				sendResponse(c, &rqstData)
-// 			}
-// 		}
-// 	})
-// 	return r
-// }
+// similar to the updateEntry except you don't have
+// to pass all the fields in a invoice to update a field
+func patchEntry(r *gin.Engine) *gin.Engine {
+	r.PATCH("/user/:usr_id/invoice/:id", func(c *gin.Context) {
+		var inv invs.Invoice
+		var bindingOk bool
+		var rqstData respBodyData
+		userID := validateRouteUserID(c, &rqstData)
+		invID := validateRouteInvID(c, &rqstData)
+		var invalidID = rqstData.FieldErr.ErrMsgs
+		if invalidID != nil {
+			// log.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
+			sendResponse(c, &rqstData)
+			return
+		}
+
+		inv, bindingOk = validateInvoiceBinding(c, &rqstData)
+		if bindingOk {
+			rqstData.Invs, rqstData.FieldErr = invs.PatchInvoice(inv, userID, invID)
+			if rqstData.FieldErr.ErrMsgs != nil {
+				sendResponse(c, &rqstData)
+				return
+			}
+			code = statusOK
+			c.JSON(code, rqstData.Invs)
+		}
+	})
+	return r
+}
 
 // // deletes an invoice entry based on id
 // func deleteEntry(r *gin.Engine) *gin.Engine {
@@ -405,7 +415,7 @@ func main() {
 	r = readUserInvoiceByID(r)
 	r = addInvoice(r)
 	r = updateInvoiceEntry(r)
-	// r = patchEntry(r)
+	r = patchEntry(r)
 	// r = deleteEntry(r)
 
 	r.Run()
