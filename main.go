@@ -390,19 +390,29 @@ func patchEntry(r *gin.Engine) *gin.Engine {
 	return r
 }
 
-// // deletes an invoice entry based on id
-// func deleteEntry(r *gin.Engine) *gin.Engine {
-// 	r.DELETE("/invoice/:id", func(c *gin.Context) {
-// 		var rqstData respBodyData
-// 		id := validateRouteID(c, &rqstData)
-// 		if id != 0 {
-// 			rqstData.Invs, rqstData.FieldErr = db.DeleteInvoice(id)
-// 			code = statusOK
-// 			sendResponse(c, &rqstData)
-// 		}
-// 	})
-// 	return r
-// }
+// deletes an invoice entry based on id
+func deleteInvEntry(r *gin.Engine) *gin.Engine {
+	r.DELETE("/user/:usr_id/invoice/:id", func(c *gin.Context) {
+		var rqstData respBodyData
+		invID := validateRouteInvID(c, &rqstData)
+		userID := validateRouteUserID(c, &rqstData)
+		var invalidID = rqstData.FieldErr.ErrMsgs
+		if invalidID != nil {
+			// log.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
+			sendResponse(c, &rqstData)
+			return
+		}
+
+		rqstData.Invs, rqstData.FieldErr = invs.DeleteInvoice(invID, userID)
+		if rqstData.FieldErr.ErrMsgs != nil {
+			sendResponse(c, &rqstData)
+			return
+		}
+		code = statusOK
+		c.JSON(code, rqstData.Invs)
+	})
+	return r
+}
 
 func main() {
 	r := setRouter()
@@ -416,7 +426,7 @@ func main() {
 	r = addInvoice(r)
 	r = updateInvoiceEntry(r)
 	r = patchEntry(r)
-	// r = deleteEntry(r)
+	r = deleteInvEntry(r)
 
 	r.Run()
 }

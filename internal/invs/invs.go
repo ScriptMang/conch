@@ -333,36 +333,38 @@ func PatchInvoice(inv Invoice, userID, invID int) ([]*Invoice, fields.GrammarErr
 	return invs, fieldErr
 }
 
-// // delete's the given invoice based on id
-// // and return the deleted invoice
-// func DeleteInvoice(id int) ([]*Invoice, GrammarError) {
-// 	ctx, db := connect()
-// 	defer db.Close()
+// delete's the given invoice based on id
+// and return the deleted invoice
+func DeleteInvoice(invID, userID int) ([]*Invoice, fields.GrammarError) {
+	ctx, db := bikeshop.Connect()
+	defer db.Close()
 
-// 	var inv Invoice
-// 	var invs []*Invoice
-// 	_, fieldErr := ReadInvoices()
+	var inv Invoice
+	var invoices []*Invoice
+	_, fieldErr := accts.ReadUserByID(userID)
 
-// 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-// 		// fmt.Printf("Error messages is empty for Delete-OP")
-// 		return invs, fieldErr
-// 	}
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		// fmt.Printf("Error messages is empty for Delete-OP")
+		return invoices, fieldErr
+	}
 
-// 	row, _ := db.Query(ctx, `DELETE FROM invoices WHERE id=$1 RETURNING *`, id)
-// 	err := pgxscan.ScanOne(&inv, row)
-// 	if err != nil {
-// 		errMsg := err.Error()
-// 		fieldErr.ErrMsgs = nil
-// 		if strings.Contains(errMsg, "\"username\" does not exist") {
-// 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
-// 		}
+	row, _ := db.Query(ctx,
+		`DELETE FROM invoices WHERE user_id=$1 AND id=$2 RETURNING *`,
+		userID, invID)
 
-// 		if strings.Contains(errMsg, "no rows in result set") {
-// 			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: invoice with specified id does not exist")
-// 		}
-// 		//fmt.Printf("%s\n", errMsg)
-// 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
-// 	}
-// 	invs = append(invs, &inv)
-// 	return invs, fieldErr
-// }
+	err := pgxscan.ScanOne(&inv, row)
+	if errors.Is(err, pgx.ErrNoRows) {
+		// log.Println("Err: No Rows were Found for the Specified User")
+		fieldErr.AddMsg(fields.ResourceNotFound, "Resource Not Found: invoice with specified id doesn't exist")
+		return nil, fieldErr
+	}
+
+	if err != nil {
+		// log.Println("Found an Error Iterating in Getting All the Invoices for the Specified User")
+		fieldErr.AddMsg(fields.BadRequest, err.Error())
+		return nil, fieldErr
+	}
+
+	invoices = append(invoices, &inv)
+	return invoices, fieldErr
+}
