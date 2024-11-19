@@ -188,6 +188,47 @@ func createAcct(r *gin.Engine) *gin.Engine {
 	return r
 }
 
+func logIn(r *gin.Engine) *gin.Engine {
+	r.POST("/account/login", func(c *gin.Context) {
+		var loginErr fields.GrammarError
+		var rqstData respBodyData
+		var userCred accts.LoginCred
+
+		loginErr = rqstData.FieldErr
+		err := c.ShouldBind(&userCred)
+		if err != nil {
+			loginErr.AddMsg(fields.BadRequest,
+				"Binding Error: failed to bind fields to account object, mismatched data-types")
+			c.JSON(fields.ErrorCode, loginErr)
+			return
+		}
+
+		// validate account info
+		authStatus, loginErr := accts.LogIntoAcct(userCred)
+		if err != nil {
+			loginErr.AddMsg(fields.BadRequest,
+				"Binding Error: failed to bind fields to account object, mismatched data-types")
+			c.JSON(fields.ErrorCode, loginErr)
+			return
+		}
+
+		// if len(rqstData) == 0 {
+		// 	fmt.Println("Thats strange, no accounts were added")
+
+		// send response back
+		errMsgSize := len(loginErr.ErrMsgs)
+		switch {
+		case errMsgSize > 0:
+			c.JSON(fields.ErrorCode, loginErr)
+		default:
+			c.JSON(statusOK, authStatus)
+		}
+
+		//log.Println("Account: ", acct)
+	})
+	return r
+}
+
 // binds json data to an invoice and insert its to the database
 func addInvoice(r *gin.Engine) *gin.Engine {
 	r.POST("/user/:usr_id/invoices/", func(c *gin.Context) {
@@ -418,6 +459,7 @@ func main() {
 	r := setRouter()
 
 	r = createAcct(r)
+	r = logIn(r)
 	r = readUserData(r)
 	r = readInvoiceData(r)
 	r = readUserDataByID(r)

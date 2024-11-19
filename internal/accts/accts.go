@@ -34,6 +34,16 @@ type Passwords struct {
 	Password string `json:"password" form:"password"`
 }
 
+type LoginCred struct {
+	UserName string
+	Pswd     string
+}
+
+type LoginStatus struct {
+	UserID int
+	Status string
+}
+
 // meant to hold err strings related to authentication and account creation
 type AuthError struct {
 	ErrMsgs []string
@@ -128,6 +138,42 @@ func addPassword(acct *Account, acctErr *fields.GrammarError) {
 	}
 }
 
+// returns a pswd hash given userid
+// if the id doesn't exist it error
+func readHashByID(userID int) ([]*Passwords, fields.GrammarError) {
+	ctx, db := bikeshop.Connect()
+	defer db.Close()
+
+	var pswd Passwords
+	var pswds []*Passwords
+	_, fieldErr := ReadUsers()
+
+	// make sure the table isn't empty
+	if fieldErr.ErrMsgs != nil {
+		return nil, fieldErr
+	}
+
+	row, _ := db.Query(ctx, `SELECT Password FROM Passwords WHERE user_id=$1`, userID)
+
+	err := pgxscan.ScanOne(&pswd, row)
+
+	if err != nil {
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "no rows in result set"):
+			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: user with specified id does not exist")
+		default:
+			fieldErr.AddMsg(BadRequest, errMsg)
+		}
+		return nil, fieldErr
+	}
+
+	// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
+
+	pswds = append(pswds, &pswd)
+	return pswds, fieldErr
+}
+
 // adds the account info to the appropiate tables w/ the database
 func AddAccount(acct *Account) ([]*Account, fields.GrammarError) {
 	var insertedAcct Account
@@ -192,7 +238,6 @@ func ReadUserByID(id int) ([]*Users, fields.GrammarError) {
 	_, fieldErr := ReadUsers()
 
 	// make sure the table isn't empty
-
 	if fieldErr.ErrMsgs != nil {
 		return usrs, fieldErr
 	}
@@ -216,6 +261,68 @@ func ReadUserByID(id int) ([]*Users, fields.GrammarError) {
 	}
 	usrs = append(usrs, &usr)
 	return usrs, fieldErr
+}
+
+// returns the user given their username
+func readUserByUsername(username string) ([]*Users, fields.GrammarError) {
+	ctx, db := bikeshop.Connect()
+	defer db.Close()
+
+	var usr Users
+	var usrs []*Users
+	_, fieldErr := ReadUsers()
+
+	// make sure the table isn't empty
+
+	if fieldErr.ErrMsgs != nil {
+		return usrs, fieldErr
+	}
+
+	row, _ := db.Query(ctx, `SELECT * FROM Users WHERE username=$1`, username)
+
+	err := pgxscan.ScanOne(&usr, row)
+	if err != nil {
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "no rows in result set") {
+			fieldErr.AddMsg(resourceNotFound, "Error: username is incorrect")
+		}
+
+		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
+		return usrs, fieldErr
+	}
+	usrs = append(usrs, &usr)
+	return usrs, fieldErr
+}
+
+// matches the client's username and pswd against the database
+// if there's a match the user is logged in, otherwise
+// there's an issue with username or password
+func LogIntoAcct(userCred LoginCred) (*LoginStatus, fields.GrammarError) {
+	// get the user struct check if it exists
+	usrs, fieldErr := readUserByUsername(userCred.UserName)
+	if fieldErr.ErrMsgs != nil {
+		return nil, fieldErr
+	}
+
+	// get the stored pswd hash
+	usr := usrs[0]
+	pswds, fieldErr := readHashByID(usr.ID)
+	if fieldErr.ErrMsgs != nil {
+		return nil, fieldErr
+	}
+
+	// hash the given pswd and compare it to whats
+	// stored in the databse
+	hashedPswd := pswds[0].Password
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPswd), []byte(userCred.Pswd))
+
+	if err != nil {
+		// log.Printf("The Pswd Hash Comparison Failed: %v\n", err.Error())
+		fieldErr.AddMsg(BadRequest, "Error: password is incorrect")
+		return nil, fieldErr
+	}
+
+	return &LoginStatus{usr.ID, "LoggedIn"}, fieldErr
 }
 
 // validate username, fname, lname, address fields for digits, symbols, punct
