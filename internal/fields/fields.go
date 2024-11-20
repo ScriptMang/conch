@@ -103,7 +103,7 @@ func hasCaps(val *string, fieldErr *GrammarError) {
 
 // checks to see if there are any digits in string val
 // adds an new error to fieldErrs if none exist
-func fieldHasNoNums(val *string, fieldErr *GrammarError) {
+func hasNums(val *string, fieldErr *GrammarError) {
 	nums := "0123456789"
 	if !strings.ContainsAny(*val, nums) {
 		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more digits")
@@ -137,7 +137,7 @@ func CheckGrammar(fieldName string, val *string, fieldErr *GrammarError) {
 
 	if name == "Password" {
 		hasCaps(val, fieldErr)
-		fieldHasNoNums(val, fieldErr)
+		hasNums(val, fieldErr)
 	}
 }
 
@@ -169,6 +169,6 @@ func CheckGrammarForPatch(val *string, fieldName string, orig string, fieldErr *
 
 	if name == "Password" {
 		hasCaps(val, fieldErr)
-		fieldHasNoNums(val, fieldErr)
+		hasNums(val, fieldErr)
 	}
 }
