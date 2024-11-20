@@ -29,14 +29,14 @@ func isTextFieldEmpty(fieldName string, val *string, fieldErr *GrammarError) {
 	}
 }
 
-func fieldHasDigits(fieldName string, val *string, fieldErr *GrammarError) {
+func hasNoDigits(fieldName string, val *string, fieldErr *GrammarError) {
 	digitFilter := "0123456789"
 	if isTextInvalid(*val, digitFilter) {
 		fieldErr.AddMsg(BadRequest, "Error: "+fieldName+" can't have any digits")
 	}
 }
 
-func fieldHasPunct(fieldName string, val *string, fieldErr *GrammarError) {
+func hasNoPunct(fieldName string, val *string, fieldErr *GrammarError) {
 	punctFilter := ".,?!'\"`:;"
 
 	switch fieldName {
@@ -53,7 +53,7 @@ func fieldHasPunct(fieldName string, val *string, fieldErr *GrammarError) {
 	}
 }
 
-func fieldHasSymbols(fieldName string, val *string, fieldErr *GrammarError) {
+func hasNoSymbols(fieldName string, val *string, fieldErr *GrammarError) {
 	symbolFilter := "~@#%$^|><&*()[]{}_-+=\\/"
 
 	switch fieldName {
@@ -119,15 +119,15 @@ func CheckGrammar(fieldName string, val *string, fieldErr *GrammarError) {
 	if *val != "" && name != "Address" &&
 		name != "Product" && name != "Username" &&
 		name != "Password" {
-		fieldHasDigits(name, val, fieldErr)
-		fieldHasPunct(name, val, fieldErr)
-		fieldHasSymbols(name, val, fieldErr)
+		hasNoDigits(name, val, fieldErr)
+		hasNoPunct(name, val, fieldErr)
+		hasNoSymbols(name, val, fieldErr)
 	}
 
 	if name == "Username" ||
 		name == "Address" || name == "Product" {
-		fieldHasPunct(name, val, fieldErr)
-		fieldHasSymbols(name, val, fieldErr)
+		hasNoPunct(name, val, fieldErr)
+		hasNoSymbols(name, val, fieldErr)
 	}
 
 	if name == "Username" ||
@@ -151,15 +151,15 @@ func CheckGrammarForPatch(val *string, fieldName string, orig string, fieldErr *
 	} else if *val != "" && name != "Address" &&
 		name != "Product" && name != "Username" &&
 		name != "Password" {
-		fieldHasDigits(fieldName, val, fieldErr)
-		fieldHasPunct(fieldName, val, fieldErr)
-		fieldHasSymbols(fieldName, val, fieldErr)
+		hasNoDigits(fieldName, val, fieldErr)
+		hasNoPunct(fieldName, val, fieldErr)
+		hasNoSymbols(fieldName, val, fieldErr)
 	}
 
 	if name == "Username" ||
 		name == "Address" || name == "Product" {
-		fieldHasPunct(fieldName, val, fieldErr)
-		fieldHasSymbols(fieldName, val, fieldErr)
+		hasNoPunct(fieldName, val, fieldErr)
+		hasNoSymbols(fieldName, val, fieldErr)
 	}
 
 	if name == "Username" ||
