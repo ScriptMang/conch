@@ -94,7 +94,7 @@ func isFieldTooLong(fieldName string, val *string, gramErr *GrammarError, minimu
 
 // checks to see if there any capital letters in string val
 // adds an new error to fieldErrs if none exist
-func fieldHasNoCapLetters(val *string, fieldErr *GrammarError) {
+func hasCaps(val *string, fieldErr *GrammarError) {
 	capLst := "ABCDEFGHIJKLMNOPQRYTUVWXYZ"
 	if !strings.ContainsAny(*val, capLst) {
 		fieldErr.AddMsg(BadRequest, "Error: Password must contain one or more capital letters")
@@ -136,7 +136,7 @@ func CheckGrammar(fieldName string, val *string, fieldErr *GrammarError) {
 	}
 
 	if name == "Password" {
-		fieldHasNoCapLetters(val, fieldErr)
+		hasCaps(val, fieldErr)
 		fieldHasNoNums(val, fieldErr)
 	}
 }
@@ -168,7 +168,7 @@ func CheckGrammarForPatch(val *string, fieldName string, orig string, fieldErr *
 	}
 
 	if name == "Password" {
-		fieldHasNoCapLetters(val, fieldErr)
+		hasCaps(val, fieldErr)
 		fieldHasNoNums(val, fieldErr)
 	}
 }
