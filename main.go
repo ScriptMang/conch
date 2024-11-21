@@ -229,6 +229,32 @@ func logIn(r *gin.Engine) *gin.Engine {
 	return r
 }
 
+func deleteAcct(r *gin.Engine) *gin.Engine {
+	r.DELETE("/account", func(c *gin.Context) {
+		var rqstData respBodyData
+		var rmvUser []*accts.Users
+		var userCred accts.LoginCred
+		err := c.ShouldBind(&userCred)
+		bindingErr := rqstData.FieldErr
+
+		if err != nil {
+			bindingErr.AddMsg(fields.BadRequest,
+				"Binding Error: failed to bind fields to userCreds, mismatched data-types")
+			c.JSON(fields.ErrorCode, bindingErr)
+			return
+		}
+
+		rmvUser, rqstData.FieldErr = accts.DeleteAcct(userCred)
+		if rqstData.FieldErr.ErrMsgs != nil {
+			sendResponse(c, &rqstData)
+			return
+		}
+		code = statusOK
+		c.JSON(code, rmvUser[0])
+	})
+	return r
+}
+
 // binds json data to an invoice and insert its to the database
 func addInvoice(r *gin.Engine) *gin.Engine {
 	r.POST("/user/:usr_id/invoices/", func(c *gin.Context) {
@@ -469,6 +495,7 @@ func main() {
 	r = updateInvoiceEntry(r)
 	r = patchEntry(r)
 	r = deleteInvEntry(r)
+	r = deleteAcct(r)
 
 	r.Run()
 }

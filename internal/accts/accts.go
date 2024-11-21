@@ -1,12 +1,14 @@
 package accts
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/ScriptMang/conch/internal/bikeshop"
 	"github.com/ScriptMang/conch/internal/fields"
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -323,6 +325,46 @@ func LogIntoAcct(userCred LoginCred) (*LoginStatus, fields.GrammarError) {
 	}
 
 	return &LoginStatus{usr.ID, "LoggedIn"}, fieldErr
+}
+
+// Deletes the User account which cascades
+// to delete their invoices too
+func DeleteAcct(userCred LoginCred) ([]*Users, fields.GrammarError) {
+	ctx, db := bikeshop.Connect()
+	defer db.Close()
+
+	var usr Users
+	var usrs []*Users
+
+	// verify that user wants to delete their account by asking
+	// for their credentials. if their info matches the db
+	// the account will get deleted. Otherwise it returns an
+	//error
+	isLoggedIn, fieldErr := LogIntoAcct(userCred)
+	if fieldErr.ErrMsgs != nil {
+		return nil, fieldErr
+	}
+
+	row, _ := db.Query(ctx,
+		`DELETE FROM users WHERE id=$1 RETURNING *`,
+		isLoggedIn.UserID)
+
+	err := pgxscan.ScanOne(&usr, row)
+	if errors.Is(err, pgx.ErrNoRows) {
+		// log.Println("Err: No Rows were Found for the Specified User")
+		fieldErr.AddMsg(fields.ResourceNotFound, "Resource Not Found: user with specified id doesn't exist")
+		return nil, fieldErr
+	}
+
+	if err != nil {
+		// log.Println("Found an Error Iterating in Getting All the Invoices for the Specified User")
+		fieldErr.AddMsg(fields.BadRequest, err.Error())
+		return nil, fieldErr
+	}
+
+	usrs = append(usrs, &usr)
+	return usrs, fieldErr
+
 }
 
 // validate username, fname, lname, address fields for digits, symbols, punct
