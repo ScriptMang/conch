@@ -7,7 +7,8 @@ For this project I'm simulating a bikshop database that keeps a table of invoice
 
 * This program requires that both the go programming language<br>
   and PostgreSQL be installed on your local machine.<br>
-  A program like Postman to send http requests to the database.
+  It also  requires a program like Postman to send http requests 
+  to the database.
 
 * Make sure to import the psql dump file into PostgreSQL.<br>
   Use the following command 'psql --username=<username> Bikeshop <  <filename>.sql'. <br>
@@ -27,33 +28,90 @@ Then, send a request using the following options below to run the crud operation
 
 #### Note About the CRUD Operations
 some CRUD Operations will require you to pass JSON to the responsebody<br>
-('Body' in PostMan) along with the request. In that case, where ever you see `<body>`<br> 
-in 'CRUD Operations' replace it with the expected json format for an invoice listed below.<br>
+('Body' in PostMan) along with the request. In that case, where ever you see `<struct>`<br> 
+in 'CRUD Operations' replace it with the expected json format for the object listed below.<br>
 Also, do not send the id attribute as part of the json object, its created along with the invoice.<br> 
-For routes that end in `:id` replace it with an integer number.<br>
+For routes that end in `:usr_id` or `:id` replace it with an integer number.<br>
 To end the program in the terminal, type `^c`(ctrl-c).
 
-### Expected JSON Format for an Invoice
+### JSON Format for an Account
 ```
 {
+  "username": string,
   "fname": string,
   "lname": string,
-  "product": string,
-  "price": float,
-  "quantity": int,
-  "category": string,
-  "shipping": string
+  "address": string,
+  "password": string
 }
 ```
 
+### JSON Format for a User
+```
+{ 
+  "id": int,
+  "username": string,
+  "fname": string,
+  "lname": string,
+  "address": string
+}
+```
+
+### JSON Format for an Invoice
+```
+{
+  "id": int,
+  "usr_id": int,
+  "product": string,
+  "category": string,
+  "price": float,
+  "quantity": int
+}
+```
+
+### JSON Format for Login-Creds
+```
+{
+  "username": string,
+  "pswd": string
+}
+```
+### Notes about the json objects
+
+#### Adding an account creates an entry in the Users table and the password table
+Although you don't directly pass a json struct for a user object in the request body, 
+you still need to provide its id for other routes. i.e `:usr_id`.
+
+#### The id properties are never passed but created 
+User and Invoice structs' id properties `:usr_id` and `:id` respectfully are assigned after creation.
+They're incremented after insertion(pass or fail) by the database.
+
+#### Passwords for Account structs get encrypted
+After sending a Post request to create an account,
+the password is encrypted and stored in the database.
+
+
 ### CRUD Operations
-* Add an invoice to the table<br>
-   `POST` `localhost:8080/invoices/` `<body>`
+* Add a user account to the table<br>
+   `POST` `localhost:8080/create/Account/` `<account>`
+* Login into your account<br>
+   `POST` `localhost:8080/account/login` `<login-creds>`
+* Read all the users from the table<br>
+   `GET` `localhost:8080/users`
 * Read all the invoices from the table<br>
-   `GET` `localhost:8080/invoices`
-* Read an invoice based on their ID<br>
-   `GET` `localhost:8080/invoice/:id`
-* Update an existing invoice<br>
-   `PUT` `localhost:8080/invoice/:id` `<body>`
+   `GET` `localhost:8080/users/invoices`
+* Read a specific user from the table<br>
+   `GET` `localhost:8080/user/:usr_id`
+* Read all the invoices for a specific user<br>
+   `GET` `localhost:8080/user/:usr_id/invoices`
+* Read an invoice for a specific user<br>
+   `GET` `localhost:8080/user/:usr_id/invoice/:id`
+* Add an invoice to a specific user<br>
+   `POST` `localhost:8080/user/:usr_id/invoices`
+* Update all the fields on an existing invoice<br>
+   `PUT` `localhost:8080/user/:usr_id/invoice/:id` `<invoice>`
+* Patch one or more fields on an existing invoice<br>
+   `PATCH` `localhost:8080/user/:usr_id/invoice/:id` `<invoice>`
+* Delete an existing account<br>
+   `DELETE` `localhost:8080/account` `<login-creds>`
 * Delete an existing invoice<br>
-   `DELETE` `localhost:8080/invoice/:id`
+   `DELETE` `localhost:8080/user/:usr_id/invoice/:id`
