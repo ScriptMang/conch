@@ -219,9 +219,11 @@ func ReadUsers() ([]*Users, fields.GrammarError) {
 	if err != nil {
 		errMsg := err.Error()
 		// log.Printf("Error in ReadUsers: %s\n", errMsg)
-		if strings.Contains(errMsg, "failed to connect to `user=username") {
+		if strings.Contains(errMsg, "failed to connect") {
 			fieldErr.ErrMsgs = nil
 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
+		} else if errMsg != "" {
+			fieldErr.AddMsg(BadRequest, errMsg)
 		}
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
@@ -249,11 +251,6 @@ func ReadUserByID(id int) ([]*Users, fields.GrammarError) {
 	err := pgxscan.ScanOne(&usr, row)
 	if err != nil {
 		errMsg := err.Error()
-		fieldErr.ErrMsgs = nil
-		if strings.Contains(errMsg, "\"username\" does not exist") {
-			fieldErr.AddMsg(BadRequest, "Error: failed to bikeshop.Connect to database, username doesn't exist")
-		}
-
 		if strings.Contains(errMsg, "no rows in result set") {
 			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: user with specified id does not exist")
 		}
