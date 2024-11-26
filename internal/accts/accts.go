@@ -33,7 +33,7 @@ type Users struct {
 type Passwords struct {
 	ID       int    `json:"id" form:"id"`
 	UserID   int    `json:"user_id" form:"user_id"`
-	Password string `json:"password" form:"password"`
+	Password []byte `json:"password" form:"password"`
 }
 
 type LoginCred struct {
@@ -98,9 +98,9 @@ func addUser(acct *Account, acctErr *fields.GrammarError) []*Account {
 
 }
 
-func encryptPassword(val string) (string, error) {
+func encryptPassword(val string) ([]byte, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(val), 14)
-	return string(hash), err
+	return hash, err
 }
 
 // helper funct that adds hash to the passwords table
@@ -109,14 +109,14 @@ func addPassword(acct *Account, acctErr *fields.GrammarError) {
 	defer db.Close()
 
 	var pswds Passwords
-	var err error
+	// var err error
 
 	if len(acctErr.ErrMsgs) > 0 {
 		return
 	}
 
 	// encrypt password
-	acct.Password, err = encryptPassword(acct.Password)
+	hashedPswd, err := encryptPassword(acct.Password)
 	if err != nil {
 		acctErr.AddMsg(BadRequest,
 			"Hashing Error: password longer than 72 bytes, can't hash")
@@ -126,8 +126,8 @@ func addPassword(acct *Account, acctErr *fields.GrammarError) {
 	// if no errors add info to appropiate tables
 	rows, _ := db.Query(
 		ctx,
-		`INSERT INTO Passwords (user_id, password) VALUES($1, $2) RETURNING *`,
-		acct.ID, acct.Password,
+		`INSERT INTO Passwords (password) VALUES($1) RETURNING *`,
+		hashedPswd,
 	)
 
 	err = pgxscan.ScanOne(&pswds, rows)
@@ -135,8 +135,9 @@ func addPassword(acct *Account, acctErr *fields.GrammarError) {
 		qryError := err.Error()
 		if strings.Contains(qryError, "value too long for type character varying") {
 			acctErr.AddMsg(BadRequest, "password too long,chars must be less than 72 bytes")
+		} else {
+			acctErr.AddMsg(BadRequest, qryError)
 		}
-		acctErr.AddMsg(BadRequest, qryError)
 	}
 }
 
@@ -178,7 +179,7 @@ func readHashByID(userID int) ([]*Passwords, fields.GrammarError) {
 
 // adds the account info to the appropiate tables w/ the database
 func AddAccount(acct *Account) ([]*Account, fields.GrammarError) {
-	var insertedAcct Account
+	// var insertedAcct Account
 	var accts []*Account
 	acctErr := &fields.GrammarError{}
 	validateAccount(acct, acctErr)
@@ -189,7 +190,7 @@ func AddAccount(acct *Account) ([]*Account, fields.GrammarError) {
 	}
 
 	// if no errors add info to appropiate tables
-	accts = addUser(acct, acctErr)
+	addUser(acct, acctErr)
 	if acctErr.ErrMsgs != nil {
 		// fmt.Printf("Errors in AddAccount Func, %v\n", acctErr.ErrMsgs)
 		return nil, *acctErr
@@ -197,13 +198,13 @@ func AddAccount(acct *Account) ([]*Account, fields.GrammarError) {
 
 	// add passwords to table, don't if err existf
 	// fmt.Printf("User added into Users: %v\n", *accts[0])
-	addPassword(accts[0], acctErr)
+	addPassword(acct, acctErr)
 	if acctErr.ErrMsgs != nil {
 		// fmt.Printf("Errors in AddAccount Func, %v\n", acctErr.ErrMsgs)
 		return nil, *acctErr
 	}
 
-	accts = append(accts, &insertedAcct)
+	accts = append(accts, acct)
 	return accts, *acctErr
 }
 
@@ -313,7 +314,7 @@ func LogIntoAcct(userCred LoginCred) (*LoginStatus, fields.GrammarError) {
 	// hash the given pswd and compare it to whats
 	// stored in the databse
 	hashedPswd := pswds[0].Password
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPswd), []byte(userCred.Pswd))
+	err := bcrypt.CompareHashAndPassword(hashedPswd, []byte(userCred.Pswd))
 
 	if err != nil {
 		// log.Printf("The Pswd Hash Comparison Failed: %v\n", err.Error())

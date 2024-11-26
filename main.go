@@ -157,7 +157,7 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 // post request to create user account
 func createAcct(r *gin.Engine) *gin.Engine {
 	r.POST("/create/Account", func(c *gin.Context) {
-		var acct *accts.Account
+		var acct accts.Account
 		var acctErr fields.GrammarError
 		var respData []*accts.Account
 		err := c.ShouldBind(&acct)
@@ -169,7 +169,7 @@ func createAcct(r *gin.Engine) *gin.Engine {
 		}
 
 		// validate account info
-		respData, acctErr = accts.AddAccount(acct)
+		respData, acctErr = accts.AddAccount(&acct)
 
 		if len(respData) == 0 {
 			fmt.Println("Thats strange, no accounts were added")
