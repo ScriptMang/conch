@@ -72,7 +72,7 @@ To end the program in the terminal, type `^c`(ctrl-c).
 ```
 {
   "username": string,
-  "pswd": string
+  "pswd": []byte
 }
 ```
 ### Notes about the json objects
