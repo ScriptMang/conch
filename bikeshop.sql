@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.4 (Homebrew)
--- Dumped by pg_dump version 16.4 (Homebrew)
+-- Dumped from database version 16.6 (Homebrew)
+-- Dumped by pg_dump version 16.6 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -39,7 +39,7 @@ ALTER TABLE public.invoices OWNER TO <username>;
 --
 -- Name: invoices_id_seq; Type: SEQUENCE; Schema: public; Owner: <username>
 --
-
+<username>
 CREATE SEQUENCE public.invoices_id_seq
     AS integer
     START WITH 1
@@ -65,7 +65,7 @@ ALTER SEQUENCE public.invoices_id_seq OWNED BY public.invoices.id;
 CREATE TABLE public.passwords (
     id integer NOT NULL,
     user_id integer NOT NULL,
-    password character varying(255) NOT NULL
+    password bytea
 );
 
 
@@ -91,6 +91,28 @@ ALTER SEQUENCE public.passwords_id_seq OWNER TO <username>;
 --
 
 ALTER SEQUENCE public.passwords_id_seq OWNED BY public.passwords.id;
+
+
+--
+-- Name: passwords_user_id_seq; Type: SEQUENCE; Schema: public; Owner: <username>
+--
+
+CREATE SEQUENCE public.passwords_user_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.passwords_user_id_seq OWNER TO <username>;
+
+--
+-- Name: passwords_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: <username>
+--
+
+ALTER SEQUENCE public.passwords_user_id_seq OWNED BY public.passwords.user_id;
 
 
 --
@@ -145,6 +167,13 @@ ALTER TABLE ONLY public.passwords ALTER COLUMN id SET DEFAULT nextval('public.pa
 
 
 --
+-- Name: passwords user_id; Type: DEFAULT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.passwords ALTER COLUMN user_id SET DEFAULT nextval('public.passwords_user_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: <username>
 --
 
@@ -177,9 +206,9 @@ COPY public.users (id, username, fname, lname, address) FROM stdin;
 
 --
 -- Name: invoices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
---
+--username
 
-SELECT pg_catalog.setval('public.invoices_id_seq', 1, false);
+SELECT pg_catalog.setval('public.invoices_id_seq', 4, true);
 
 
 --
@@ -187,6 +216,13 @@ SELECT pg_catalog.setval('public.invoices_id_seq', 1, false);
 --
 
 SELECT pg_catalog.setval('public.passwords_id_seq', 1, false);
+
+
+--
+-- Name: passwords_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
+--
+
+SELECT pg_catalog.setval('public.passwords_user_id_seq', 1, false);
 
 
 --
@@ -245,19 +281,19 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: passwords fk_user; Type: FK CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.passwords
+    ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
 -- Name: invoices invoices_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: <username>
 --
 
 ALTER TABLE ONLY public.invoices
     ADD CONSTRAINT invoices_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
-
-
---
--- Name: passwords passwords_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: <username>
---
-
-ALTER TABLE ONLY public.passwords
-    ADD CONSTRAINT passwords_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
