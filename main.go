@@ -159,7 +159,7 @@ func createAcct(r *gin.Engine) *gin.Engine {
 	r.POST("/create/Account", func(c *gin.Context) {
 		var acct accts.Account
 		var acctErr fields.GrammarError
-		var respData []*accts.Account
+		var acctStatus *accts.Registered
 		err := c.ShouldBind(&acct)
 		if err != nil {
 			acctErr.AddMsg(fields.BadRequest,
@@ -169,18 +169,18 @@ func createAcct(r *gin.Engine) *gin.Engine {
 		}
 
 		// validate account info
-		respData, acctErr = accts.AddAccount(&acct)
+		acctStatus, acctErr = accts.AddAccount(&acct)
 
-		if len(respData) == 0 {
-			fmt.Println("Thats strange, no accounts were added")
-		}
+		// if len(respData) == 0 {
+		// 	fmt.Println("Thats strange, no accounts were added")
+		// }
 		// send response back
 		errMsgSize := len(acctErr.ErrMsgs)
 		switch {
 		case errMsgSize > 0:
 			c.JSON(fields.ErrorCode, acctErr)
 		default:
-			c.JSON(statusOK, *respData[0])
+			c.JSON(statusOK, *acctStatus)
 		}
 
 		//log.Println("Account: ", acct)

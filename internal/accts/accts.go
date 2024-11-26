@@ -2,7 +2,6 @@ package accts
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/ScriptMang/conch/internal/bikeshop"
@@ -37,10 +36,14 @@ type Passwords struct {
 }
 
 type LoginCred struct {
-	UserName string
-	Pswd     string
+	UserName string `json:"username" form:"username"`
+	Password string `json:"pswd" form:"password"`
 }
 
+type Registered struct {
+	UserID int
+	Msg    string
+}
 type LoginStatus struct {
 	UserID int
 	Status string
@@ -64,16 +67,15 @@ func (credErr *AuthError) AddMsg(statusCode int, str string) {
 }
 
 // helper funct that adds all user-info to users table
-func addUser(acct *Account, acctErr *fields.GrammarError) []*Account {
+func addUser(acct *Account, acctErr *fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
 	var insertedAcct Account
-	var accts []*Account
 
 	if len(acctErr.ErrMsgs) > 0 {
-		fmt.Println("Errs exist in AddUser Funct return nil")
-		return nil
+		// fmt.Println("Errs exist in AddUser Funct return nil")
+		return
 	}
 
 	rows, _ := db.Query(
@@ -90,12 +92,12 @@ func addUser(acct *Account, acctErr *fields.GrammarError) []*Account {
 		} else {
 			acctErr.AddMsg(BadRequest, qryError)
 		}
+		return
 	}
+
 	//	fmt.Printf("Errors so far when adding a user: %s\n", acctErr.ErrMsgs)
 	//	fmt.Printf("New User to be added: %+v\n", insertedAcct)
-	accts = append(accts, &insertedAcct)
-	return accts
-
+	acct.ID = insertedAcct.ID
 }
 
 func encryptPassword(val string) ([]byte, error) {
@@ -115,6 +117,10 @@ func addPassword(acct *Account, acctErr *fields.GrammarError) {
 		return
 	}
 
+	if len(acct.Password) == 0 {
+		acctErr.AddMsg(BadRequest, " Couldn't add password since none exist")
+		return
+	}
 	// encrypt password
 	hashedPswd, err := encryptPassword(acct.Password)
 	if err != nil {
@@ -178,9 +184,7 @@ func readHashByID(userID int) ([]*Passwords, fields.GrammarError) {
 }
 
 // adds the account info to the appropiate tables w/ the database
-func AddAccount(acct *Account) ([]*Account, fields.GrammarError) {
-	// var insertedAcct Account
-	var accts []*Account
+func AddAccount(acct *Account) (*Registered, fields.GrammarError) {
 	acctErr := &fields.GrammarError{}
 	validateAccount(acct, acctErr)
 
@@ -204,8 +208,7 @@ func AddAccount(acct *Account) ([]*Account, fields.GrammarError) {
 		return nil, *acctErr
 	}
 
-	accts = append(accts, acct)
-	return accts, *acctErr
+	return &Registered{acct.ID, "registered"}, *acctErr
 }
 
 // returns the list of all existing users
@@ -314,10 +317,10 @@ func LogIntoAcct(userCred LoginCred) (*LoginStatus, fields.GrammarError) {
 	// hash the given pswd and compare it to whats
 	// stored in the databse
 	hashedPswd := pswds[0].Password
-	err := bcrypt.CompareHashAndPassword(hashedPswd, []byte(userCred.Pswd))
+	err := bcrypt.CompareHashAndPassword(hashedPswd, []byte(userCred.Password))
 
 	if err != nil {
-		// log.Printf("The Pswd Hash Comparison Failed: %v\n", err.Error())
+		// log.Printf("The Password Hash Comparison Failed: %v\n", err.Error())
 		fieldErr.AddMsg(BadRequest, "Error: password is incorrect")
 		return nil, fieldErr
 	}
