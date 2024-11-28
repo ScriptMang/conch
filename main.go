@@ -156,7 +156,7 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 
 // post request to create user account
 func createAcct(r *gin.Engine) *gin.Engine {
-	r.POST("/create/Account", func(c *gin.Context) {
+	r.POST("/users/", func(c *gin.Context) {
 		var acct accts.Account
 		var acctErr fields.GrammarError
 		var acctStatus *accts.Registered
@@ -189,7 +189,7 @@ func createAcct(r *gin.Engine) *gin.Engine {
 }
 
 func logIn(r *gin.Engine) *gin.Engine {
-	r.POST("/account/login", func(c *gin.Context) {
+	r.POST("/user/login", func(c *gin.Context) {
 		var loginErr fields.GrammarError
 		var rqstData respBodyData
 		var userCred accts.LoginCred
@@ -230,7 +230,7 @@ func logIn(r *gin.Engine) *gin.Engine {
 }
 
 func deleteAcct(r *gin.Engine) *gin.Engine {
-	r.DELETE("/account", func(c *gin.Context) {
+	r.DELETE("/users/", func(c *gin.Context) {
 		var rqstData respBodyData
 		var rmvUser []*accts.Users
 		var userCred accts.LoginCred
