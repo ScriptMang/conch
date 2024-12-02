@@ -78,7 +78,8 @@ To end the program in the terminal, type `^c`(ctrl-c).
 ### Notes about the json objects
 
 #### Adding an account creates an entry in the Users table and the password table
-Although you don't directly pass a json struct for a user object in the request body, 
+Although you don't directly pass a json struct for a user
+object in the request body, 
 you still need to provide its id for other routes. i.e `:usr_id`.
 
 #### The id properties are never passed but created 
@@ -92,26 +93,26 @@ the password is encrypted and stored in the database.
 
 ### CRUD Operations
 * Add a user account to the table<br>
-   `POST` `localhost:8080/create/Account/` `<account>`
+   `POST` `localhost:8080/users/` `<account>`
 * Login into your account<br>
-   `POST` `localhost:8080/account/login` `<login-creds>`
+   `POST` `localhost:8080/user/login` `<login-creds>`
 * Read all the users from the table<br>
    `GET` `localhost:8080/users`
 * Read all the invoices from the table<br>
-   `GET` `localhost:8080/users/invoices`
+   `GET` `localhost:8080/invoices`
 * Read a specific user from the table<br>
    `GET` `localhost:8080/user/:usr_id`
 * Read all the invoices for a specific user<br>
-   `GET` `localhost:8080/user/:usr_id/invoices`
+   `GET` `localhost:8080/invoices`
 * Read an invoice for a specific user<br>
    `GET` `localhost:8080/user/:usr_id/invoice/:id`
 * Add an invoice to a specific user<br>
-   `POST` `localhost:8080/user/:usr_id/invoices`
+   `POST` `localhost:8080/invoices/`
 * Update all the fields on an existing invoice<br>
    `PUT` `localhost:8080/user/:usr_id/invoice/:id` `<invoice>`
 * Patch one or more fields on an existing invoice<br>
    `PATCH` `localhost:8080/user/:usr_id/invoice/:id` `<invoice>`
 * Delete an existing account<br>
-   `DELETE` `localhost:8080/account` `<login-creds>`
+   `DELETE` `localhost:8080/users/` `<login-creds>`
 * Delete an existing invoice<br>
    `DELETE` `localhost:8080/user/:usr_id/invoice/:id`
