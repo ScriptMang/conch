@@ -54,13 +54,41 @@ func (inv *Invoice) validateAllFields(user accts.Users) fields.GrammarError {
 	return fieldErr
 }
 
-func InsertOp(usr accts.Users, inv Invoice) ([]*Invoice, fields.GrammarError) {
+func (inv *Invoice) validateInvFields() fields.GrammarError {
+	// check for empty fields: for all the fields
+	textFields := map[string]*string{
+		"Category": &inv.Category,
+		"Product":  &inv.Product,
+	}
+	var fieldErr fields.GrammarError
+	for field, val := range textFields {
+		fields.CheckGrammar(field, val, &fieldErr)
+	}
+
+	// check for negative values:  price and quantity
+	if inv.Price == 0.00 {
+		fieldErr.AddMsg(fields.BadRequest, "Error: Price can't be zero")
+	} else if inv.Price < 0.00 {
+		fieldErr.AddMsg(fields.BadRequest, "Error: The price can't be negative")
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+	}
+
+	if inv.Quantity == 0 {
+		fieldErr.AddMsg(fields.BadRequest, "Error: Quantity can't be zero")
+	} else if inv.Quantity < 0 {
+		fieldErr.AddMsg(fields.BadRequest, "Error: The quantity can't be negative")
+		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
+	}
+	return fieldErr
+}
+
+func InsertOp(inv Invoice) ([]*Invoice, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
 	var insertedInv Invoice
 	var invs []*Invoice
-	fieldErr := inv.validateAllFields(usr)
+	fieldErr := inv.validateInvFields()
 
 	if len(fieldErr.ErrMsgs) > 0 {
 		return invs, fieldErr
@@ -70,7 +98,7 @@ func InsertOp(usr accts.Users, inv Invoice) ([]*Invoice, fields.GrammarError) {
 	rows, _ := db.Query(
 		ctx,
 		`INSERT INTO invoices (user_id, category, product, price, quantity) VALUES($1, $2, $3, $4, $5) RETURNING *`,
-		usr.ID, inv.Category, inv.Product, inv.Price, inv.Quantity,
+		inv.UserID, inv.Category, inv.Product, inv.Price, inv.Quantity,
 	)
 
 	err := pgxscan.ScanOne(&insertedInv, rows)
@@ -92,10 +120,9 @@ func InsertOp(usr accts.Users, inv Invoice) ([]*Invoice, fields.GrammarError) {
 		default:
 			fieldErr.AddMsg(fields.BadRequest, qryError)
 		}
-
 	}
-	invs = append(invs, &insertedInv)
 
+	invs = append(invs, &insertedInv)
 	return invs, fieldErr
 }
 

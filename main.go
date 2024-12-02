@@ -257,36 +257,42 @@ func deleteAcct(r *gin.Engine) *gin.Engine {
 
 // binds json data to an invoice and insert its to the database
 func addInvoice(r *gin.Engine) *gin.Engine {
-	r.POST("/user/:usr_id/invoices/", func(c *gin.Context) {
+	r.POST("/invoices/", func(c *gin.Context) {
 		var inv invs.Invoice
 		var rqstData respBodyData
 		var bindingOk bool
-		id := validateRouteUserID(c, &rqstData)
+		// id := validateRouteUserID(c, &rqstData)
 		// fmt.Printf("ID in addInvoice funct is: %d\n", id)
-		var invalidID = rqstData.FieldErr.ErrMsgs
-		if invalidID != nil {
-			sendResponse(c, &rqstData)
-			return
-		}
+		// var invalidID = rqstData.FieldErr.ErrMsgs
+		// if invalidID != nil {
+		// 	sendResponse(c, &rqstData)
+		// 	return
+		// }
+
 		inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 		// fmt.Printf("Invoice in addInvoice funct is: %+v\n", inv)
-		if id != 0 && bindingOk {
+		if bindingOk {
 			var fieldErr fields.GrammarError
-			rqstData.Users, fieldErr = accts.ReadUserByID(id)
-			usrs := rqstData.Users
+			// rqstData.Users, fieldErr = accts.ReadUserByID(inv.UserID)
+			// usrs := rqstData.Users
 			// fmt.Printf("User in addInvoice funct is: %+v\n", *usrs[0])
 			// fmt.Printf("The length of fieldErrs after ReadUserByID is: %d\n", len(fieldErr.ErrMsgs))
+			// if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+			// 	rqstData.FieldErr = fieldErr
+			// 	sendResponse(c, &rqstData)
+			// 	return
+			// }
+			rqstData.Invs, fieldErr = invs.InsertOp(inv)
+			// fmt.Printf("Invoice after InsertOP is: %+v\n", *rqstData.Invs[0])
+			// fmt.Printf("FieldErrs after InsertOP is: %v\n", fieldErr.ErrMsgs)
 			if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 				rqstData.FieldErr = fieldErr
 				sendResponse(c, &rqstData)
 				return
 			}
-			rqstData.Invs, fieldErr = invs.InsertOp(*usrs[0], inv)
-			rqstData.FieldErr = fieldErr
-			// fmt.Printf("Invoice after InsertOP is: %+v\n", *rqstData.Invs[0])
-			// fmt.Printf("FieldErrs after InsertOP is: %v\n", fieldErr.ErrMsgs)
 			code = statusCreated
-			sendResponse(c, &rqstData)
+			c.JSON(code, rqstData.Invs)
+			// sendResponse(c, &rqstData)
 		}
 	})
 	return r
