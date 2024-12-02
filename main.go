@@ -19,15 +19,15 @@ type respBodyData struct {
 }
 
 type Order struct {
-	ID       int
-	UserID   int
-	Fname    string
-	Lname    string
-	Product  string
-	Price    json.Number
-	Quantity int
-	Category string
-	Address  string
+	ID       int         `json:"id"`
+	UserID   int         `json:"user_id"`
+	Fname    string      `json:"fname"`
+	Lname    string      `json:"lname"`
+	Product  string      `json:"product"`
+	Price    json.Number `json:"price"`
+	Quantity int         `json:"quantity"`
+	Category string      `json:"category"`
+	Address  string      `json:"address"`
 }
 
 var code int //httpstatuscode
