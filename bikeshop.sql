@@ -158,8 +158,7 @@ CREATE TABLE public.users (
     id integer NOT NULL,
     username character varying(80) NOT NULL,
     fname character varying(80) NOT NULL,
-    lname character varying(80) NOT NULL,
-    addr_id integer NOT NULL
+    lname character varying(80) NOT NULL
 );
 
 
@@ -250,7 +249,7 @@ COPY public.passwords (id, user_id, password) FROM stdin;
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: <username>
 --
 
-COPY public.users (id, username, fname, lname, addr_id) FROM stdin;
+COPY public.users (id, username, fname, lname) FROM stdin;
 \.
 
 
@@ -359,14 +358,6 @@ ALTER TABLE ONLY public.passwords
 
 ALTER TABLE ONLY public.invoices
     ADD CONSTRAINT invoices_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- Name: users users_addr_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: <username>
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_addr_id_fkey FOREIGN KEY (addr_id) REFERENCES public.addresses(id);
 
 
 --
