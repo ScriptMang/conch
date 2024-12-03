@@ -21,6 +21,41 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: addresses; Type: TABLE; Schema: public; Owner: <username>
+--
+
+CREATE TABLE public.addresses (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    address character varying(255) NOT NULL
+);
+
+
+ALTER TABLE public.addresses OWNER TO <username>;
+
+--
+-- Name: addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: <username>
+--
+
+CREATE SEQUENCE public.addresses_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.addresses_id_seq OWNER TO <username>;
+
+--
+-- Name: addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: <username>
+--
+
+ALTER SEQUENCE public.addresses_id_seq OWNED BY public.addresses.id;
+
+
+--
 -- Name: invoices; Type: TABLE; Schema: public; Owner: <username>
 --
 
@@ -39,7 +74,7 @@ ALTER TABLE public.invoices OWNER TO <username>;
 --
 -- Name: invoices_id_seq; Type: SEQUENCE; Schema: public; Owner: <username>
 --
-<username>
+
 CREATE SEQUENCE public.invoices_id_seq
     AS integer
     START WITH 1
@@ -124,7 +159,7 @@ CREATE TABLE public.users (
     username character varying(80) NOT NULL,
     fname character varying(80) NOT NULL,
     lname character varying(80) NOT NULL,
-    address character varying(255) NOT NULL
+    addr_id integer NOT NULL
 );
 
 
@@ -150,6 +185,13 @@ ALTER SEQUENCE public.users_id_seq OWNER TO <username>;
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+
+
+--
+-- Name: addresses id; Type: DEFAULT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.addresses ALTER COLUMN id SET DEFAULT nextval('public.addresses_id_seq'::regclass);
 
 
 --
@@ -181,6 +223,14 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 
 
 --
+-- Data for Name: addresses; Type: TABLE DATA; Schema: public; Owner: <username>
+--
+
+COPY public.addresses (id, user_id, address) FROM stdin;
+\.
+
+
+--
 -- Data for Name: invoices; Type: TABLE DATA; Schema: public; Owner: <username>
 --
 
@@ -200,36 +250,51 @@ COPY public.passwords (id, user_id, password) FROM stdin;
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: <username>
 --
 
-COPY public.users (id, username, fname, lname, address) FROM stdin;
+COPY public.users (id, username, fname, lname, addr_id) FROM stdin;
 \.
 
 
 --
--- Name: invoices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
---username
+-- Name: addresses_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
+--
 
-SELECT pg_catalog.setval('public.invoices_id_seq', 4, true);
+SELECT pg_catalog.setval('public.addresses_id_seq', 1, false);
+
+
+--
+-- Name: invoices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
+--
+
+SELECT pg_catalog.setval('public.invoices_id_seq', 3, true);
 
 
 --
 -- Name: passwords_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
 --
 
-SELECT pg_catalog.setval('public.passwords_id_seq', 1, false);
+SELECT pg_catalog.setval('public.passwords_id_seq', 2, true);
 
 
 --
 -- Name: passwords_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
 --
 
-SELECT pg_catalog.setval('public.passwords_user_id_seq', 1, false);
+SELECT pg_catalog.setval('public.passwords_user_id_seq', 2, true);
 
 
 --
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 1, false);
+SELECT pg_catalog.setval('public.users_id_seq', 2, true);
+
+
+--
+-- Name: addresses addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.addresses
+    ADD CONSTRAINT addresses_pkey PRIMARY KEY (id);
 
 
 --
@@ -257,14 +322,6 @@ ALTER TABLE ONLY public.passwords
 
 
 --
--- Name: users users_fname_lname_address_key; Type: CONSTRAINT; Schema: public; Owner: <username>
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_fname_lname_address_key UNIQUE (fname, lname, address);
-
-
---
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
 --
 
@@ -281,6 +338,14 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: addresses addresses_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.addresses
+    ADD CONSTRAINT addresses_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
 -- Name: passwords fk_user; Type: FK CONSTRAINT; Schema: public; Owner: <username>
 --
 
@@ -293,7 +358,15 @@ ALTER TABLE ONLY public.passwords
 --
 
 ALTER TABLE ONLY public.invoices
-    ADD CONSTRAINT invoices_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT invoices_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: users users_addr_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_addr_id_fkey FOREIGN KEY (addr_id) REFERENCES public.addresses(id);
 
 
 --
