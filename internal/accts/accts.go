@@ -100,6 +100,8 @@ func addUserContact(acct *Account, acctErr *fields.GrammarError) {
 	}
 }
 
+// helper funct that adds a users username to users table
+func addUsername(acct *Account, acctErr *fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
@@ -112,8 +114,8 @@ func addUserContact(acct *Account, acctErr *fields.GrammarError) {
 
 	rows, _ := db.Query(
 		ctx,
-		`INSERT INTO Users (username, fname,lname,address) VALUES($1, $2, $3, $4) RETURNING *`,
-		acct.Username, acct.Fname, acct.Lname, acct.Address,
+		`INSERT INTO Usernames (username) VALUES($1) RETURNING *`,
+		acct.Username,
 	)
 
 	err := pgxscan.ScanOne(&insertedAcct, rows)
