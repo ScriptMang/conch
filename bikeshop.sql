@@ -153,16 +153,16 @@ ALTER SEQUENCE public.usercontacts_id_seq OWNED BY public.usercontacts.id;
 
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: <username>
+-- Name: usernames; Type: TABLE; Schema: public; Owner: <username>
 --
 
-CREATE TABLE public.users (
+CREATE TABLE public.usernames (
     id integer NOT NULL,
     username character varying(80) NOT NULL
 );
 
 
-ALTER TABLE public.users OWNER TO <username>;
+ALTER TABLE public.usernames OWNER TO <username>;
 
 --
 -- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: <username>
@@ -183,7 +183,7 @@ ALTER SEQUENCE public.users_id_seq OWNER TO <username>;
 -- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: <username>
 --
 
-ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+ALTER SEQUENCE public.users_id_seq OWNED BY public.usernames.id;
 
 
 --
@@ -215,10 +215,10 @@ ALTER TABLE ONLY public.usercontacts ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
--- Name: users id; Type: DEFAULT; Schema: public; Owner: <username>
+-- Name: usernames id; Type: DEFAULT; Schema: public; Owner: <username>
 --
 
-ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+ALTER TABLE ONLY public.usernames ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
@@ -246,10 +246,10 @@ COPY public.usercontacts (id, user_id, fname, lname, address) FROM stdin;
 
 
 --
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: <username>
+-- Data for Name: usernames; Type: TABLE DATA; Schema: public; Owner: <username>
 --
 
-COPY public.users (id, username) FROM stdin;
+COPY public.usernames (id, username) FROM stdin;
 \.
 
 
@@ -321,18 +321,18 @@ ALTER TABLE ONLY public.usercontacts
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
+-- Name: usernames users_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
 --
 
-ALTER TABLE ONLY public.users
+ALTER TABLE ONLY public.usernames
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
 
 --
--- Name: users users_username_key; Type: CONSTRAINT; Schema: public; Owner: <username>
+-- Name: usernames users_username_key; Type: CONSTRAINT; Schema: public; Owner: <username>
 --
 
-ALTER TABLE ONLY public.users
+ALTER TABLE ONLY public.usernames
     ADD CONSTRAINT users_username_key UNIQUE (username);
 
 
@@ -341,7 +341,7 @@ ALTER TABLE ONLY public.users
 --
 
 ALTER TABLE ONLY public.passwords
-    ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES public.usernames(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -349,7 +349,7 @@ ALTER TABLE ONLY public.passwords
 --
 
 ALTER TABLE ONLY public.invoices
-    ADD CONSTRAINT invoices_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT invoices_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.usernames(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -357,7 +357,7 @@ ALTER TABLE ONLY public.invoices
 --
 
 ALTER TABLE ONLY public.usercontacts
-    ADD CONSTRAINT usercontacts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT usercontacts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.usernames(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
