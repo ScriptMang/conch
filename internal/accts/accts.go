@@ -71,8 +71,35 @@ func (credErr *AuthError) AddMsg(statusCode int, str string) {
 	credErr.ErrMsgs = append(credErr.ErrMsgs, str)
 }
 
-// helper funct that adds all user-info to users table
-func addUser(acct *Account, acctErr *fields.GrammarError) {
+// adds private userinfo  to usercontacts
+func addUserContact(acct *Account, acctErr *fields.GrammarError) {
+	ctx, db := bikeshop.Connect()
+	defer db.Close()
+
+	var newContact []*UserContacts
+	if len(acctErr.ErrMsgs) > 0 {
+		// fmt.Println("Errs exist in addUserContact Funct return nil")
+		return
+	}
+
+	rows, _ := db.Query(
+		ctx,
+		`INSERT INTO UserContacts (fname, lname, address) VALUES($1, $2, $3) RETURNING *`,
+		acct.Fname, acct.Lname, acct.Address,
+	)
+
+	err := pgxscan.ScanOne(&newContact, rows)
+	if err != nil {
+		qryError := err.Error()
+		if strings.Contains(qryError, "value too long for type character varying") {
+			acctErr.AddMsg(BadRequest, "varchar too long, use varchar length between 1-255")
+		} else {
+			acctErr.AddMsg(BadRequest, qryError)
+		}
+		return
+	}
+}
+
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
