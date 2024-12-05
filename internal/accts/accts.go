@@ -105,7 +105,7 @@ func addUsername(acct *Account, acctErr *fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
-	var insertedAcct Account
+	var username []*Usernames
 
 	if len(acctErr.ErrMsgs) > 0 {
 		// fmt.Println("Errs exist in AddUser Funct return nil")
@@ -118,7 +118,7 @@ func addUsername(acct *Account, acctErr *fields.GrammarError) {
 		acct.Username,
 	)
 
-	err := pgxscan.ScanOne(&insertedAcct, rows)
+	err := pgxscan.ScanOne(&username, rows)
 	if err != nil {
 		qryError := err.Error()
 		if strings.Contains(qryError, "value too long for type character varying") {
@@ -131,7 +131,7 @@ func addUsername(acct *Account, acctErr *fields.GrammarError) {
 
 	//	fmt.Printf("Errors so far when adding a user: %s\n", acctErr.ErrMsgs)
 	//	fmt.Printf("New User to be added: %+v\n", insertedAcct)
-	acct.ID = insertedAcct.ID
+	acct.ID = username[0].ID
 }
 
 func encryptPassword(val string) ([]byte, error) {
