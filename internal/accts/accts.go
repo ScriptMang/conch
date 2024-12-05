@@ -189,7 +189,7 @@ func readHashByID(userID int) ([]*Passwords, fields.GrammarError) {
 
 	var pswd Passwords
 	var pswds []*Passwords
-	_, fieldErr := ReadUsers()
+	_, fieldErr := ReadUserContact()
 
 	// make sure the table isn't empty
 	if fieldErr.ErrMsgs != nil {
