@@ -370,12 +370,12 @@ func LogIntoAcct(userCred LoginCred) (*LoginStatus, fields.GrammarError) {
 
 // Deletes the User account which cascades
 // to delete their invoices too
-func DeleteAcct(userCred LoginCred) ([]*Users, fields.GrammarError) {
+func DeleteAcct(userCred LoginCred) ([]*Usernames, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
-	var usr Users
-	var usrs []*Users
+	var usr Usernames
+	var usrs []*Usernames
 
 	// verify that user wants to delete their account by asking
 	// for their credentials. if their info matches the db
