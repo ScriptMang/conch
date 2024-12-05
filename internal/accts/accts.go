@@ -252,17 +252,17 @@ func AddAccount(acct *Account) (*Registered, fields.GrammarError) {
 }
 
 // returns the list of all existing users
-func ReadUsers() ([]*Users, fields.GrammarError) {
+func ReadUserContact() ([]*UserContacts, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
-	var usrs []*Users
+	var usrContacts []*UserContacts
 	fieldErr := fields.GrammarError{}
-	rows, _ := db.Query(ctx, `SELECT * FROM Users`)
-	err := pgxscan.ScanAll(&usrs, rows)
+	rows, _ := db.Query(ctx, `SELECT * FROM UserContacts`)
+	err := pgxscan.ScanAll(&usrContacts, rows)
 	if err != nil {
 		errMsg := err.Error()
-		// log.Printf("Error in ReadUsers: %s\n", errMsg)
+		// log.Printf("Error in ReadUsernames: %s\n", errMsg)
 		if strings.Contains(errMsg, "failed to connect") {
 			fieldErr.ErrMsgs = nil
 			fieldErr.AddMsg(BadRequest, "Error: failed to connect to database, username doesn't exist")
@@ -272,27 +272,27 @@ func ReadUsers() ([]*Users, fields.GrammarError) {
 		// fmt.Printf("ReadOp List: %s\n", fieldErr.ErrMsgs)
 	}
 
-	return usrs, fieldErr
+	return usrContacts, fieldErr
 }
 
 // returns a user given the id
 // if the id doesn't exist it error
-func ReadUserByID(id int) ([]*Users, fields.GrammarError) {
+func ReadUserContactByID(id int) ([]*UserContacts, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
-	var usr Users
-	var usrs []*Users
-	_, fieldErr := ReadUsers()
+	var usrContact UserContacts
+	var usrContacts []*UserContacts
+	_, fieldErr := ReadUserContact()
 
 	// make sure the table isn't empty
 	if fieldErr.ErrMsgs != nil {
-		return usrs, fieldErr
+		return usrContacts, fieldErr
 	}
 
-	row, _ := db.Query(ctx, `SELECT * FROM Users WHERE id=$1`, id)
+	row, _ := db.Query(ctx, `SELECT * FROM UserContacts WHERE id=$1`, id)
 
-	err := pgxscan.ScanOne(&usr, row)
+	err := pgxscan.ScanOne(&usrContact, row)
 	if err != nil {
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "no rows in result set") {
@@ -300,20 +300,20 @@ func ReadUserByID(id int) ([]*Users, fields.GrammarError) {
 		}
 
 		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
-		return usrs, fieldErr
+		return usrContacts, fieldErr
 	}
-	usrs = append(usrs, &usr)
-	return usrs, fieldErr
+	usrContacts = append(usrContacts, &usrContact)
+	return usrContacts, fieldErr
 }
 
 // returns the user given their username
-func readUserByUsername(username string) ([]*Users, fields.GrammarError) {
+func readUserByUsername(username string) ([]*Usernames, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
-	var usr Users
-	var usrs []*Users
-	_, fieldErr := ReadUsers()
+	var usr Usernames
+	var usrs []*Usernames
+	_, fieldErr := ReadUserContact()
 
 	// make sure the table isn't empty
 
@@ -321,7 +321,7 @@ func readUserByUsername(username string) ([]*Users, fields.GrammarError) {
 		return usrs, fieldErr
 	}
 
-	row, _ := db.Query(ctx, `SELECT * FROM Users WHERE username=$1`, username)
+	row, _ := db.Query(ctx, `SELECT * FROM Usernames WHERE username=$1`, username)
 
 	err := pgxscan.ScanOne(&usr, row)
 	if err != nil {
