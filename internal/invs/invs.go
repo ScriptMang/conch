@@ -23,14 +23,14 @@ type Invoice struct {
 type Invoices []*Invoice
 
 // takes an invoice and throws an error for any field with an invalid input
-func (inv *Invoice) validateAllFields(user accts.Users) fields.GrammarError {
+func (inv *Invoice) validateAllFields(userContact accts.UserContacts) fields.GrammarError {
 	// check for empty fields: for all the fields
 	textFields := map[string]*string{
-		"Fname":    &user.Fname,
-		"Lname":    &user.Lname,
+		"Fname":    &userContact.Fname,
+		"Lname":    &userContact.Lname,
 		"Category": &inv.Category,
 		"Product":  &inv.Product,
-		"Address":  &user.Address,
+		"Address":  &userContact.Address,
 	}
 	var fieldErr fields.GrammarError
 	for field, val := range textFields {
@@ -188,7 +188,7 @@ func ReadInvoiceByUserID(userID, invID int) ([]*Invoice, fields.GrammarError) {
 	defer db.Close()
 
 	var invoices []*Invoice
-	users, fieldErr := accts.ReadUserByID(userID)
+	users, fieldErr := accts.ReadUserContactByID(userID)
 
 	if fieldErr.ErrMsgs != nil {
 		// log.Printf("ReadInvoicesByUserID funct: error username doesn't exist")
@@ -219,8 +219,8 @@ func ReadInvoiceByUserID(userID, invID int) ([]*Invoice, fields.GrammarError) {
 	return invoices, fieldErr
 }
 
-func (inv *Invoice) validateFieldsForUpdate(user accts.Users) fields.GrammarError {
-	return inv.validateAllFields(user)
+func (inv *Invoice) validateFieldsForUpdate(userContact accts.UserContacts) fields.GrammarError {
+	return inv.validateAllFields(userContact)
 }
 
 // updates and returns the given invoice by id
@@ -230,7 +230,7 @@ func UpdateInvoiceByUserID(inv Invoice, userID, invID int) ([]*Invoice, fields.G
 
 	var inv2 Invoice // resulting invoice
 	var invoices []*Invoice
-	usrs, _ := accts.ReadUserByID(userID)
+	usrs, _ := accts.ReadUserContactByID(userID)
 	_, fieldErr := ReadInvoiceByUserID(userID, invID)
 
 	// check readuserbyid for errs
@@ -368,7 +368,7 @@ func DeleteInvoice(invID, userID int) ([]*Invoice, fields.GrammarError) {
 
 	var inv Invoice
 	var invoices []*Invoice
-	_, fieldErr := accts.ReadUserByID(userID)
+	_, fieldErr := accts.ReadUserContactByID(userID)
 
 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 		// fmt.Printf("Error messages is empty for Delete-OP")
