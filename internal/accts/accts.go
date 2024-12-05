@@ -227,15 +227,21 @@ func AddAccount(acct *Account) (*Registered, fields.GrammarError) {
 		return nil, *acctErr
 	}
 
+	addUserContact(acct, acctErr)
+	if acctErr.ErrMsgs != nil {
+		// fmt.Printf("Errors in AddAccount Func, %v\n", acctErr.ErrMsgs)
+		return nil, *acctErr
+	}
+
 	// if no errors add info to appropiate tables
-	addUser(acct, acctErr)
+	addUsername(acct, acctErr)
 	if acctErr.ErrMsgs != nil {
 		// fmt.Printf("Errors in AddAccount Func, %v\n", acctErr.ErrMsgs)
 		return nil, *acctErr
 	}
 
 	// add passwords to table, don't if err existf
-	// fmt.Printf("User added into Users: %v\n", *accts[0])
+	// fmt.Printf("User added into Usernames: %v\n", *accts[0])
 	addPassword(acct, acctErr)
 	if acctErr.ErrMsgs != nil {
 		// fmt.Printf("Errors in AddAccount Func, %v\n", acctErr.ErrMsgs)
