@@ -13,9 +13,9 @@ import (
 )
 
 type respBodyData struct {
-	Invs     []*invs.Invoice
-	Users    []*accts.Users
-	FieldErr fields.GrammarError
+	Invs        []*invs.Invoice
+	UsrContacts []*accts.UserContacts
+	FieldErr    fields.GrammarError
 }
 
 type Order struct {
@@ -121,7 +121,7 @@ func validateRouteInvID(c *gin.Context, rqstData *respBodyData) int {
 // serialize Invoice or GrammarError as json to response body
 func sendResponse(c *gin.Context, rqstData *respBodyData) {
 	invs := rqstData.Invs
-	usrs := rqstData.Users
+	usrContacts := rqstData.UsrContacts
 	fieldErr := rqstData.FieldErr
 	switch {
 	case fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "":
@@ -133,9 +133,9 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 
 		// change price of type float to string
 		// add it to resultingInv struct then invLst
-		for _, usr := range usrs {
+		for _, usrContact := range usrContacts {
 			for _, inv := range invs {
-				if inv.UserID != usr.ID {
+				if inv.UserID != usrContact.ID {
 					continue
 				}
 				receipt.ID = inv.ID
@@ -144,9 +144,9 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 				receipt.Price = json.Number(fmt.Sprintf("%.2f", inv.Price))
 				receipt.Quantity = inv.Quantity
 				receipt.Category = inv.Category
-				receipt.Fname = usr.Fname
-				receipt.Lname = usr.Lname
-				receipt.Address = usr.Address
+				receipt.Fname = usrContact.Fname
+				receipt.Lname = usrContact.Lname
+				receipt.Address = usrContact.Address
 				receipts = append(receipts, receipt)
 			}
 		}
@@ -232,7 +232,7 @@ func logIn(r *gin.Engine) *gin.Engine {
 func deleteAcct(r *gin.Engine) *gin.Engine {
 	r.DELETE("/users/", func(c *gin.Context) {
 		var rqstData respBodyData
-		var rmvUser []*accts.Users
+		var rmvUser []*accts.Usernames
 		var userCred accts.LoginCred
 		err := c.ShouldBind(&userCred)
 		bindingErr := rqstData.FieldErr
@@ -284,7 +284,7 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 func readUserData(r *gin.Engine) *gin.Engine {
 	r.GET("/users", func(c *gin.Context) {
 		var rqstData respBodyData
-		rqstData.Users, rqstData.FieldErr = accts.ReadUsers()
+		rqstData.UsrContacts, rqstData.FieldErr = accts.ReadUserContact()
 		fieldErr := rqstData.FieldErr
 		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 			// log.Printf("Error in ReadUserData funct: %v\n", fieldErr.ErrMsgs)
@@ -292,7 +292,7 @@ func readUserData(r *gin.Engine) *gin.Engine {
 			return
 		}
 		code = statusOK
-		c.JSON(code, rqstData.Users)
+		c.JSON(code, rqstData.UsrContacts)
 	})
 	return r
 }
@@ -307,7 +307,7 @@ func readUserDataByID(r *gin.Engine) *gin.Engine {
 			sendResponse(c, &rqstData)
 			return
 		}
-		rqstData.Users, rqstData.FieldErr = accts.ReadUserByID(id)
+		rqstData.UsrContacts, rqstData.FieldErr = accts.ReadUserContactByID(id)
 		fieldErr := rqstData.FieldErr
 		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
 			// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
@@ -315,7 +315,7 @@ func readUserDataByID(r *gin.Engine) *gin.Engine {
 			return
 		}
 		code = statusOK
-		c.JSON(code, *rqstData.Users[0])
+		c.JSON(code, *rqstData.UsrContacts[0])
 	})
 	return r
 }
