@@ -22,22 +22,22 @@ type Account struct {
 }
 
 type UserContacts struct {
-	ID      int    `json:"id"`
-	UserID  int    `json:"user_id"`
-	Fname   string `json:"fname" form:"fname"`
-	Lname   string `json:"lname" form:"lname"`
-	Address string `json:"address"`
+	ID      int    `db:"id" json:"id"`
+	UserID  int    `db:"user_id" json:"user_id"`
+	Fname   string `db:"fname" json:"fname" form:"fname"`
+	Lname   string `db:"lname" json:"lname" form:"lname"`
+	Address string `db:"address" json:"address"`
 }
 
 type Usernames struct {
-	ID       int    `json:"id" form:"id"`
-	Username string `json:"username" form:"username"`
+	ID       int    `db:"id" json:"id"`
+	Username string `db:"username" json:"username"`
 }
 
 type Passwords struct {
-	ID       int    `json:"id" form:"id"`
-	UserID   int    `json:"user_id" form:"user_id"`
-	Password []byte `json:"password" form:"password"`
+	ID       int    `db:"id" json:"id" form:"id"`
+	UserID   int    `db:"user_id" json:"user_id" form:"user_id"`
+	Password []byte `db:"password" json:"password" form:"password"`
 }
 
 type LoginCred struct {
@@ -76,7 +76,7 @@ func addUserContact(acct *Account, acctErr *fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
-	var newContact []*UserContacts
+	var newContact UserContacts
 	if len(acctErr.ErrMsgs) > 0 {
 		// fmt.Println("Errs exist in addUserContact Funct return nil")
 		return
@@ -84,8 +84,8 @@ func addUserContact(acct *Account, acctErr *fields.GrammarError) {
 
 	rows, _ := db.Query(
 		ctx,
-		`INSERT INTO UserContacts (fname, lname, address) VALUES($1, $2, $3) RETURNING *`,
-		acct.Fname, acct.Lname, acct.Address,
+		`INSERT INTO UserContacts (user_id, fname, lname, address) VALUES($1, $2, $3, $4) RETURNING *`,
+		acct.ID, acct.Fname, acct.Lname, acct.Address,
 	)
 
 	err := pgxscan.ScanOne(&newContact, rows)
@@ -105,8 +105,7 @@ func addUsername(acct *Account, acctErr *fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
-	var username []*Usernames
-
+	var id int
 	if len(acctErr.ErrMsgs) > 0 {
 		// fmt.Println("Errs exist in AddUser Funct return nil")
 		return
@@ -114,11 +113,11 @@ func addUsername(acct *Account, acctErr *fields.GrammarError) {
 
 	rows, _ := db.Query(
 		ctx,
-		`INSERT INTO Usernames (username) VALUES($1) RETURNING *`,
+		`INSERT INTO Usernames (username) VALUES($1) RETURNING id`,
 		acct.Username,
 	)
 
-	err := pgxscan.ScanOne(&username, rows)
+	err := pgxscan.ScanOne(&id, rows)
 	if err != nil {
 		qryError := err.Error()
 		if strings.Contains(qryError, "value too long for type character varying") {
@@ -131,7 +130,7 @@ func addUsername(acct *Account, acctErr *fields.GrammarError) {
 
 	//	fmt.Printf("Errors so far when adding a user: %s\n", acctErr.ErrMsgs)
 	//	fmt.Printf("New User to be added: %+v\n", insertedAcct)
-	acct.ID = username[0].ID
+	acct.ID = id
 }
 
 func encryptPassword(val string) ([]byte, error) {
@@ -163,11 +162,10 @@ func addPassword(acct *Account, acctErr *fields.GrammarError) {
 		return
 	}
 
-	// if no errors add info to appropiate tables
-	rows, _ := db.Query(
-		ctx,
-		`INSERT INTO Passwords (password) VALUES($1) RETURNING *`,
-		hashedPswd,
+	// // if no errors add info to appropiate tables
+	rows, _ := db.Query(ctx,
+		`INSERT INTO Passwords (user_id, password) VALUES($1, $2) RETURNING *`,
+		acct.ID, hashedPswd,
 	)
 
 	err = pgxscan.ScanOne(&pswds, rows)
@@ -227,14 +225,14 @@ func AddAccount(acct *Account) (*Registered, fields.GrammarError) {
 		return nil, *acctErr
 	}
 
-	addUserContact(acct, acctErr)
+	// if no errors add info to appropiate tables
+	addUsername(acct, acctErr)
 	if acctErr.ErrMsgs != nil {
 		// fmt.Printf("Errors in AddAccount Func, %v\n", acctErr.ErrMsgs)
 		return nil, *acctErr
 	}
 
-	// if no errors add info to appropiate tables
-	addUsername(acct, acctErr)
+	addUserContact(acct, acctErr)
 	if acctErr.ErrMsgs != nil {
 		// fmt.Printf("Errors in AddAccount Func, %v\n", acctErr.ErrMsgs)
 		return nil, *acctErr
