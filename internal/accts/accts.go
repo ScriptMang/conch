@@ -385,7 +385,7 @@ func DeleteAcct(userCred LoginCred) ([]*Usernames, fields.GrammarError) {
 	}
 
 	row, _ := db.Query(ctx,
-		`DELETE FROM users WHERE id=$1 RETURNING *`,
+		`DELETE FROM usernames WHERE id=$1 RETURNING *`,
 		isLoggedIn.UserID)
 
 	err := pgxscan.ScanOne(&usr, row)
