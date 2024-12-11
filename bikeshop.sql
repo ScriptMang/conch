@@ -27,8 +27,8 @@ SET default_table_access_method = heap;
 CREATE TABLE public.invoices (
     id integer NOT NULL,
     user_id integer NOT NULL,
-    product character varying(255) NOT NULL,
-    category character varying(255) NOT NULL,
+    product character varying(80) NOT NULL,
+    category character varying(80) NOT NULL,
     price numeric(5,2) NOT NULL,
     quantity integer NOT NULL
 );
@@ -65,7 +65,7 @@ ALTER SEQUENCE public.invoices_id_seq OWNED BY public.invoices.id;
 CREATE TABLE public.passwords (
     id integer NOT NULL,
     user_id integer NOT NULL,
-    password bytea
+    password bytea NOT NULL
 );
 
 
@@ -91,28 +91,6 @@ ALTER SEQUENCE public.passwords_id_seq OWNER TO <username>;
 --
 
 ALTER SEQUENCE public.passwords_id_seq OWNED BY public.passwords.id;
-
-
---
--- Name: passwords_user_id_seq; Type: SEQUENCE; Schema: public; Owner: <username>
---
-
-CREATE SEQUENCE public.passwords_user_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.passwords_user_id_seq OWNER TO <username>;
-
---
--- Name: passwords_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: <username>
---
-
-ALTER SEQUENCE public.passwords_user_id_seq OWNED BY public.passwords.user_id;
 
 
 --
@@ -158,17 +136,17 @@ ALTER SEQUENCE public.usercontacts_id_seq OWNED BY public.usercontacts.id;
 
 CREATE TABLE public.usernames (
     id integer NOT NULL,
-    username character varying(80) NOT NULL
+    username character varying(255) NOT NULL
 );
 
 
 ALTER TABLE public.usernames OWNER TO <username>;
 
 --
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: <username>
+-- Name: usernames_id_seq; Type: SEQUENCE; Schema: public; Owner: <username>
 --
 
-CREATE SEQUENCE public.users_id_seq
+CREATE SEQUENCE public.usernames_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -177,13 +155,13 @@ CREATE SEQUENCE public.users_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.users_id_seq OWNER TO <username>;
+ALTER SEQUENCE public.usernames_id_seq OWNER TO <username>;
 
 --
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: <username>
+-- Name: usernames_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: <username>
 --
 
-ALTER SEQUENCE public.users_id_seq OWNED BY public.usernames.id;
+ALTER SEQUENCE public.usernames_id_seq OWNED BY public.usernames.id;
 
 
 --
@@ -201,13 +179,6 @@ ALTER TABLE ONLY public.passwords ALTER COLUMN id SET DEFAULT nextval('public.pa
 
 
 --
--- Name: passwords user_id; Type: DEFAULT; Schema: public; Owner: <username>
---
-
-ALTER TABLE ONLY public.passwords ALTER COLUMN user_id SET DEFAULT nextval('public.passwords_user_id_seq'::regclass);
-
-
---
 -- Name: usercontacts id; Type: DEFAULT; Schema: public; Owner: <username>
 --
 
@@ -218,7 +189,7 @@ ALTER TABLE ONLY public.usercontacts ALTER COLUMN id SET DEFAULT nextval('public
 -- Name: usernames id; Type: DEFAULT; Schema: public; Owner: <username>
 --
 
-ALTER TABLE ONLY public.usernames ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+ALTER TABLE ONLY public.usernames ALTER COLUMN id SET DEFAULT nextval('public.usernames_id_seq'::regclass);
 
 
 --
@@ -257,35 +228,36 @@ COPY public.usernames (id, username) FROM stdin;
 -- Name: invoices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
 --
 
-SELECT pg_catalog.setval('public.invoices_id_seq', 3, true);
+SELECT pg_catalog.setval('public.invoices_id_seq', 1, true);
 
 
 --
 -- Name: passwords_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
 --
 
-SELECT pg_catalog.setval('public.passwords_id_seq', 2, true);
-
-
---
--- Name: passwords_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
---
-
-SELECT pg_catalog.setval('public.passwords_user_id_seq', 2, true);
+SELECT pg_catalog.setval('public.passwords_id_seq', 1, true);
 
 
 --
 -- Name: usercontacts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
 --
 
-SELECT pg_catalog.setval('public.usercontacts_id_seq', 1, false);
+SELECT pg_catalog.setval('public.usercontacts_id_seq', 1, true);
 
 
 --
--- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
+-- Name: usernames_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 2, true);
+SELECT pg_catalog.setval('public.usernames_id_seq', 1, true);
+
+
+--
+-- Name: invoices invoices_id_user_id_product_category_price_quantity_key; Type: CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.invoices
+    ADD CONSTRAINT invoices_id_user_id_product_category_price_quantity_key UNIQUE (id, user_id, product, category, price, quantity);
 
 
 --
@@ -313,6 +285,14 @@ ALTER TABLE ONLY public.passwords
 
 
 --
+-- Name: usercontacts usercontacts_fname_lname_address_key; Type: CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.usercontacts
+    ADD CONSTRAINT usercontacts_fname_lname_address_key UNIQUE (fname, lname, address);
+
+
+--
 -- Name: usercontacts usercontacts_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
 --
 
@@ -321,27 +301,19 @@ ALTER TABLE ONLY public.usercontacts
 
 
 --
--- Name: usernames users_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
+-- Name: usernames usernames_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
 --
 
 ALTER TABLE ONLY public.usernames
-    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT usernames_pkey PRIMARY KEY (id);
 
 
 --
--- Name: usernames users_username_key; Type: CONSTRAINT; Schema: public; Owner: <username>
+-- Name: usernames usernames_username_key; Type: CONSTRAINT; Schema: public; Owner: <username>
 --
 
 ALTER TABLE ONLY public.usernames
-    ADD CONSTRAINT users_username_key UNIQUE (username);
-
-
---
--- Name: passwords fk_user; Type: FK CONSTRAINT; Schema: public; Owner: <username>
---
-
-ALTER TABLE ONLY public.passwords
-    ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES public.usernames(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT usernames_username_key UNIQUE (username);
 
 
 --
@@ -350,6 +322,14 @@ ALTER TABLE ONLY public.passwords
 
 ALTER TABLE ONLY public.invoices
     ADD CONSTRAINT invoices_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.usernames(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: passwords passwords_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.passwords
+    ADD CONSTRAINT passwords_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.usernames(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
