@@ -45,11 +45,20 @@ To end the program in the terminal, type `^c`(ctrl-c).
 }
 ```
 
-### JSON Format for a User
+### JSON Format for a Usernames
 ```
 { 
   "id": int,
+  "user_id": int,
   "username": string,
+}
+```
+
+### JSON Format for a UserContacts
+```
+{ 
+  "id": int,
+  "user_id": int,
   "fname": string,
   "lname": string,
   "address": string
@@ -60,7 +69,7 @@ To end the program in the terminal, type `^c`(ctrl-c).
 ```
 {
   "id": int,
-  "usr_id": int,
+  "user_id": int,
   "product": string,
   "category": string,
   "price": float,
@@ -77,7 +86,7 @@ To end the program in the terminal, type `^c`(ctrl-c).
 ```
 ### Notes about the json objects
 
-#### Adding an account creates an entry in the Users table and the password table
+#### Adding an account creates an entry in the Usernames table and the passwords table
 Although you don't directly pass a json struct for a user
 object in the request body, 
 you still need to provide its id for other routes. i.e `:usr_id`.
@@ -96,7 +105,7 @@ the password is encrypted and stored in the database.
    `POST` `localhost:8080/users/` `<account>`
 * Login into your account<br>
    `POST` `localhost:8080/user/login` `<login-creds>`
-* Read all the users from the table<br>
+* Read all the usernames from the table<br>
    `GET` `localhost:8080/users`
 * Read all the invoices from the table<br>
    `GET` `localhost:8080/invoices`
