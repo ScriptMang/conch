@@ -181,7 +181,7 @@ func addPassword(acct *Account, acctErr *fields.GrammarError) {
 
 // returns a pswd hash given userid
 // if the id doesn't exist it error
-func readHashByID(userID int) ([]*Passwords, fields.GrammarError) {
+func ReadHashByID(userID int) ([]*Passwords, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
@@ -335,58 +335,24 @@ func readUserByUsername(username string) ([]*Usernames, fields.GrammarError) {
 	return usrs, fieldErr
 }
 
-// matches the client's username and pswd against the database
-// if there's a match the user is logged in, otherwise
-// there's an issue with username or password
-func LogIntoAcct(userCred LoginCred) (*LoginStatus, fields.GrammarError) {
-	// get the user struct check if it exists
-	usrs, fieldErr := readUserByUsername(userCred.UserName)
-	if fieldErr.ErrMsgs != nil {
-		return nil, fieldErr
-	}
-
-	// get the stored pswd hash
-	usr := usrs[0]
-	pswds, fieldErr := readHashByID(usr.ID)
-	if fieldErr.ErrMsgs != nil {
-		return nil, fieldErr
-	}
-
-	// hash the given pswd and compare it to whats
-	// stored in the databse
-	hashedPswd := pswds[0].Password
-	err := bcrypt.CompareHashAndPassword(hashedPswd, []byte(userCred.Password))
-
-	if err != nil {
-		// log.Printf("The Password Hash Comparison Failed: %v\n", err.Error())
-		fieldErr.AddMsg(BadRequest, "Error: password is incorrect")
-		return nil, fieldErr
-	}
-
-	return &LoginStatus{usr.ID, "LoggedIn"}, fieldErr
-}
-
 // Deletes the User account which cascades
 // to delete their invoices too
-func DeleteAcct(userCred LoginCred) ([]*Usernames, fields.GrammarError) {
+func DeleteAcct(user Usernames) ([]*Usernames, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
 	var usr Usernames
 	var usrs []*Usernames
 
-	// verify that user wants to delete their account by asking
-	// for their credentials. if their info matches the db
-	// the account will get deleted. Otherwise it returns an
-	//error
-	isLoggedIn, fieldErr := LogIntoAcct(userCred)
+	// verify username exists
+	_, fieldErr := readUserByUsername(user.Username)
 	if fieldErr.ErrMsgs != nil {
 		return nil, fieldErr
 	}
 
 	row, _ := db.Query(ctx,
 		`DELETE FROM usernames WHERE id=$1 RETURNING *`,
-		isLoggedIn.UserID)
+		user.ID)
 
 	err := pgxscan.ScanOne(&usr, row)
 	if errors.Is(err, pgx.ErrNoRows) {

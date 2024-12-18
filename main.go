@@ -1,8 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -33,6 +37,8 @@ type Order struct {
 var code int //httpstatuscode
 const statusOK = 200
 const statusCreated = 201
+
+var tokens []string // bearer token
 
 // configs gin router and renders index-page
 func setRouter() *gin.Engine {
@@ -154,6 +160,16 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 	}
 }
 
+// returns random hex as a string
+func randHex(n int) (string, error) {
+	bytes := make([]byte, n)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
+}
+
 // post request to create user account
 func createAcct(r *gin.Engine) *gin.Engine {
 	r.POST("/users/", func(c *gin.Context) {
@@ -189,42 +205,28 @@ func createAcct(r *gin.Engine) *gin.Engine {
 }
 
 func logIn(r *gin.Engine) *gin.Engine {
-	r.POST("/user/login", func(c *gin.Context) {
-		var loginErr fields.GrammarError
-		var rqstData respBodyData
-		var userCred accts.LoginCred
 
-		loginErr = rqstData.FieldErr
-		err := c.ShouldBind(&userCred)
-		if err != nil {
-			loginErr.AddMsg(fields.BadRequest,
-				"Binding Error: failed to bind fields to account object, mismatched data-types")
-			c.JSON(fields.ErrorCode, loginErr)
-			return
-		}
+	const hash_unreadable = "Couldn't read password hash.\n"
+	pswd1, readErr := accts.ReadHashByID(2)
+	if readErr.ErrMsgs != nil {
+		fmt.Fprintf(os.Stderr, hash_unreadable)
+		os.Exit(1)
+	}
+	pswd2, readErr := accts.ReadHashByID(3)
+	if readErr.ErrMsgs != nil {
+		fmt.Fprintf(os.Stderr, hash_unreadable)
+		os.Exit(1)
+	}
 
-		// validate account info
-		authStatus, loginErr := accts.LogIntoAcct(userCred)
-		if err != nil {
-			loginErr.AddMsg(fields.BadRequest,
-				"Binding Error: failed to bind fields to account object, mismatched data-types")
-			c.JSON(fields.ErrorCode, loginErr)
-			return
-		}
-
-		// if len(rqstData) == 0 {
-		// 	fmt.Println("Thats strange, no accounts were added")
-
-		// send response back
-		errMsgSize := len(loginErr.ErrMsgs)
-		switch {
-		case errMsgSize > 0:
-			c.JSON(fields.ErrorCode, loginErr)
-		default:
-			c.JSON(statusOK, authStatus)
-		}
-
-		//log.Println("Account: ", acct)
+	r.POST("/user/login", gin.BasicAuth(gin.Accounts{
+		"wrigglyWart56": string(pswd1[0].Password),
+		"hypnoTonic05":  string(pswd2[0].Password),
+	}), func(c *gin.Context) {
+		token, _ := randHex(20)
+		tokens = append(tokens, token)
+		c.JSON(http.StatusAccepted, gin.H{
+			"token": token,
+		})
 	})
 	return r
 }
@@ -233,8 +235,9 @@ func deleteAcct(r *gin.Engine) *gin.Engine {
 	r.DELETE("/users/", func(c *gin.Context) {
 		var rqstData respBodyData
 		var rmvUser []*accts.Usernames
-		var userCred accts.LoginCred
-		err := c.ShouldBind(&userCred)
+		// var userCred accts.LoginCred
+		var user accts.Usernames
+		err := c.ShouldBind(&user)
 		bindingErr := rqstData.FieldErr
 
 		if err != nil {
@@ -244,7 +247,7 @@ func deleteAcct(r *gin.Engine) *gin.Engine {
 			return
 		}
 
-		rmvUser, rqstData.FieldErr = accts.DeleteAcct(userCred)
+		rmvUser, rqstData.FieldErr = accts.DeleteAcct(user)
 		if rqstData.FieldErr.ErrMsgs != nil {
 			sendResponse(c, &rqstData)
 			return
@@ -276,6 +279,25 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 			code = statusCreated
 			c.JSON(code, rqstData.Invs)
 		}
+	})
+	return r
+}
+
+func protectedData(r *gin.Engine) *gin.Engine {
+	r.GET("/protected/data", func(c *gin.Context) {
+		bToken := c.Request.Header.Get("Authorization")
+		rqstToken := strings.Split(bToken, " ")[1]
+		for _, token := range tokens {
+			if token == rqstToken {
+				c.JSON(http.StatusOK, gin.H{
+					"Data": "Value",
+				})
+				return
+			}
+		}
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
 	})
 	return r
 }
@@ -474,6 +496,7 @@ func main() {
 
 	r = createAcct(r)
 	r = logIn(r)
+	r = protectedData(r)
 	r = readUserData(r)
 	r = readInvoiceData(r)
 	r = readUserDataByID(r)
