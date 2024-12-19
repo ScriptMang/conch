@@ -258,27 +258,34 @@ func addInvoice(r *gin.Engine) *gin.Engine {
 	return r
 }
 
-func protectedData(r *gin.Engine) *gin.Engine {
-	r.GET("/protected/data", func(c *gin.Context) {
-		bToken := c.Request.Header.Get("Authorization")
-		rqstToken := strings.Split(bToken, " ")[1]
-		for _, token := range tokens {
-			if token == rqstToken {
-				c.JSON(http.StatusOK, gin.H{
-					"Data": "Value",
-				})
-				return
-			}
-		}
+func protectData(c *gin.Context) {
+	c.Keys = make(map[string]any)
+	bToken := c.Request.Header.Get("Authorization")
+	if bToken == "" {
+		c.Keys["isAuthorized"] = false
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
 		})
+		return
+	}
+	rqstToken := strings.Split(bToken, " ")[1]
+	for _, token := range tokens {
+		if token == rqstToken {
+			c.Keys["isAuthorized"] = true
+			return
+		}
+	}
+	c.Keys["isAuthorized"] = false
+	c.JSON(http.StatusUnauthorized, gin.H{
+		"message": "unauthorized",
 	})
-	return r
 }
 
 // returns the list of all users
 func readUserData(c *gin.Context) {
+	if c.Keys["isAuthorized"] == false {
+		return
+	}
 	var rqstData respBodyData
 	rqstData.UsrContacts, rqstData.FieldErr = accts.ReadUserContact()
 	fieldErr := rqstData.FieldErr
@@ -447,7 +454,7 @@ func main() {
 
 	// r = logIn(r)
 	r = addInvoice(r)
-	acctGroup := r.Group("/users")
+	acctGroup := r.Group("/users", protectData)
 	{
 		acctGroup.GET("", readUserData)
 		acctGroup.GET("/invoices", readInvoiceData)
@@ -467,18 +474,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	userGroup := r.Group("/user/", gin.BasicAuth(gin.Accounts{
+	loginGroup := r.Group("/user/", gin.BasicAuth(gin.Accounts{
 		"wrigglyWart56": string(pswd1[0].Password),
 		"hypnoTonic05":  string(pswd2[0].Password),
 	}))
 	{
-		userGroup.POST("/login", logIn)
-		userGroup.GET("/:usr_id", readUserDataByID)                // read user by their id
-		userGroup.GET("/:usr_id/invoices", readUserInvoices)       // read all the invoices for a user
-		userGroup.GET("/:usr_id/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user
-		userGroup.PUT("/:usr_id/invoice/:id", updateInvoiceEntry)  // updates the entire invoice
-		userGroup.PATCH("/:usr_id/invoice/:id", patchEntry)        // updates any field of an invoice
-		userGroup.DELETE("/:usr_id/invoice/:id", deleteInvEntry)   // deletes a specific invoice
+		loginGroup.POST("/login", logIn)
+	}
+
+	protectGroup := r.Group("/user/", protectData)
+	{
+		protectGroup.GET("/:usr_id", readUserDataByID)                // read user by their id
+		protectGroup.GET("/:usr_id/invoices", readUserInvoices)       // read all the invoices for a user
+		protectGroup.GET("/:usr_id/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user
+		protectGroup.PUT("/:usr_id/invoice/:id", updateInvoiceEntry)  // updates the entire invoice
+		protectGroup.PATCH("/:usr_id/invoice/:id", patchEntry)        // updates any field of an invoice
+		protectGroup.DELETE("/:usr_id/invoice/:id", deleteInvEntry)   // deletes a specific invoice
+
 	}
 
 	r.Run()
