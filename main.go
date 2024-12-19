@@ -171,91 +171,66 @@ func randHex(n int) (string, error) {
 }
 
 // post request to create user account
-func createAcct(r *gin.Engine) *gin.Engine {
-	r.POST("/users/", func(c *gin.Context) {
-		var acct accts.Account
-		var acctErr fields.GrammarError
-		var acctStatus *accts.Registered
-		err := c.ShouldBind(&acct)
-		if err != nil {
-			acctErr.AddMsg(fields.BadRequest,
-				"Binding Error: failed to bind fields to account object, mismatched data-types")
-			c.JSON(fields.ErrorCode, acctErr)
-			return
-		}
-
-		// validate account info
-		acctStatus, acctErr = accts.AddAccount(&acct)
-
-		// if len(respData) == 0 {
-		// 	fmt.Println("Thats strange, no accounts were added")
-		// }
-		// send response back
-		errMsgSize := len(acctErr.ErrMsgs)
-		switch {
-		case errMsgSize > 0:
-			c.JSON(fields.ErrorCode, acctErr)
-		default:
-			c.JSON(statusOK, *acctStatus)
-		}
-
-		//log.Println("Account: ", acct)
-	})
-	return r
-}
-
-func logIn(r *gin.Engine) *gin.Engine {
-
-	const hash_unreadable = "Couldn't read password hash.\n"
-	pswd1, readErr := accts.ReadHashByID(2)
-	if readErr.ErrMsgs != nil {
-		fmt.Fprintf(os.Stderr, hash_unreadable)
-		os.Exit(1)
-	}
-	pswd2, readErr := accts.ReadHashByID(3)
-	if readErr.ErrMsgs != nil {
-		fmt.Fprintf(os.Stderr, hash_unreadable)
-		os.Exit(1)
+func createAcct(c *gin.Context) {
+	var acct accts.Account
+	var acctErr fields.GrammarError
+	var acctStatus *accts.Registered
+	err := c.ShouldBind(&acct)
+	if err != nil {
+		acctErr.AddMsg(fields.BadRequest,
+			"Binding Error: failed to bind fields to account object, mismatched data-types")
+		c.JSON(fields.ErrorCode, acctErr)
+		return
 	}
 
-	r.POST("/user/login", gin.BasicAuth(gin.Accounts{
-		"wrigglyWart56": string(pswd1[0].Password),
-		"hypnoTonic05":  string(pswd2[0].Password),
-	}), func(c *gin.Context) {
-		token, _ := randHex(20)
-		tokens = append(tokens, token)
-		c.JSON(http.StatusAccepted, gin.H{
-			"token": token,
-		})
-	})
-	return r
+	// validate account info
+	acctStatus, acctErr = accts.AddAccount(&acct)
+
+	// if len(respData) == 0 {
+	// 	fmt.Println("Thats strange, no accounts were added")
+	// }
+	// send response back
+	errMsgSize := len(acctErr.ErrMsgs)
+	switch {
+	case errMsgSize > 0:
+		c.JSON(fields.ErrorCode, acctErr)
+	default:
+		c.JSON(statusOK, *acctStatus)
+	}
+
+	//log.Println("Account: ", acct)
 }
 
-func deleteAcct(r *gin.Engine) *gin.Engine {
-	r.DELETE("/users/", func(c *gin.Context) {
-		var rqstData respBodyData
-		var rmvUser []*accts.Usernames
-		// var userCred accts.LoginCred
-		var user accts.Usernames
-		err := c.ShouldBind(&user)
-		bindingErr := rqstData.FieldErr
-
-		if err != nil {
-			bindingErr.AddMsg(fields.BadRequest,
-				"Binding Error: failed to bind fields to userCreds, mismatched data-types")
-			c.JSON(fields.ErrorCode, bindingErr)
-			return
-		}
-
-		rmvUser, rqstData.FieldErr = accts.DeleteAcct(user)
-		if rqstData.FieldErr.ErrMsgs != nil {
-			sendResponse(c, &rqstData)
-			return
-		}
-		code = statusOK
-		c.JSON(code, rmvUser[0])
+func logIn(c *gin.Context) {
+	token, _ := randHex(20)
+	tokens = append(tokens, token)
+	c.JSON(http.StatusAccepted, gin.H{
+		"token": token,
 	})
-	return r
+}
+
+func deleteAcct(c *gin.Context) {
+	var rqstData respBodyData
+	var rmvUser []*accts.Usernames
+	// var userCred accts.LoginCred
+	var user accts.Usernames
+	err := c.ShouldBind(&user)
+	bindingErr := rqstData.FieldErr
+
+	if err != nil {
+		bindingErr.AddMsg(fields.BadRequest,
+			"Binding Error: failed to bind fields to userCreds, mismatched data-types")
+		c.JSON(fields.ErrorCode, bindingErr)
+		return
+	}
+
+	rmvUser, rqstData.FieldErr = accts.DeleteAcct(user)
+	if rqstData.FieldErr.ErrMsgs != nil {
+		sendResponse(c, &rqstData)
+		return
+	}
+	code = statusOK
+	c.JSON(code, rmvUser[0])
 }
 
 // binds json data to an invoice and insert its to the database
@@ -303,210 +278,208 @@ func protectedData(r *gin.Engine) *gin.Engine {
 }
 
 // returns the list of all users
-func readUserData(r *gin.Engine) *gin.Engine {
-	r.GET("/users", func(c *gin.Context) {
-		var rqstData respBodyData
-		rqstData.UsrContacts, rqstData.FieldErr = accts.ReadUserContact()
-		fieldErr := rqstData.FieldErr
-		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-			// log.Printf("Error in ReadUserData funct: %v\n", fieldErr.ErrMsgs)
-			sendResponse(c, &rqstData)
-			return
-		}
-		code = statusOK
-		c.JSON(code, rqstData.UsrContacts)
-	})
-	return r
+func readUserData(c *gin.Context) {
+	var rqstData respBodyData
+	rqstData.UsrContacts, rqstData.FieldErr = accts.ReadUserContact()
+	fieldErr := rqstData.FieldErr
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		// log.Printf("Error in ReadUserData funct: %v\n", fieldErr.ErrMsgs)
+		sendResponse(c, &rqstData)
+		return
+	}
+	code = statusOK
+	c.JSON(code, rqstData.UsrContacts)
 }
 
 // returns a user given its id
-func readUserDataByID(r *gin.Engine) *gin.Engine {
-	r.GET("/user/:usr_id", func(c *gin.Context) {
-		var rqstData respBodyData
-		id := validateRouteUserID(c, &rqstData)
-		var invalidID = rqstData.FieldErr.ErrMsgs
-		if invalidID != nil {
-			sendResponse(c, &rqstData)
-			return
-		}
-		rqstData.UsrContacts, rqstData.FieldErr = accts.ReadUserContactByID(id)
-		fieldErr := rqstData.FieldErr
-		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-			// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
-			sendResponse(c, &rqstData)
-			return
-		}
-		code = statusOK
-		c.JSON(code, *rqstData.UsrContacts[0])
-	})
-	return r
+func readUserDataByID(c *gin.Context) {
+	var rqstData respBodyData
+	id := validateRouteUserID(c, &rqstData)
+	var invalidID = rqstData.FieldErr.ErrMsgs
+	if invalidID != nil {
+		sendResponse(c, &rqstData)
+		return
+	}
+	rqstData.UsrContacts, rqstData.FieldErr = accts.ReadUserContactByID(id)
+	fieldErr := rqstData.FieldErr
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
+		sendResponse(c, &rqstData)
+		return
+	}
+	code = statusOK
+	c.JSON(code, *rqstData.UsrContacts[0])
 }
 
 // // returns all the invoices within the database
-func readInvoiceData(r *gin.Engine) *gin.Engine {
-	r.GET("/users/invoices", func(c *gin.Context) {
-		var rqstData respBodyData
-		rqstData.Invs, rqstData.FieldErr = invs.ReadInvoices()
-		fieldErr := rqstData.FieldErr
-		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-			sendResponse(c, &rqstData)
-			return
-		}
-		code = statusOK
-		c.JSON(code, rqstData.Invs)
-	})
-	return r
+func readInvoiceData(c *gin.Context) {
+	var rqstData respBodyData
+	rqstData.Invs, rqstData.FieldErr = invs.ReadInvoices()
+	fieldErr := rqstData.FieldErr
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		sendResponse(c, &rqstData)
+		return
+	}
+	code = statusOK
+	c.JSON(code, rqstData.Invs)
 }
 
 // returns all the invoices for a given user
-func readUserInvoices(r *gin.Engine) *gin.Engine {
-	r.GET("/user/:usr_id/invoices", func(c *gin.Context) {
-		var rqstData respBodyData
-		id := validateRouteUserID(c, &rqstData)
-		var invalidID = rqstData.FieldErr.ErrMsgs
-		if invalidID != nil {
-			sendResponse(c, &rqstData)
-			return
-		}
-		rqstData.Invs, rqstData.FieldErr = invs.ReadInvoicesByUserID(id)
-		fieldErr := rqstData.FieldErr
-		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-			// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
-			sendResponse(c, &rqstData)
-			return
-		}
-		code = statusOK
-		c.JSON(code, rqstData.Invs)
-	})
-	return r
+func readUserInvoices(c *gin.Context) {
+	var rqstData respBodyData
+	id := validateRouteUserID(c, &rqstData)
+	var invalidID = rqstData.FieldErr.ErrMsgs
+	if invalidID != nil {
+		sendResponse(c, &rqstData)
+		return
+	}
+	rqstData.Invs, rqstData.FieldErr = invs.ReadInvoicesByUserID(id)
+	fieldErr := rqstData.FieldErr
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
+		sendResponse(c, &rqstData)
+		return
+	}
+	code = statusOK
+	c.JSON(code, rqstData.Invs)
 }
 
 // returns a specific invoice for a specific user
 // given the user id and invoice id
-func readUserInvoiceByID(r *gin.Engine) *gin.Engine {
-	r.GET("/user/:usr_id/invoice/:id", func(c *gin.Context) {
-		var rqstData respBodyData
-		userID := validateRouteUserID(c, &rqstData)
-		invID := validateRouteInvID(c, &rqstData)
-		var invalidID = rqstData.FieldErr.ErrMsgs
-		if invalidID != nil {
-			// fmt.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
-			sendResponse(c, &rqstData)
-			return
-		}
-		rqstData.Invs, rqstData.FieldErr = invs.ReadInvoiceByUserID(userID, invID)
-		fieldErr := rqstData.FieldErr
-		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-			// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
-			sendResponse(c, &rqstData)
-			return
-		}
-		code = statusOK
-		c.JSON(code, rqstData.Invs)
-	})
-	return r
+func readUserInvoiceByID(c *gin.Context) {
+	var rqstData respBodyData
+	userID := validateRouteUserID(c, &rqstData)
+	invID := validateRouteInvID(c, &rqstData)
+	var invalidID = rqstData.FieldErr.ErrMsgs
+	if invalidID != nil {
+		// fmt.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
+		sendResponse(c, &rqstData)
+		return
+	}
+	rqstData.Invs, rqstData.FieldErr = invs.ReadInvoiceByUserID(userID, invID)
+	fieldErr := rqstData.FieldErr
+	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+		// fmt.Printf("readUserInovices funct: error is %s\n", fieldErr.ErrMsgs[0])
+		sendResponse(c, &rqstData)
+		return
+	}
+	code = statusOK
+	c.JSON(code, rqstData.Invs)
 }
 
 // updates an invoice entry by id
 // require the user to pass the entire invoice
 // to change any field
-func updateInvoiceEntry(r *gin.Engine) *gin.Engine {
-	r.PUT("/user/:usr_id/invoice/:id", func(c *gin.Context) {
-		var inv invs.Invoice
-		var bindingOk bool
-		var rqstData respBodyData
-		userID := validateRouteUserID(c, &rqstData)
-		invID := validateRouteInvID(c, &rqstData)
-		var invalidID = rqstData.FieldErr.ErrMsgs
-		if invalidID != nil {
-			// log.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
-			sendResponse(c, &rqstData)
-			return
-		}
-		inv, bindingOk = validateInvoiceBinding(c, &rqstData)
-		if bindingOk {
-			rqstData.Invs, rqstData.FieldErr = invs.UpdateInvoiceByUserID(inv, userID, invID)
-			if rqstData.FieldErr.ErrMsgs != nil {
-				sendResponse(c, &rqstData)
-				return
-			}
-			code = statusOK
-			c.JSON(code, rqstData.Invs)
-		}
-	})
-	return r
-}
-
-// similar to the updateEntry except you don't have
-// to pass all the fields in a invoice to update a field
-func patchEntry(r *gin.Engine) *gin.Engine {
-	r.PATCH("/user/:usr_id/invoice/:id", func(c *gin.Context) {
-		var inv invs.Invoice
-		var bindingOk bool
-		var rqstData respBodyData
-		userID := validateRouteUserID(c, &rqstData)
-		invID := validateRouteInvID(c, &rqstData)
-		var invalidID = rqstData.FieldErr.ErrMsgs
-		if invalidID != nil {
-			// log.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
-			sendResponse(c, &rqstData)
-			return
-		}
-
-		inv, bindingOk = validateInvoiceBinding(c, &rqstData)
-		if bindingOk {
-			rqstData.Invs, rqstData.FieldErr = invs.PatchInvoice(inv, userID, invID)
-			if rqstData.FieldErr.ErrMsgs != nil {
-				sendResponse(c, &rqstData)
-				return
-			}
-			code = statusOK
-			c.JSON(code, rqstData.Invs)
-		}
-	})
-	return r
-}
-
-// deletes an invoice entry based on id
-func deleteInvEntry(r *gin.Engine) *gin.Engine {
-	r.DELETE("/user/:usr_id/invoice/:id", func(c *gin.Context) {
-		var rqstData respBodyData
-		invID := validateRouteInvID(c, &rqstData)
-		userID := validateRouteUserID(c, &rqstData)
-		var invalidID = rqstData.FieldErr.ErrMsgs
-		if invalidID != nil {
-			// log.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
-			sendResponse(c, &rqstData)
-			return
-		}
-
-		rqstData.Invs, rqstData.FieldErr = invs.DeleteInvoice(invID, userID)
+func updateInvoiceEntry(c *gin.Context) {
+	var inv invs.Invoice
+	var bindingOk bool
+	var rqstData respBodyData
+	userID := validateRouteUserID(c, &rqstData)
+	invID := validateRouteInvID(c, &rqstData)
+	var invalidID = rqstData.FieldErr.ErrMsgs
+	if invalidID != nil {
+		// log.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
+		sendResponse(c, &rqstData)
+		return
+	}
+	inv, bindingOk = validateInvoiceBinding(c, &rqstData)
+	if bindingOk {
+		rqstData.Invs, rqstData.FieldErr = invs.UpdateInvoiceByUserID(inv, userID, invID)
 		if rqstData.FieldErr.ErrMsgs != nil {
 			sendResponse(c, &rqstData)
 			return
 		}
 		code = statusOK
 		c.JSON(code, rqstData.Invs)
-	})
-	return r
+	}
+}
+
+// similar to the updateEntry except you don't have
+// to pass all the fields in a invoice to update a field
+func patchEntry(c *gin.Context) {
+	var inv invs.Invoice
+	var bindingOk bool
+	var rqstData respBodyData
+	userID := validateRouteUserID(c, &rqstData)
+	invID := validateRouteInvID(c, &rqstData)
+	var invalidID = rqstData.FieldErr.ErrMsgs
+	if invalidID != nil {
+		// log.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
+		sendResponse(c, &rqstData)
+		return
+	}
+
+	inv, bindingOk = validateInvoiceBinding(c, &rqstData)
+	if bindingOk {
+		rqstData.Invs, rqstData.FieldErr = invs.PatchInvoice(inv, userID, invID)
+		if rqstData.FieldErr.ErrMsgs != nil {
+			sendResponse(c, &rqstData)
+			return
+		}
+		code = statusOK
+		c.JSON(code, rqstData.Invs)
+	}
+}
+
+// deletes an invoice entry based on id
+func deleteInvEntry(c *gin.Context) {
+	var rqstData respBodyData
+	invID := validateRouteInvID(c, &rqstData)
+	userID := validateRouteUserID(c, &rqstData)
+	var invalidID = rqstData.FieldErr.ErrMsgs
+	if invalidID != nil {
+		// log.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
+		sendResponse(c, &rqstData)
+		return
+	}
+
+	rqstData.Invs, rqstData.FieldErr = invs.DeleteInvoice(invID, userID)
+	if rqstData.FieldErr.ErrMsgs != nil {
+		sendResponse(c, &rqstData)
+		return
+	}
+	code = statusOK
+	c.JSON(code, rqstData.Invs)
 }
 
 func main() {
 	r := setRouter()
 
-	r = createAcct(r)
-	r = logIn(r)
-	r = protectedData(r)
-	r = readUserData(r)
-	r = readInvoiceData(r)
-	r = readUserDataByID(r)
-	r = readUserInvoices(r)
-	r = readUserInvoiceByID(r)
+	// r = logIn(r)
 	r = addInvoice(r)
-	r = updateInvoiceEntry(r)
-	r = patchEntry(r)
-	r = deleteInvEntry(r)
-	r = deleteAcct(r)
+	acctGroup := r.Group("/users")
+	{
+		acctGroup.GET("", readUserData)
+		acctGroup.GET("/invoices", readInvoiceData)
+		acctGroup.POST("/", createAcct)
+		acctGroup.DELETE("/", deleteAcct)
+	}
+
+	const hash_unreadable = "Couldn't read password hash.\n"
+	pswd1, readErr := accts.ReadHashByID(2)
+	if readErr.ErrMsgs != nil {
+		fmt.Fprintf(os.Stderr, hash_unreadable)
+		os.Exit(1)
+	}
+	pswd2, readErr := accts.ReadHashByID(3)
+	if readErr.ErrMsgs != nil {
+		fmt.Fprintf(os.Stderr, hash_unreadable)
+		os.Exit(1)
+	}
+
+	userGroup := r.Group("/user/", gin.BasicAuth(gin.Accounts{
+		"wrigglyWart56": string(pswd1[0].Password),
+		"hypnoTonic05":  string(pswd2[0].Password),
+	}))
+	{
+		userGroup.POST("/login", logIn)
+		userGroup.GET("/:usr_id", readUserDataByID)                // read user by their id
+		userGroup.GET("/:usr_id/invoices", readUserInvoices)       // read all the invoices for a user
+		userGroup.GET("/:usr_id/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user
+		userGroup.PUT("/:usr_id/invoice/:id", updateInvoiceEntry)  // updates the entire invoice
+		userGroup.PATCH("/:usr_id/invoice/:id", patchEntry)        // updates any field of an invoice
+		userGroup.DELETE("/:usr_id/invoice/:id", deleteInvEntry)   // deletes a specific invoice
+	}
 
 	r.Run()
 }
