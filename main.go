@@ -171,34 +171,31 @@ func randHex(n int) (string, error) {
 }
 
 // post request to create user account
-func createAcct(c *gin.Context) {
-	var acct accts.Account
-	var acctErr fields.GrammarError
-	var acctStatus *accts.Registered
-	err := c.ShouldBind(&acct)
-	if err != nil {
-		acctErr.AddMsg(fields.BadRequest,
-			"Binding Error: failed to bind fields to account object, mismatched data-types")
-		c.JSON(fields.ErrorCode, acctErr)
-		return
-	}
+func createAcct(r *gin.Engine) *gin.Engine {
+	r.POST("/users", func(c *gin.Context) {
+		var acct accts.Account
+		var acctErr fields.GrammarError
+		var acctStatus *accts.Registered
+		err := c.ShouldBind(&acct)
+		if err != nil {
+			acctErr.AddMsg(fields.BadRequest,
+				"Binding Error: failed to bind fields to account object, mismatched data-types")
+			c.JSON(fields.ErrorCode, acctErr)
+			return
+		}
 
-	// validate account info
-	acctStatus, acctErr = accts.AddAccount(&acct)
-
-	// if len(respData) == 0 {
-	// 	fmt.Println("Thats strange, no accounts were added")
-	// }
-	// send response back
-	errMsgSize := len(acctErr.ErrMsgs)
-	switch {
-	case errMsgSize > 0:
-		c.JSON(fields.ErrorCode, acctErr)
-	default:
-		c.JSON(statusOK, *acctStatus)
-	}
-
-	//log.Println("Account: ", acct)
+		// validate account info
+		acctStatus, acctErr = accts.AddAccount(&acct)
+		// send response back
+		errMsgSize := len(acctErr.ErrMsgs)
+		switch {
+		case errMsgSize > 0:
+			c.JSON(fields.ErrorCode, acctErr)
+		default:
+			c.JSON(statusOK, *acctStatus)
+		}
+	})
+	return r
 }
 
 func logIn(c *gin.Context) {
@@ -233,31 +230,6 @@ func deleteAcct(c *gin.Context) {
 	c.JSON(code, rmvUser[0])
 }
 
-// binds json data to an invoice and insert its to the database
-func addInvoice(r *gin.Engine) *gin.Engine {
-	r.POST("/invoices/", func(c *gin.Context) {
-		var inv invs.Invoice
-		var rqstData respBodyData
-		var bindingOk bool
-		inv, bindingOk = validateInvoiceBinding(c, &rqstData)
-		// fmt.Printf("Invoice in addInvoice funct is: %+v\n", inv)
-		if bindingOk {
-			var fieldErr fields.GrammarError
-			rqstData.Invs, fieldErr = invs.InsertOp(inv)
-			// fmt.Printf("Invoice after InsertOP is: %+v\n", *rqstData.Invs[0])
-			// fmt.Printf("FieldErrs after InsertOP is: %v\n", fieldErr.ErrMsgs)
-			if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
-				rqstData.FieldErr = fieldErr
-				sendResponse(c, &rqstData)
-				return
-			}
-			code = statusCreated
-			c.JSON(code, rqstData.Invs)
-		}
-	})
-	return r
-}
-
 func protectData(c *gin.Context) {
 	c.Keys = make(map[string]any)
 	bToken := c.Request.Header.Get("Authorization")
@@ -281,6 +253,31 @@ func protectData(c *gin.Context) {
 	})
 }
 
+// binds json data to an invoice and insert its to the database
+func addInvoice(c *gin.Context) {
+	if c.Keys["isAuthorized"] == false {
+		return
+	}
+	var inv invs.Invoice
+	var rqstData respBodyData
+	var bindingOk bool
+	inv, bindingOk = validateInvoiceBinding(c, &rqstData)
+	// fmt.Printf("Invoice in addInvoice funct is: %+v\n", inv)
+	if bindingOk {
+		var fieldErr fields.GrammarError
+		rqstData.Invs, fieldErr = invs.InsertOp(inv)
+		// fmt.Printf("Invoice after InsertOP is: %+v\n", *rqstData.Invs[0])
+		// fmt.Printf("FieldErrs after InsertOP is: %v\n", fieldErr.ErrMsgs)
+		if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
+			rqstData.FieldErr = fieldErr
+			sendResponse(c, &rqstData)
+			return
+		}
+		code = statusCreated
+		c.JSON(code, rqstData.Invs)
+	}
+}
+
 // returns the list of all users
 func readUserData(c *gin.Context) {
 	if c.Keys["isAuthorized"] == false {
@@ -300,6 +297,9 @@ func readUserData(c *gin.Context) {
 
 // returns a user given its id
 func readUserDataByID(c *gin.Context) {
+	if c.Keys["isAuthorized"] == false {
+		return
+	}
 	var rqstData respBodyData
 	id := validateRouteUserID(c, &rqstData)
 	var invalidID = rqstData.FieldErr.ErrMsgs
@@ -320,6 +320,9 @@ func readUserDataByID(c *gin.Context) {
 
 // // returns all the invoices within the database
 func readInvoiceData(c *gin.Context) {
+	if c.Keys["isAuthorized"] == false {
+		return
+	}
 	var rqstData respBodyData
 	rqstData.Invs, rqstData.FieldErr = invs.ReadInvoices()
 	fieldErr := rqstData.FieldErr
@@ -333,6 +336,9 @@ func readInvoiceData(c *gin.Context) {
 
 // returns all the invoices for a given user
 func readUserInvoices(c *gin.Context) {
+	if c.Keys["isAuthorized"] == false {
+		return
+	}
 	var rqstData respBodyData
 	id := validateRouteUserID(c, &rqstData)
 	var invalidID = rqstData.FieldErr.ErrMsgs
@@ -354,6 +360,9 @@ func readUserInvoices(c *gin.Context) {
 // returns a specific invoice for a specific user
 // given the user id and invoice id
 func readUserInvoiceByID(c *gin.Context) {
+	if c.Keys["isAuthorized"] == false {
+		return
+	}
 	var rqstData respBodyData
 	userID := validateRouteUserID(c, &rqstData)
 	invID := validateRouteInvID(c, &rqstData)
@@ -378,6 +387,9 @@ func readUserInvoiceByID(c *gin.Context) {
 // require the user to pass the entire invoice
 // to change any field
 func updateInvoiceEntry(c *gin.Context) {
+	if c.Keys["isAuthorized"] == false {
+		return
+	}
 	var inv invs.Invoice
 	var bindingOk bool
 	var rqstData respBodyData
@@ -404,6 +416,9 @@ func updateInvoiceEntry(c *gin.Context) {
 // similar to the updateEntry except you don't have
 // to pass all the fields in a invoice to update a field
 func patchEntry(c *gin.Context) {
+	if c.Keys["isAuthorized"] == false {
+		return
+	}
 	var inv invs.Invoice
 	var bindingOk bool
 	var rqstData respBodyData
@@ -430,6 +445,9 @@ func patchEntry(c *gin.Context) {
 
 // deletes an invoice entry based on id
 func deleteInvEntry(c *gin.Context) {
+	if c.Keys["isAuthorized"] == false {
+		return
+	}
 	var rqstData respBodyData
 	invID := validateRouteInvID(c, &rqstData)
 	userID := validateRouteUserID(c, &rqstData)
@@ -451,15 +469,13 @@ func deleteInvEntry(c *gin.Context) {
 
 func main() {
 	r := setRouter()
+	r = createAcct(r)
 
-	// r = logIn(r)
-	r = addInvoice(r)
-	acctGroup := r.Group("/users", protectData)
+	userGroup1 := r.Group("/users", protectData)
 	{
-		acctGroup.GET("", readUserData)
-		acctGroup.GET("/invoices", readInvoiceData)
-		acctGroup.POST("/", createAcct)
-		acctGroup.DELETE("/", deleteAcct)
+		userGroup1.GET("", readUserData)
+		userGroup1.GET("/invoices", readInvoiceData)
+		userGroup1.DELETE("/", deleteAcct)
 	}
 
 	const hash_unreadable = "Couldn't read password hash.\n"
@@ -482,15 +498,19 @@ func main() {
 		loginGroup.POST("/login", logIn)
 	}
 
-	protectGroup := r.Group("/user/", protectData)
+	createInv := r.Group("/invoices/", protectData)
 	{
-		protectGroup.GET("/:usr_id", readUserDataByID)                // read user by their id
-		protectGroup.GET("/:usr_id/invoices", readUserInvoices)       // read all the invoices for a user
-		protectGroup.GET("/:usr_id/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user
-		protectGroup.PUT("/:usr_id/invoice/:id", updateInvoiceEntry)  // updates the entire invoice
-		protectGroup.PATCH("/:usr_id/invoice/:id", patchEntry)        // updates any field of an invoice
-		protectGroup.DELETE("/:usr_id/invoice/:id", deleteInvEntry)   // deletes a specific invoice
+		createInv.POST("", addInvoice)
+	}
 
+	userGroup2 := r.Group("/user/", protectData)
+	{
+		userGroup2.GET("/:usr_id", readUserDataByID)                // read user by their id
+		userGroup2.GET("/:usr_id/invoices", readUserInvoices)       // read all the invoices for a user
+		userGroup2.GET("/:usr_id/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user
+		userGroup2.PUT("/:usr_id/invoice/:id", updateInvoiceEntry)  // updates the entire invoice
+		userGroup2.PATCH("/:usr_id/invoice/:id", patchEntry)        // updates any field of an invoice
+		userGroup2.DELETE("/:usr_id/invoice/:id", deleteInvEntry)   // deletes a specific invoice
 	}
 
 	r.Run()
