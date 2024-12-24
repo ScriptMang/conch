@@ -1,10 +1,9 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -160,16 +159,6 @@ func sendResponse(c *gin.Context, rqstData *respBodyData) {
 	}
 }
 
-// returns random hex as a string
-func randHex(n int) (string, error) {
-	bytes := make([]byte, n)
-	_, err := rand.Read(bytes)
-	if err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
-}
-
 // post request to create user account
 func createAcct(r *gin.Engine) *gin.Engine {
 	r.POST("/users", func(c *gin.Context) {
@@ -199,7 +188,19 @@ func createAcct(r *gin.Engine) *gin.Engine {
 }
 
 func logIn(c *gin.Context) {
-	token, _ := randHex(20)
+	var username, ok = c.MustGet(gin.AuthUserKey).(string)
+	if !ok {
+		log.Fatalf("Couldn't Get user's username from AUTHUserKey\n")
+	}
+	var fieldErr fields.GrammarError
+	token := accts.GenerateToken(username, &fieldErr)
+	if fieldErr.ErrMsgs != nil && token == "" {
+		c.JSON(accts.BadRequest, gin.H{
+			"TokenError": fieldErr.ErrMsgs,
+		})
+		return
+	}
+
 	tokens = append(tokens, token)
 	c.JSON(http.StatusAccepted, gin.H{
 		"token": token,
@@ -490,12 +491,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	loginGroup := r.Group("/user/", gin.BasicAuth(gin.Accounts{
+	loginRoute := r.Group("/user/", gin.BasicAuth(gin.Accounts{
 		"wrigglyWart56": string(pswd1[0].Password),
 		"hypnoTonic05":  string(pswd2[0].Password),
 	}))
 	{
-		loginGroup.POST("/login", logIn)
+		loginRoute.POST("/login", logIn)
 	}
 
 	createInv := r.Group("/invoices/", protectData)

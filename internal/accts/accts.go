@@ -1,6 +1,8 @@
 package accts
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"strings"
 
@@ -38,6 +40,12 @@ type Passwords struct {
 	ID       int    `db:"id" json:"id" form:"id"`
 	UserID   int    `db:"user_id" json:"user_id" form:"user_id"`
 	Password []byte `db:"password" json:"password" form:"password"`
+}
+
+type Tokens struct {
+	ID     int    `db:"id" json:"id" form:"id"`
+	UserID int    `db:"user_id" json:"user_id"`
+	Token  []byte `db:"token" json:"token"`
 }
 
 type LoginCred struct {
@@ -213,6 +221,50 @@ func ReadHashByID(userID int) ([]*Passwords, fields.GrammarError) {
 
 	pswds = append(pswds, &pswd)
 	return pswds, fieldErr
+}
+
+// returns random hex as a string
+func randHex(n int) (string, error) {
+	bytes := make([]byte, n)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
+}
+
+// create a session token and stores it in the database
+func GenerateToken(username string, acctErr *fields.GrammarError) string {
+	ctx, db := bikeshop.Connect()
+	defer db.Close()
+
+	var newToken Tokens
+	token, _ := randHex(20)
+
+	users, fieldErr := readUserByUsername(username)
+	user := *users[0]
+	if fieldErr.ErrMsgs != nil {
+		return ""
+	}
+
+	rows, _ := db.Query(ctx,
+		`INSERT INTO Tokens (user_id, token) VALUES($1, $2) RETURNING *`,
+		user.ID, token,
+	)
+
+	err := pgxscan.ScanOne(&newToken, rows)
+	if err != nil {
+		qryError := err.Error()
+		if strings.Contains(qryError, "value too long for type character varying") {
+			acctErr.AddMsg(BadRequest, "varchar too long, use varchar length between 1-255")
+		} else {
+			acctErr.AddMsg(BadRequest, qryError)
+		}
+		return ""
+	}
+
+	token = string(newToken.Token)
+	return token
 }
 
 // adds the account info to the appropiate tables w/ the database
