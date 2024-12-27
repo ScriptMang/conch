@@ -37,7 +37,7 @@ var code int //httpstatuscode
 const statusOK = 200
 const statusCreated = 201
 
-var tokens []string // bearer token
+var btokens []accts.Tokens // bearer token
 
 // configs gin router and renders index-page
 func setRouter() *gin.Engine {
@@ -194,16 +194,16 @@ func logIn(c *gin.Context) {
 	}
 	var fieldErr fields.GrammarError
 	token := accts.GenerateToken(username, &fieldErr)
-	if fieldErr.ErrMsgs != nil && token == "" {
+	if fieldErr.ErrMsgs != nil {
 		c.JSON(accts.BadRequest, gin.H{
 			"TokenError": fieldErr.ErrMsgs,
 		})
 		return
 	}
 
-	tokens = append(tokens, token)
+	btokens = append(btokens, token)
 	c.JSON(http.StatusAccepted, gin.H{
-		"token": token,
+		"token": string(token.Token),
 	})
 }
 
@@ -219,6 +219,15 @@ func deleteAcct(c *gin.Context) {
 		bindingErr.AddMsg(fields.BadRequest,
 			"Binding Error: failed to bind fields to userCreds, mismatched data-types")
 		c.JSON(fields.ErrorCode, bindingErr)
+		return
+	}
+
+	// verify that the userID assigned to the token matches the route's userID
+	if c.Keys["rqstTokenUserID"] != user.ID {
+		c.Keys["isAuthorized"] = false
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
 		return
 	}
 
@@ -241,13 +250,30 @@ func protectData(c *gin.Context) {
 		})
 		return
 	}
+
+	// get the userid for the inputted token
+	var fieldErr fields.GrammarError
 	rqstToken := strings.Split(bToken, " ")[1]
-	for _, token := range tokens {
-		if token == rqstToken {
+	rqstTokenUserID := accts.ReadUserIDByToken(rqstToken, &fieldErr)
+
+	// return the error retrieving the token
+	if fieldErr.ErrMsgs != nil {
+		c.Keys["isAuthorized"] = false
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"TokenError": fieldErr.ErrMsgs,
+		})
+		return
+	}
+	c.Keys["rqstTokenUserID"] = rqstTokenUserID
+
+	for _, token := range btokens {
+		dbTknUserID := accts.ReadUserIDByToken(string(token.Token), &fieldErr)
+		if dbTknUserID == rqstTokenUserID {
 			c.Keys["isAuthorized"] = true
 			return
 		}
 	}
+
 	c.Keys["isAuthorized"] = false
 	c.JSON(http.StatusUnauthorized, gin.H{
 		"message": "unauthorized",
@@ -264,6 +290,16 @@ func addInvoice(c *gin.Context) {
 	var bindingOk bool
 	inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 	// fmt.Printf("Invoice in addInvoice funct is: %+v\n", inv)
+
+	// invoice binding must match along with their userID
+	if bindingOk && c.Keys["rqstTokenUserID"] != inv.UserID {
+		c.Keys["isAuthorized"] = false
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
 	if bindingOk {
 		var fieldErr fields.GrammarError
 		rqstData.Invs, fieldErr = invs.InsertOp(inv)
@@ -298,9 +334,11 @@ func readUserData(c *gin.Context) {
 
 // returns a user given its id
 func readUserDataByID(c *gin.Context) {
+	// verify first whether the token exist in the databse
 	if c.Keys["isAuthorized"] == false {
 		return
 	}
+
 	var rqstData respBodyData
 	id := validateRouteUserID(c, &rqstData)
 	var invalidID = rqstData.FieldErr.ErrMsgs
@@ -308,6 +346,16 @@ func readUserDataByID(c *gin.Context) {
 		sendResponse(c, &rqstData)
 		return
 	}
+
+	// verify that the userID assigned to the token matches the route's userID
+	if c.Keys["rqstTokenUserID"] != id {
+		c.Keys["isAuthorized"] = false
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
 	rqstData.UsrContacts, rqstData.FieldErr = accts.ReadUserContactByID(id)
 	fieldErr := rqstData.FieldErr
 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
@@ -347,6 +395,16 @@ func readUserInvoices(c *gin.Context) {
 		sendResponse(c, &rqstData)
 		return
 	}
+
+	// verify that the userID assigned to the token matches the route's userID
+	if c.Keys["rqstTokenUserID"] != id {
+		c.Keys["isAuthorized"] = false
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
 	rqstData.Invs, rqstData.FieldErr = invs.ReadInvoicesByUserID(id)
 	fieldErr := rqstData.FieldErr
 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
@@ -373,6 +431,16 @@ func readUserInvoiceByID(c *gin.Context) {
 		sendResponse(c, &rqstData)
 		return
 	}
+
+	// verify that the userID assigned to the token matches the route's userID
+	if c.Keys["rqstTokenUserID"] != userID {
+		c.Keys["isAuthorized"] = false
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
 	rqstData.Invs, rqstData.FieldErr = invs.ReadInvoiceByUserID(userID, invID)
 	fieldErr := rqstData.FieldErr
 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
@@ -402,6 +470,16 @@ func updateInvoiceEntry(c *gin.Context) {
 		sendResponse(c, &rqstData)
 		return
 	}
+
+	// verify that the userID assigned to the token matches the route's userID
+	if c.Keys["rqstTokenUserID"] != userID {
+		c.Keys["isAuthorized"] = false
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
 	inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 	if bindingOk {
 		rqstData.Invs, rqstData.FieldErr = invs.UpdateInvoiceByUserID(inv, userID, invID)
@@ -432,6 +510,15 @@ func patchEntry(c *gin.Context) {
 		return
 	}
 
+	// verify that the userID assigned to the token matches the route's userID
+	if c.Keys["rqstTokenUserID"] != userID {
+		c.Keys["isAuthorized"] = false
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
 	inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 	if bindingOk {
 		rqstData.Invs, rqstData.FieldErr = invs.PatchInvoice(inv, userID, invID)
@@ -459,6 +546,14 @@ func deleteInvEntry(c *gin.Context) {
 		return
 	}
 
+	if c.Keys["rqstTokenUserID"] != userID {
+		c.Keys["isAuthorized"] = false
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
 	rqstData.Invs, rqstData.FieldErr = invs.DeleteInvoice(invID, userID)
 	if rqstData.FieldErr.ErrMsgs != nil {
 		sendResponse(c, &rqstData)
@@ -472,46 +567,50 @@ func main() {
 	r := setRouter()
 	r = createAcct(r)
 
-	userGroup1 := r.Group("/users", protectData)
-	{
-		userGroup1.GET("", readUserData)
-		userGroup1.GET("/invoices", readInvoiceData)
-		userGroup1.DELETE("/", deleteAcct)
-	}
-
-	const hash_unreadable = "Couldn't read password hash.\n"
-	pswd1, readErr := accts.ReadHashByID(2)
+	isHashUnreadable := false
+	const hash_unreadable = "Couldn't read password hash"
+	pswd1, readErr := accts.ReadHashByID(1)
 	if readErr.ErrMsgs != nil {
-		fmt.Fprintf(os.Stderr, hash_unreadable)
-		os.Exit(1)
+		isHashUnreadable = true
+		fmt.Fprintf(os.Stderr, hash_unreadable+" 1\n")
 	}
-	pswd2, readErr := accts.ReadHashByID(3)
+
+	pswd2, readErr := accts.ReadHashByID(2)
 	if readErr.ErrMsgs != nil {
-		fmt.Fprintf(os.Stderr, hash_unreadable)
-		os.Exit(1)
+		isHashUnreadable = true
+		fmt.Fprintf(os.Stderr, hash_unreadable+" 2\n")
 	}
 
-	loginRoute := r.Group("/user/", gin.BasicAuth(gin.Accounts{
-		"wrigglyWart56": string(pswd1[0].Password),
-		"hypnoTonic05":  string(pswd2[0].Password),
-	}))
-	{
-		loginRoute.POST("/login", logIn)
-	}
+	if !isHashUnreadable {
+		loginRoute := r.Group("/user/", gin.BasicAuth(gin.Accounts{
+			"wrigglyWart56": string(pswd1[0].Password),
+			"hypnoTonic05":  string(pswd2[0].Password),
+		}))
+		{
+			loginRoute.POST("/login", logIn)
+		}
 
-	createInv := r.Group("/invoices/", protectData)
-	{
-		createInv.POST("", addInvoice)
-	}
+		userGroup1 := r.Group("/users", protectData)
+		{
+			userGroup1.GET("", readUserData)
+			userGroup1.GET("/invoices", readInvoiceData)
+			userGroup1.DELETE("/", deleteAcct)
+		}
 
-	userGroup2 := r.Group("/user/", protectData)
-	{
-		userGroup2.GET("/:usr_id", readUserDataByID)                // read user by their id
-		userGroup2.GET("/:usr_id/invoices", readUserInvoices)       // read all the invoices for a user
-		userGroup2.GET("/:usr_id/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user
-		userGroup2.PUT("/:usr_id/invoice/:id", updateInvoiceEntry)  // updates the entire invoice
-		userGroup2.PATCH("/:usr_id/invoice/:id", patchEntry)        // updates any field of an invoice
-		userGroup2.DELETE("/:usr_id/invoice/:id", deleteInvEntry)   // deletes a specific invoice
+		createInv := r.Group("/invoices/", protectData)
+		{
+			createInv.POST("", addInvoice)
+		}
+
+		userGroup2 := r.Group("/user/", protectData)
+		{
+			userGroup2.GET("/:usr_id", readUserDataByID)                // read user by their id
+			userGroup2.GET("/:usr_id/invoices", readUserInvoices)       // read all the invoices for a user
+			userGroup2.GET("/:usr_id/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user
+			userGroup2.PUT("/:usr_id/invoice/:id", updateInvoiceEntry)  // updates the entire invoice
+			userGroup2.PATCH("/:usr_id/invoice/:id", patchEntry)        // updates any field of an invoice
+			userGroup2.DELETE("/:usr_id/invoice/:id", deleteInvEntry)   // deletes a specific invoice
+		}
 	}
 
 	r.Run()

@@ -234,7 +234,7 @@ func randHex(n int) (string, error) {
 }
 
 // create a session token and stores it in the database
-func GenerateToken(username string, acctErr *fields.GrammarError) string {
+func GenerateToken(username string, acctErr *fields.GrammarError) Tokens {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
 
@@ -244,7 +244,7 @@ func GenerateToken(username string, acctErr *fields.GrammarError) string {
 	users, fieldErr := readUserByUsername(username)
 	user := *users[0]
 	if fieldErr.ErrMsgs != nil {
-		return ""
+		return newToken
 	}
 
 	rows, _ := db.Query(ctx,
@@ -260,11 +260,33 @@ func GenerateToken(username string, acctErr *fields.GrammarError) string {
 		} else {
 			acctErr.AddMsg(BadRequest, qryError)
 		}
-		return ""
+		return newToken
 	}
 
-	token = string(newToken.Token)
-	return token
+	return newToken
+}
+
+func ReadUserIDByToken(tgtToken string, fieldErr *fields.GrammarError) int {
+	ctx, db := bikeshop.Connect()
+	defer db.Close()
+
+	var token Tokens
+	rows, _ := db.Query(ctx,
+		`SELECT * FROM tokens WHERE token=$1`, tgtToken,
+	)
+
+	err := pgxscan.ScanOne(&token, rows)
+	if err != nil {
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "no rows in result set"):
+			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: user with specified id does not exist")
+		default:
+			fieldErr.AddMsg(BadRequest, errMsg)
+		}
+		return 0
+	}
+	return token.UserID
 }
 
 // adds the account info to the appropiate tables w/ the database
