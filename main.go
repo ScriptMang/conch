@@ -207,6 +207,49 @@ func logIn(c *gin.Context) {
 	})
 }
 
+func logOut(c *gin.Context) {
+
+	if c.Keys["isAuthorized"] == false {
+		return
+	}
+
+	var rqstData respBodyData
+	var usr accts.Usernames
+	err := c.ShouldBind(&usr)
+	bindingErr := rqstData.FieldErr
+
+	if err != nil {
+		bindingErr.AddMsg(fields.BadRequest,
+			"Binding Error: failed to bind fields to userCreds, mismatched data-types")
+		c.JSON(fields.ErrorCode, bindingErr)
+		return
+	}
+
+	// verify that the userID assigned to the token matches the route's userID
+	if c.Keys["rqstTokenUserID"] != usr.ID {
+		c.Keys["isAuthorized"] = false
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
+	var fieldErr fields.GrammarError
+	accts.LogOut(usr.ID, &fieldErr)
+
+	if fieldErr.ErrMsgs != nil {
+		c.JSON(accts.BadRequest, gin.H{
+			"TokenError": fieldErr.ErrMsgs,
+		})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"message": fmt.Sprintf("User: %s has logged out", usr.Username),
+	})
+
+}
+
 func deleteAcct(c *gin.Context) {
 	var rqstData respBodyData
 	var rmvUser []*accts.Usernames
@@ -595,6 +638,7 @@ func main() {
 			userGroup1.GET("", readUserData)
 			userGroup1.GET("/invoices", readInvoiceData)
 			userGroup1.DELETE("/", deleteAcct)
+			userGroup1.POST("/logout", logOut)
 		}
 
 		createInv := r.Group("/invoices/", protectData)

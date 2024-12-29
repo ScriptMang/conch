@@ -233,7 +233,7 @@ func randHex(n int) (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-// create a session token and stores it in the database
+// creates an auth-token for a user and stores it in the database
 func GenerateToken(username string, acctErr *fields.GrammarError) Tokens {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
@@ -266,6 +266,7 @@ func GenerateToken(username string, acctErr *fields.GrammarError) Tokens {
 	return newToken
 }
 
+// returns the auth-token, given the user's id
 func ReadUserIDByToken(tgtToken string, fieldErr *fields.GrammarError) int {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
@@ -409,8 +410,34 @@ func readUserByUsername(username string) ([]*Usernames, fields.GrammarError) {
 	return usrs, fieldErr
 }
 
-// Deletes the User account which cascades
-// to delete their invoices too
+// When users logout they delete their session token
+func LogOut(userID int, fieldErr *fields.GrammarError) Tokens {
+	ctx, db := bikeshop.Connect()
+	defer db.Close()
+
+	var token Tokens
+	row, _ := db.Query(ctx,
+		`DELETE FROM tokens WHERE user_id=$1 RETURNING *`,
+		userID)
+
+	err := pgxscan.ScanOne(&token, row)
+	if errors.Is(err, pgx.ErrNoRows) {
+		// log.Println("Err: No Rows were Found for the Specified User")
+		fieldErr.AddMsg(fields.ResourceNotFound, "Resource Not Found: user with specified id doesn't exist")
+		return token
+	}
+
+	if err != nil {
+		errMsg := err.Error()
+		fieldErr.AddMsg(fields.BadRequest, errMsg)
+		return token
+	}
+
+	return token
+}
+
+// Deletes the User account which
+// cascades to delete their invoices too
 func DeleteAcct(user Usernames) ([]*Usernames, fields.GrammarError) {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
