@@ -94,6 +94,41 @@ ALTER SEQUENCE public.passwords_id_seq OWNED BY public.passwords.id;
 
 
 --
+-- Name: tokens; Type: TABLE; Schema: public; Owner: <username>
+--
+
+CREATE TABLE public.tokens (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    token character varying(80)
+);
+
+
+ALTER TABLE public.tokens OWNER TO <username>;
+
+--
+-- Name: tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: <username>
+--
+
+CREATE SEQUENCE public.tokens_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.tokens_id_seq OWNER TO <username>;
+
+--
+-- Name: tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: <username>
+--
+
+ALTER SEQUENCE public.tokens_id_seq OWNED BY public.tokens.id;
+
+
+--
 -- Name: usercontacts; Type: TABLE; Schema: public; Owner: <username>
 --
 
@@ -179,6 +214,13 @@ ALTER TABLE ONLY public.passwords ALTER COLUMN id SET DEFAULT nextval('public.pa
 
 
 --
+-- Name: tokens id; Type: DEFAULT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.tokens ALTER COLUMN id SET DEFAULT nextval('public.tokens_id_seq'::regclass);
+
+
+--
 -- Name: usercontacts id; Type: DEFAULT; Schema: public; Owner: <username>
 --
 
@@ -209,6 +251,14 @@ COPY public.passwords (id, user_id, password) FROM stdin;
 
 
 --
+-- Data for Name: tokens; Type: TABLE DATA; Schema: public; Owner: <username>
+--
+
+COPY public.tokens (id, user_id, token) FROM stdin;
+\.
+
+
+--
 -- Data for Name: usercontacts; Type: TABLE DATA; Schema: public; Owner: <username>
 --
 
@@ -228,28 +278,35 @@ COPY public.usernames (id, username) FROM stdin;
 -- Name: invoices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
 --
 
-SELECT pg_catalog.setval('public.invoices_id_seq', 1, true);
+SELECT pg_catalog.setval('public.invoices_id_seq', 1, false);
 
 
 --
 -- Name: passwords_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
 --
 
-SELECT pg_catalog.setval('public.passwords_id_seq', 1, true);
+SELECT pg_catalog.setval('public.passwords_id_seq', 1, false);
+
+
+--
+-- Name: tokens_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
+--
+
+SELECT pg_catalog.setval('public.tokens_id_seq', 1, false);
 
 
 --
 -- Name: usercontacts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
 --
 
-SELECT pg_catalog.setval('public.usercontacts_id_seq', 1, true);
+SELECT pg_catalog.setval('public.usercontacts_id_seq', 1, false);
 
 
 --
 -- Name: usernames_id_seq; Type: SEQUENCE SET; Schema: public; Owner: <username>
 --
 
-SELECT pg_catalog.setval('public.usernames_id_seq', 1, true);
+SELECT pg_catalog.setval('public.usernames_id_seq', 1, false);
 
 
 --
@@ -282,6 +339,22 @@ ALTER TABLE ONLY public.passwords
 
 ALTER TABLE ONLY public.passwords
     ADD CONSTRAINT passwords_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tokens tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.tokens
+    ADD CONSTRAINT tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tokens user_id_unique; Type: CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.tokens
+    ADD CONSTRAINT user_id_unique UNIQUE (user_id);
 
 
 --
@@ -330,6 +403,14 @@ ALTER TABLE ONLY public.invoices
 
 ALTER TABLE ONLY public.passwords
     ADD CONSTRAINT passwords_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.usernames(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: tokens tokens_fk; Type: FK CONSTRAINT; Schema: public; Owner: <username>
+--
+
+ALTER TABLE ONLY public.tokens
+    ADD CONSTRAINT tokens_fk FOREIGN KEY (user_id) REFERENCES public.usernames(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
