@@ -255,9 +255,12 @@ func GenerateToken(username string, acctErr *fields.GrammarError) Tokens {
 	err := pgxscan.ScanOne(&newToken, rows)
 	if err != nil {
 		qryError := err.Error()
-		if strings.Contains(qryError, "value too long for type character varying") {
+		switch {
+		case strings.Contains(qryError, "value too long for type character varying"):
 			acctErr.AddMsg(BadRequest, "varchar too long, use varchar length between 1-255")
-		} else {
+		case strings.Contains(qryError, "duplicate key value violates unique constraint"):
+			acctErr.AddMsg(BadRequest, "Error: Duplicate User: cannot generate a new token if one already exist")
+		default:
 			acctErr.AddMsg(BadRequest, qryError)
 		}
 		return newToken
