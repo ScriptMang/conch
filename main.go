@@ -244,7 +244,7 @@ func logOut(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusAccepted, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"message": fmt.Sprintf("User: %s has logged out", usr.Username),
 	})
 
