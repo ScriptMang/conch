@@ -106,13 +106,13 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (invs.Invoic
 }
 
 // validates the user id route parameter
-func validateRouteUserID(c *gin.Context, rqstData *respBodyData) int {
-	id, err := strconv.Atoi(c.Param("usr_id"))
-	if err != nil {
-		rqstData.FieldErr.AddMsg(fields.BadRequest, "Bad Request: user id can't be converted to an integer")
-	}
-	return id
-}
+// func validateRouteUserID(c *gin.Context, rqstData *respBodyData) int {
+// 	id, err := strconv.Atoi(c.Param("usr_id"))
+// 	if err != nil {
+// 		rqstData.FieldErr.AddMsg(fields.BadRequest, "Bad Request: user id can't be converted to an integer")
+// 	}
+// 	return id
+// }
 
 // validates the invoice id route parameter
 func validateRouteInvID(c *gin.Context, rqstData *respBodyData) int {
@@ -647,14 +647,14 @@ func main() {
 			createInv.POST("", addInvoice)
 		}
 
-		userGroup2 := r.Group("/user/", protectData)
+		userGroup2 := r.Group("/user", protectData)
 		{
-			userGroup2.GET("/:usr_id", readUserDataByID)                // read user by their id
-			userGroup2.GET("/:usr_id/invoices", readUserInvoices)       // read all the invoices for a user
-			userGroup2.GET("/:usr_id/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user
-			userGroup2.PUT("/:usr_id/invoice/:id", updateInvoiceEntry)  // updates the entire invoice
-			userGroup2.PATCH("/:usr_id/invoice/:id", patchEntry)        // updates any field of an invoice
-			userGroup2.DELETE("/:usr_id/invoice/:id", deleteInvEntry)   // deletes a specific invoice
+			userGroup2.GET("", readUserDataByID)                        // read user by their id | rmv usr_id
+			userGroup2.GET("/:usr_id/invoices", readUserInvoices)       // read all the invoices for a user | rmv usr_id
+			userGroup2.GET("/:usr_id/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user | rmv usr_id
+			userGroup2.PUT("/:usr_id/invoice/:id", updateInvoiceEntry)  // updates the entire invoice | rmv usr_id
+			userGroup2.PATCH("/:usr_id/invoice/:id", patchEntry)        // updates any field of an invoice | rmv usr_id
+			userGroup2.DELETE("/:usr_id/invoice/:id", deleteInvEntry)   // deletes a specific invoice | rmv usr_id
 		}
 	}
 
