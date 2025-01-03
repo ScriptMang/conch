@@ -335,7 +335,7 @@ func addInvoice(c *gin.Context) {
 	// fmt.Printf("Invoice in addInvoice funct is: %+v\n", inv)
 
 	// invoice binding must match along with their userID
-	if bindingOk && c.Keys["rqstTokenUserID"] != inv.UserID {
+	if c.Keys["rqstTokenUserID"] == 0 {
 		c.Keys["isAuthorized"] = false
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
@@ -345,6 +345,7 @@ func addInvoice(c *gin.Context) {
 
 	if bindingOk {
 		var fieldErr fields.GrammarError
+		inv.UserID = c.Keys["rqstTokenUserID"].(int)
 		rqstData.Invs, fieldErr = invs.InsertOp(inv)
 		// fmt.Printf("Invoice after InsertOP is: %+v\n", *rqstData.Invs[0])
 		// fmt.Printf("FieldErrs after InsertOP is: %v\n", fieldErr.ErrMsgs)
