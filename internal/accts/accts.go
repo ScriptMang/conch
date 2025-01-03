@@ -269,7 +269,7 @@ func GenerateToken(username string, acctErr *fields.GrammarError) Tokens {
 	return newToken
 }
 
-// returns the auth-token, given the user's id
+// returns the user id asscoiated by the auth-token
 func ReadUserIDByToken(tgtToken string, fieldErr *fields.GrammarError) int {
 	ctx, db := bikeshop.Connect()
 	defer db.Close()
