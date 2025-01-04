@@ -596,7 +596,7 @@ func main() {
 	}
 
 	if !isHashUnreadable {
-		loginRoute := r.Group("/user/", gin.BasicAuth(gin.Accounts{
+		loginRoute := r.Group("/", gin.BasicAuth(gin.Accounts{
 			"wrigglyWart56": string(pswd1[0].Password),
 			"hypnoTonic05":  string(pswd2[0].Password),
 		}))
