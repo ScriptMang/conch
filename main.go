@@ -383,16 +383,8 @@ func readUserDataByID(c *gin.Context) {
 		return
 	}
 
-	var rqstData respBodyData
-	id := validateRouteUserID(c, &rqstData)
-	var invalidID = rqstData.FieldErr.ErrMsgs
-	if invalidID != nil {
-		sendResponse(c, &rqstData)
-		return
-	}
-
 	// verify that the userID assigned to the token matches the route's userID
-	if c.Keys["rqstTokenUserID"] != id {
+	if c.Keys["rqstTokenUserID"] == 0 {
 		c.Keys["isAuthorized"] = false
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
@@ -400,6 +392,8 @@ func readUserDataByID(c *gin.Context) {
 		return
 	}
 
+	var rqstData respBodyData
+	id := c.Keys["rqstTokenUserID"].(int)
 	rqstData.UsrContacts, rqstData.FieldErr = accts.ReadUserContactByID(id)
 	fieldErr := rqstData.FieldErr
 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
@@ -432,16 +426,9 @@ func readUserInvoices(c *gin.Context) {
 	if c.Keys["isAuthorized"] == false {
 		return
 	}
-	var rqstData respBodyData
-	id := validateRouteUserID(c, &rqstData)
-	var invalidID = rqstData.FieldErr.ErrMsgs
-	if invalidID != nil {
-		sendResponse(c, &rqstData)
-		return
-	}
 
 	// verify that the userID assigned to the token matches the route's userID
-	if c.Keys["rqstTokenUserID"] != id {
+	if c.Keys["rqstTokenUserID"] == 0 {
 		c.Keys["isAuthorized"] = false
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
@@ -449,6 +436,8 @@ func readUserInvoices(c *gin.Context) {
 		return
 	}
 
+	var rqstData respBodyData
+	id := c.Keys["rqstTokenUserID"].(int)
 	rqstData.Invs, rqstData.FieldErr = invs.ReadInvoicesByUserID(id)
 	fieldErr := rqstData.FieldErr
 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
@@ -466,18 +455,12 @@ func readUserInvoiceByID(c *gin.Context) {
 	if c.Keys["isAuthorized"] == false {
 		return
 	}
+
 	var rqstData respBodyData
-	userID := validateRouteUserID(c, &rqstData)
 	invID := validateRouteInvID(c, &rqstData)
-	var invalidID = rqstData.FieldErr.ErrMsgs
-	if invalidID != nil {
-		// fmt.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
-		sendResponse(c, &rqstData)
-		return
-	}
 
 	// verify that the userID assigned to the token matches the route's userID
-	if c.Keys["rqstTokenUserID"] != userID {
+	if c.Keys["rqstTokenUserID"] == 0 {
 		c.Keys["isAuthorized"] = false
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
@@ -485,6 +468,7 @@ func readUserInvoiceByID(c *gin.Context) {
 		return
 	}
 
+	userID := c.Keys["rqstTokenUserID"].(int)
 	rqstData.Invs, rqstData.FieldErr = invs.ReadInvoiceByUserID(userID, invID)
 	fieldErr := rqstData.FieldErr
 	if fieldErr.ErrMsgs != nil && fieldErr.ErrMsgs[0] != "" {
@@ -505,18 +489,12 @@ func updateInvoiceEntry(c *gin.Context) {
 	}
 	var inv invs.Invoice
 	var bindingOk bool
+
 	var rqstData respBodyData
-	userID := validateRouteUserID(c, &rqstData)
 	invID := validateRouteInvID(c, &rqstData)
-	var invalidID = rqstData.FieldErr.ErrMsgs
-	if invalidID != nil {
-		// log.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
-		sendResponse(c, &rqstData)
-		return
-	}
 
 	// verify that the userID assigned to the token matches the route's userID
-	if c.Keys["rqstTokenUserID"] != userID {
+	if c.Keys["rqstTokenUserID"] == 0 {
 		c.Keys["isAuthorized"] = false
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
@@ -526,6 +504,8 @@ func updateInvoiceEntry(c *gin.Context) {
 
 	inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 	if bindingOk {
+
+		userID := c.Keys["rqstTokenUserID"].(int)
 		rqstData.Invs, rqstData.FieldErr = invs.UpdateInvoiceByUserID(inv, userID, invID)
 		if rqstData.FieldErr.ErrMsgs != nil {
 			sendResponse(c, &rqstData)
@@ -544,18 +524,12 @@ func patchEntry(c *gin.Context) {
 	}
 	var inv invs.Invoice
 	var bindingOk bool
+
 	var rqstData respBodyData
-	userID := validateRouteUserID(c, &rqstData)
 	invID := validateRouteInvID(c, &rqstData)
-	var invalidID = rqstData.FieldErr.ErrMsgs
-	if invalidID != nil {
-		// log.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
-		sendResponse(c, &rqstData)
-		return
-	}
 
 	// verify that the userID assigned to the token matches the route's userID
-	if c.Keys["rqstTokenUserID"] != userID {
+	if c.Keys["rqstTokenUserID"] == 0 {
 		c.Keys["isAuthorized"] = false
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
@@ -565,6 +539,7 @@ func patchEntry(c *gin.Context) {
 
 	inv, bindingOk = validateInvoiceBinding(c, &rqstData)
 	if bindingOk {
+		userID := c.Keys["rqstTokenUserID"].(int)
 		rqstData.Invs, rqstData.FieldErr = invs.PatchInvoice(inv, userID, invID)
 		if rqstData.FieldErr.ErrMsgs != nil {
 			sendResponse(c, &rqstData)
@@ -580,17 +555,11 @@ func deleteInvEntry(c *gin.Context) {
 	if c.Keys["isAuthorized"] == false {
 		return
 	}
+
 	var rqstData respBodyData
 	invID := validateRouteInvID(c, &rqstData)
-	userID := validateRouteUserID(c, &rqstData)
-	var invalidID = rqstData.FieldErr.ErrMsgs
-	if invalidID != nil {
-		// log.Printf("Invalid Route ID or IDs for readUserInvoiceByID handler\n")
-		sendResponse(c, &rqstData)
-		return
-	}
 
-	if c.Keys["rqstTokenUserID"] != userID {
+	if c.Keys["rqstTokenUserID"] == 0 {
 		c.Keys["isAuthorized"] = false
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
@@ -598,6 +567,7 @@ func deleteInvEntry(c *gin.Context) {
 		return
 	}
 
+	userID := c.Keys["rqstTokenUserID"].(int)
 	rqstData.Invs, rqstData.FieldErr = invs.DeleteInvoice(invID, userID)
 	if rqstData.FieldErr.ErrMsgs != nil {
 		sendResponse(c, &rqstData)
@@ -649,12 +619,12 @@ func main() {
 
 		userGroup2 := r.Group("/user", protectData)
 		{
-			userGroup2.GET("", readUserDataByID)                        // read user by their id | rmv usr_id
-			userGroup2.GET("/:usr_id/invoices", readUserInvoices)       // read all the invoices for a user | rmv usr_id
-			userGroup2.GET("/:usr_id/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user | rmv usr_id
-			userGroup2.PUT("/:usr_id/invoice/:id", updateInvoiceEntry)  // updates the entire invoice | rmv usr_id
-			userGroup2.PATCH("/:usr_id/invoice/:id", patchEntry)        // updates any field of an invoice | rmv usr_id
-			userGroup2.DELETE("/:usr_id/invoice/:id", deleteInvEntry)   // deletes a specific invoice | rmv usr_id
+			userGroup2.GET("", readUserDataByID)                // read user by their id
+			userGroup2.GET("/invoices", readUserInvoices)       // read all the invoices for a user
+			userGroup2.GET("/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user
+			userGroup2.PUT("/invoice/:id", updateInvoiceEntry)  // updates the entire invoice
+			userGroup2.PATCH("/invoice/:id", patchEntry)        // updates any field of an invoice
+			userGroup2.DELETE("/invoice/:id", deleteInvEntry)   // deletes a specific invoice
 		}
 	}
 
