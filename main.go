@@ -617,9 +617,9 @@ func main() {
 			createInv.POST("", addInvoice)
 		}
 
-		userGroup2 := r.Group("/user", protectData)
+		userGroup2 := r.Group("/", protectData)
 		{
-			userGroup2.GET("", readUserDataByID)                // read user by their id
+			userGroup2.GET("/user", readUserDataByID)           // read user by their id
 			userGroup2.GET("/invoices", readUserInvoices)       // read all the invoices for a user
 			userGroup2.GET("/invoice/:id", readUserInvoiceByID) // read a specific invoice from a user
 			userGroup2.PUT("/invoice/:id", updateInvoiceEntry)  // updates the entire invoice
