@@ -604,11 +604,11 @@ func main() {
 			loginRoute.POST("/login", logIn)
 		}
 
-		userGroup1 := r.Group("/users", protectData)
+		userGroup1 := r.Group("/", protectData)
 		{
-			userGroup1.GET("", readUserData)
+			userGroup1.GET("/users", readUserData)
 			userGroup1.GET("/invoices", readInvoiceData)
-			userGroup1.DELETE("/", deleteAcct)
+			userGroup1.DELETE("/users", deleteAcct)
 			userGroup1.POST("/logout", logOut)
 		}
 
