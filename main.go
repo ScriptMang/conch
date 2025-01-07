@@ -213,20 +213,8 @@ func logOut(c *gin.Context) {
 		return
 	}
 
-	var rqstData respBodyData
-	var usr accts.Usernames
-	err := c.ShouldBind(&usr)
-	bindingErr := rqstData.FieldErr
-
-	if err != nil {
-		bindingErr.AddMsg(fields.BadRequest,
-			"Binding Error: failed to bind fields to userCreds, mismatched data-types")
-		c.JSON(fields.ErrorCode, bindingErr)
-		return
-	}
-
 	// verify that the userID assigned to the token matches the route's userID
-	if c.Keys["rqstTokenUserID"] != usr.ID {
+	if c.Keys["rqstTokenUserID"] == 0 {
 		c.Keys["isAuthorized"] = false
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
@@ -235,8 +223,16 @@ func logOut(c *gin.Context) {
 	}
 
 	var fieldErr fields.GrammarError
-	accts.LogOut(usr.ID, &fieldErr)
+	userID := c.Keys["rqstTokenUserID"].(int)
+	username := accts.ReadUsernameByID(userID, &fieldErr)
+	if fieldErr.ErrMsgs != nil {
+		c.JSON(accts.BadRequest, gin.H{
+			"Error": fieldErr.ErrMsgs,
+		})
+		return
+	}
 
+	accts.LogOut(userID, &fieldErr)
 	if fieldErr.ErrMsgs != nil {
 		c.JSON(accts.BadRequest, gin.H{
 			"TokenError": fieldErr.ErrMsgs,
@@ -245,7 +241,7 @@ func logOut(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("User: %s has logged out", usr.Username),
+		"message": fmt.Sprintf("User: %s has logged out", username[0].Username),
 	})
 
 }

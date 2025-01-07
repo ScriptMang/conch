@@ -413,6 +413,29 @@ func readUserByUsername(username string) ([]*Usernames, fields.GrammarError) {
 	return usrs, fieldErr
 }
 
+func ReadUsernameByID(userID int, fieldErr *fields.GrammarError) []*Usernames {
+	ctx, db := bikeshop.Connect()
+	defer db.Close()
+
+	var usr Usernames
+	var usrs []*Usernames
+
+	row, _ := db.Query(ctx, `SELECT * FROM Usernames WHERE id=$1`, userID)
+
+	err := pgxscan.ScanOne(&usr, row)
+	if err != nil {
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "no rows in result set") {
+			fieldErr.AddMsg(resourceNotFound, "Resource Not Found: username with specified id doesn't exist")
+		}
+
+		// fmt.Printf("The len of fieldErr msgs is: %d\n", len(fieldErr.ErrMsgs))
+		return usrs
+	}
+	usrs = append(usrs, &usr)
+	return usrs
+}
+
 // When users logout they delete their session token
 func LogOut(userID int, fieldErr *fields.GrammarError) Tokens {
 	ctx, db := bikeshop.Connect()
