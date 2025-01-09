@@ -247,22 +247,16 @@ func logOut(c *gin.Context) {
 }
 
 func deleteAcct(c *gin.Context) {
-	var rqstData respBodyData
-	var rmvUser []*accts.Usernames
-	// var userCred accts.LoginCred
-	var user accts.Usernames
-	err := c.ShouldBind(&user)
-	bindingErr := rqstData.FieldErr
 
-	if err != nil {
-		bindingErr.AddMsg(fields.BadRequest,
-			"Binding Error: failed to bind fields to userCreds, mismatched data-types")
-		c.JSON(fields.ErrorCode, bindingErr)
+	if c.Keys["isAuthorized"] == false {
 		return
 	}
 
+	var rqstData respBodyData
+	var rmvUser []*accts.Usernames
+
 	// verify that the userID assigned to the token matches the route's userID
-	if c.Keys["rqstTokenUserID"] != user.ID {
+	if c.Keys["rqstTokenUserID"] == 0 {
 		c.Keys["isAuthorized"] = false
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "unauthorized",
@@ -270,13 +264,26 @@ func deleteAcct(c *gin.Context) {
 		return
 	}
 
-	rmvUser, rqstData.FieldErr = accts.DeleteAcct(user)
+	var fieldErr fields.GrammarError
+	userID := c.Keys["rqstTokenUserID"].(int)
+	user := accts.ReadUsernameByID(userID, &fieldErr)
+	if fieldErr.ErrMsgs != nil {
+		c.JSON(accts.BadRequest, gin.H{
+			"Error": fieldErr.ErrMsgs,
+		})
+		return
+	}
+
+	rmvUser, rqstData.FieldErr = accts.DeleteAcct(*user[0])
 	if rqstData.FieldErr.ErrMsgs != nil {
 		sendResponse(c, &rqstData)
 		return
 	}
+
 	code = statusOK
-	c.JSON(code, rmvUser[0])
+	c.JSON(code, gin.H{
+		"message": fmt.Sprintf("User: %s has been deleted", rmvUser[0].Username),
+	})
 }
 
 func protectData(c *gin.Context) {
