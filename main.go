@@ -537,7 +537,14 @@ func updateInvoiceEntry(c *gin.Context) {
 			return
 		}
 		code = statusOK
-		c.JSON(code, rqstData.Invs)
+		inv2 := *rqstData.Invs[0]
+		c.JSON(code, gin.H{
+			"id":       inv2.ID,
+			"product":  inv2.Product,
+			"category": inv2.Category,
+			"price":    inv2.Price,
+			"quantity": inv2.Quantity,
+		})
 	}
 }
 
@@ -571,7 +578,14 @@ func patchEntry(c *gin.Context) {
 			return
 		}
 		code = statusOK
-		c.JSON(code, rqstData.Invs)
+		inv2 := *rqstData.Invs[0]
+		c.JSON(code, gin.H{
+			"id":       inv2.ID,
+			"product":  inv2.Product,
+			"category": inv2.Category,
+			"price":    inv2.Price,
+			"quantity": inv2.Quantity,
+		})
 	}
 }
 
@@ -599,7 +613,14 @@ func deleteInvEntry(c *gin.Context) {
 		return
 	}
 	code = statusOK
-	c.JSON(code, rqstData.Invs)
+	inv := *rqstData.Invs[0]
+	c.JSON(code, gin.H{
+		"id":       inv.ID,
+		"product":  inv.Product,
+		"category": inv.Category,
+		"price":    inv.Price,
+		"quantity": inv.Quantity,
+	})
 }
 
 func main() {
