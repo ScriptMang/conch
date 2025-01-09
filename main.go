@@ -495,7 +495,14 @@ func readUserInvoiceByID(c *gin.Context) {
 		return
 	}
 	code = statusOK
-	c.JSON(code, rqstData.Invs)
+	inv := *rqstData.Invs[0]
+	c.JSON(code, gin.H{
+		"id":       inv.ID,
+		"product":  inv.Product,
+		"category": inv.Category,
+		"price":    inv.Price,
+		"quantity": inv.Quantity,
+	})
 }
 
 // updates an invoice entry by id
