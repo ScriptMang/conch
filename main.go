@@ -455,8 +455,16 @@ func readUserInvoices(c *gin.Context) {
 		sendResponse(c, &rqstData)
 		return
 	}
+
 	code = statusOK
-	c.JSON(code, rqstData.Invs)
+	inv := *rqstData.Invs[0]
+	c.JSON(code, gin.H{
+		"id":       inv.ID,
+		"product":  inv.Product,
+		"category": inv.Category,
+		"price":    inv.Price,
+		"quantity": inv.Quantity,
+	})
 }
 
 // returns a specific invoice for a specific user
