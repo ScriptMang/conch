@@ -358,7 +358,14 @@ func addInvoice(c *gin.Context) {
 			return
 		}
 		code = statusCreated
-		c.JSON(code, rqstData.Invs)
+		inv2 := *rqstData.Invs[0]
+		c.JSON(code, gin.H{
+			"id":       inv2.ID,
+			"product":  inv2.Product,
+			"category": inv2.Category,
+			"price":    inv2.Price,
+			"quantity": inv2.Quantity,
+		})
 	}
 }
 
