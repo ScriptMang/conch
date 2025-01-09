@@ -105,15 +105,6 @@ func validateInvoiceBinding(c *gin.Context, rqstData *respBodyData) (invs.Invoic
 	return inv, false
 }
 
-// validates the user id route parameter
-// func validateRouteUserID(c *gin.Context, rqstData *respBodyData) int {
-// 	id, err := strconv.Atoi(c.Param("usr_id"))
-// 	if err != nil {
-// 		rqstData.FieldErr.AddMsg(fields.BadRequest, "Bad Request: user id can't be converted to an integer")
-// 	}
-// 	return id
-// }
-
 // validates the invoice id route parameter
 func validateRouteInvID(c *gin.Context, rqstData *respBodyData) int {
 	id, err := strconv.Atoi(c.Param("id"))
