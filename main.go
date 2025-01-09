@@ -33,6 +33,14 @@ type Order struct {
 	Address  string      `json:"address"`
 }
 
+type rsltInv struct {
+	ID       int
+	Product  string
+	Price    json.Number
+	Quantity int
+	Category string
+}
+
 var code int //httpstatuscode
 const statusOK = 200
 const statusCreated = 201
@@ -317,6 +325,18 @@ func protectData(c *gin.Context) {
 	})
 }
 
+// takes an invoice create new invoice struct w/o user_id
+func editedInv(inv invs.Invoice) rsltInv {
+	var inv2 rsltInv
+	inv2.ID = inv.ID
+	inv2.Product = inv.Product
+	inv2.Category = inv.Category
+	inv2.Price = json.Number(fmt.Sprintf("%.2f", inv.Price))
+	inv2.Quantity = inv.Quantity
+
+	return inv2
+}
+
 // binds json data to an invoice and insert its to the database
 func addInvoice(c *gin.Context) {
 	if c.Keys["isAuthorized"] == false {
@@ -350,13 +370,8 @@ func addInvoice(c *gin.Context) {
 		}
 		code = statusCreated
 		inv2 := *rqstData.Invs[0]
-		c.JSON(code, gin.H{
-			"id":       inv2.ID,
-			"product":  inv2.Product,
-			"category": inv2.Category,
-			"price":    inv2.Price,
-			"quantity": inv2.Quantity,
-		})
+		rslt := editedInv(inv2)
+		c.JSON(code, rslt)
 	}
 }
 
@@ -449,13 +464,8 @@ func readUserInvoices(c *gin.Context) {
 
 	code = statusOK
 	inv := *rqstData.Invs[0]
-	c.JSON(code, gin.H{
-		"id":       inv.ID,
-		"product":  inv.Product,
-		"category": inv.Category,
-		"price":    inv.Price,
-		"quantity": inv.Quantity,
-	})
+	rslt := editedInv(inv)
+	c.JSON(code, rslt)
 }
 
 // returns a specific invoice for a specific user
@@ -487,13 +497,8 @@ func readUserInvoiceByID(c *gin.Context) {
 	}
 	code = statusOK
 	inv := *rqstData.Invs[0]
-	c.JSON(code, gin.H{
-		"id":       inv.ID,
-		"product":  inv.Product,
-		"category": inv.Category,
-		"price":    inv.Price,
-		"quantity": inv.Quantity,
-	})
+	rslt := editedInv(inv)
+	c.JSON(code, rslt)
 }
 
 // updates an invoice entry by id
@@ -529,13 +534,8 @@ func updateInvoiceEntry(c *gin.Context) {
 		}
 		code = statusOK
 		inv2 := *rqstData.Invs[0]
-		c.JSON(code, gin.H{
-			"id":       inv2.ID,
-			"product":  inv2.Product,
-			"category": inv2.Category,
-			"price":    inv2.Price,
-			"quantity": inv2.Quantity,
-		})
+		rslt := editedInv(inv2)
+		c.JSON(code, rslt)
 	}
 }
 
@@ -570,13 +570,8 @@ func patchEntry(c *gin.Context) {
 		}
 		code = statusOK
 		inv2 := *rqstData.Invs[0]
-		c.JSON(code, gin.H{
-			"id":       inv2.ID,
-			"product":  inv2.Product,
-			"category": inv2.Category,
-			"price":    inv2.Price,
-			"quantity": inv2.Quantity,
-		})
+		rslt := editedInv(inv2)
+		c.JSON(code, rslt)
 	}
 }
 
@@ -605,13 +600,8 @@ func deleteInvEntry(c *gin.Context) {
 	}
 	code = statusOK
 	inv := *rqstData.Invs[0]
-	c.JSON(code, gin.H{
-		"id":       inv.ID,
-		"product":  inv.Product,
-		"category": inv.Category,
-		"price":    inv.Price,
-		"quantity": inv.Quantity,
-	})
+	rslt := editedInv(inv)
+	c.JSON(code, rslt)
 }
 
 func main() {
