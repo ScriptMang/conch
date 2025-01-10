@@ -31,7 +31,7 @@ some CRUD Operations will require you to pass JSON to the responsebody<br>
 ('Body' in PostMan) along with the request. In that case, where ever you see `<struct>`<br> 
 in 'CRUD Operations' replace it with the expected json format for the object listed below.<br>
 Also, do not send the id attribute as part of the json object, its created along with the invoice.<br> 
-For routes that end in `:usr_id` or `:id` replace it with an integer number.<br>
+For routes that end in `:id` replace it with an integer number.<br>
 To end the program in the terminal, type `^c`(ctrl-c).
 
 ### JSON Format for an Account
@@ -48,8 +48,6 @@ To end the program in the terminal, type `^c`(ctrl-c).
 ### JSON Format for a Usernames
 ```
 { 
-  "id": int,
-  "user_id": int,
   "username": string,
 }
 ```
@@ -68,8 +66,6 @@ To end the program in the terminal, type `^c`(ctrl-c).
 ### JSON Format for an Invoice
 ```
 {
-  "id": int,
-  "user_id": int,
   "product": string,
   "category": string,
   "price": float,
@@ -84,6 +80,8 @@ To end the program in the terminal, type `^c`(ctrl-c).
   "pswd": []byte
 }
 ```
+
+
 ### Notes about the json objects
 
 #### Adding an account creates an entry in the Usernames table and the passwords table
@@ -92,36 +90,42 @@ object in the request body,
 you still need to provide its id for other routes. i.e `:usr_id`.
 
 #### The id properties are never passed but created 
-User and Invoice structs' id properties `:usr_id` and `:id` respectfully are assigned after creation.
+An Invoice structs id properties `:id` respectfully are assigned after creation.
 They're incremented after insertion(pass or fail) by the database.
 
 #### Passwords for Account structs get encrypted
 After sending a Post request to create an account,
 the password is encrypted and stored in the database.
 
+### Tokens
+
+Tokens are created after a user logs in. 
+The token type being used is a bearer token.
+The user must take their token and pass it across all
+routes except account creation and logging in.
 
 ### CRUD Operations
 * Add a user account to the table<br>
    `POST` `localhost:8080/users/` `<account>`
 * Login into your account<br>
-   `POST` `localhost:8080/user/login` `<login-creds>`
+   `POST` `localhost:8080/login` `<login-creds>`
 * Read all the usernames from the table<br>
    `GET` `localhost:8080/users`
 * Read all the invoices from the table<br>
-   `GET` `localhost:8080/invoices`
+   `GET` `localhost:8080/invoices` `<token>`
 * Read a specific user from the table<br>
-   `GET` `localhost:8080/user/:usr_id`
+   `GET` `localhost:8080/user` `<token>`
 * Read all the invoices for a specific user<br>
-   `GET` `localhost:8080/invoices`
+   `GET` `localhost:8080/user/invoices` `<token>`
 * Read an invoice for a specific user<br>
-   `GET` `localhost:8080/user/:usr_id/invoice/:id`
+   `GET` `localhost:8080/invoice/:id` `<token>`
 * Add an invoice to a specific user<br>
-   `POST` `localhost:8080/invoices/`
+   `POST` `localhost:8080/invoices/` `<token>` `<invoice>`
 * Update all the fields on an existing invoice<br>
-   `PUT` `localhost:8080/user/:usr_id/invoice/:id` `<invoice>`
+   `PUT` `localhost:8080/invoice/:id`  `<token>` `<invoice>`
 * Patch one or more fields on an existing invoice<br>
-   `PATCH` `localhost:8080/user/:usr_id/invoice/:id` `<invoice>`
+   `PATCH` `localhost:8080/invoice/:id` `<token>` `<invoice>`
 * Delete an existing account<br>
-   `DELETE` `localhost:8080/users/` `<login-creds>`
+   `DELETE` `localhost:8080/users` `<token>`
 * Delete an existing invoice<br>
-   `DELETE` `localhost:8080/user/:usr_id/invoice/:id`
+   `DELETE` `localhost:8080/invoice/:id` `<token>`
