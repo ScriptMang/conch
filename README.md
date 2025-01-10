@@ -84,11 +84,6 @@ To end the program in the terminal, type `^c`(ctrl-c).
 
 ### Notes about the json objects
 
-#### Adding an account creates an entry in the Usernames table and the passwords table
-Although you don't directly pass a json struct for a user
-object in the request body, 
-you still need to provide its id for other routes. i.e `:usr_id`.
-
 #### The id properties are never passed but created 
 An Invoice structs id properties `:id` respectfully are assigned after creation.
 They're incremented after insertion(pass or fail) by the database.
@@ -99,16 +94,25 @@ the password is encrypted and stored in the database.
 
 ### Tokens
 
-Tokens are created after a user logs in. 
+Tokens are created after a user logs into their account. 
 The token type being used is a bearer token.
 The user must take their token and pass it across all
 routes except account creation and logging in.
+When a user logs out they delete their token.
+This means to access any of their routes that needed
+tokens before they need to login again and
+generate a new token.
+
+
+
 
 ### CRUD Operations
 * Add a user account to the table<br>
    `POST` `localhost:8080/users/` `<account>`
 * Login into your account<br>
    `POST` `localhost:8080/login` `<login-creds>`
+* Log out of your account<br>
+   `POST` `localhost:8080/logout` `<token>`
 * Read all the usernames from the table<br>
    `GET` `localhost:8080/users`
 * Read all the invoices from the table<br>
