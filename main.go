@@ -36,9 +36,9 @@ type Order struct {
 type rsltInv struct {
 	ID       int
 	Product  string
+	Category string
 	Price    json.Number
 	Quantity int
-	Category string
 }
 
 var code int //httpstatuscode
@@ -463,9 +463,14 @@ func readUserInvoices(c *gin.Context) {
 	}
 
 	code = statusOK
-	inv := *rqstData.Invs[0]
-	rslt := editedInv(inv)
-	c.JSON(code, rslt)
+	invLst := rqstData.Invs
+	var editedInvLst []*rsltInv
+	for _, tmpInv := range invLst {
+		rslt := editedInv(*tmpInv)
+		editedInvLst = append(editedInvLst, &rslt)
+	}
+
+	c.JSON(code, editedInvLst)
 }
 
 // returns a specific invoice for a specific user
