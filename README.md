@@ -73,14 +73,6 @@ To end the program in the terminal, type `^c`(ctrl-c).
 }
 ```
 
-### JSON Format for Login-Creds
-```
-{
-  "username": string,
-  "pswd": []byte
-}
-```
-
 
 ### Notes about the json objects
 
@@ -91,6 +83,21 @@ They're incremented after insertion(pass or fail) by the database.
 #### Passwords for Account structs get encrypted
 After sending a Post request to create an account,
 the password is encrypted and stored in the database.
+
+### Basic Auth
+
+Basic auth stands for basic authentication.
+It requires a user to give their username
+and password to authenticate. The client can
+pass this info using curl by using the flag
+to `authorization` and providing the login
+credentials. The login credentials are combined 
+together and  are encoded in base64.
+
+You can use Postman click authorization, select basic-auth
+and pass it the username and password have it encode it in
+base64 and send it along with the `POST` request
+
 
 ### Tokens
 
@@ -110,7 +117,7 @@ generate a new token.
 * Add a user account to the table<br>
    `POST` `localhost:8080/users/` `<account>`
 * Login into your account<br>
-   `POST` `localhost:8080/login` `<login-creds>`
+   `POST` `localhost:8080/login` `<basic-auth>`
 * Log out of your account<br>
    `POST` `localhost:8080/logout` `<token>`
 * Read all the usernames from the table<br>

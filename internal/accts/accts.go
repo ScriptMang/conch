@@ -48,11 +48,6 @@ type Tokens struct {
 	Token  []byte `db:"token" json:"token"`
 }
 
-type LoginCred struct {
-	UserName string `json:"username" form:"username"`
-	Password string `json:"pswd" form:"password"`
-}
-
 type Registered struct {
 	UserID int
 	Msg    string
