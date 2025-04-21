@@ -11,7 +11,7 @@ For this project I'm simulating a bikshop database that keeps a table of invoice
   to the database.
 
 * Make sure to import the psql dump file into PostgreSQL.<br>
-  Use the following command 'psql --username=<username> Bikeshop <  <filename>.sql'. <br>
+  Use the following command 'psql --username=\<username\> Bikeshop <  \<filename\>.sql'. <br>
   Note: replace placeholder info within the angle brackets with your own.
 
 * Inside the bikeshop.go file replace the substring 'username' within the uri variable. <br>
